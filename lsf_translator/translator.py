@@ -126,7 +126,7 @@ class LSFTranslator:
             return []
 
         content = self._extract_content(response)
-        return self._parse_glosses(content)
+        return self._parse_glosses(content, text)
 
     async def translate_event(self, sentence: TranscriptEvent) -> GlossEvent:
         """Traduit une phrase (interface neutre) en `GlossEvent`.
@@ -152,15 +152,40 @@ class LSFTranslator:
         return ""
 
     @staticmethod
-    def _parse_glosses(content: str) -> list[str]:
-        if not content:
+    def _parse_glosses(content: str, source_text: str = "") -> list[str]:
+        """Extrait la liste de gloses du JSON renvoyé par le LLM.
+
+        Chaque échec de parsing journalise la **réponse brute complète** (et la
+        phrase source) pour pouvoir diagnostiquer les ``[LSF Gloss] []`` : une
+        liste vide peut venir d'une réponse vide, d'un JSON invalide ou d'un JSON
+        sans clé ``glosses``. Une liste légitimement vide (clé présente mais
+        tableau vide) n'est pas signalée.
+        """
+        ctx = f" (phrase : {source_text!r})" if source_text else ""
+        if not content or not content.strip():
+            log.warning("Réponse LLM vide%s — aucune glose produite.", ctx)
             return []
         try:
             data = json.loads(content)
-        except json.JSONDecodeError:
-            log.warning("Réponse LLM non-JSON, ignorée : %r", content[:200])
+        except json.JSONDecodeError as exc:
+            log.warning(
+                "Réponse LLM non-JSON%s : %s\n  réponse brute : %s",
+                ctx, exc, content,
+            )
             return []
-        glosses = data.get("glosses", []) if isinstance(data, dict) else []
+        if not isinstance(data, dict) or "glosses" not in data:
+            log.warning(
+                "JSON LLM sans clé 'glosses'%s\n  réponse brute : %s",
+                ctx, content,
+            )
+            return []
+        glosses = data.get("glosses", [])
+        if not isinstance(glosses, list):
+            log.warning(
+                "'glosses' n'est pas une liste%s\n  réponse brute : %s",
+                ctx, content,
+            )
+            return []
         # Normalisation défensive : chaînes non vides uniquement.
         return [str(g).strip() for g in glosses if str(g).strip()]
 
