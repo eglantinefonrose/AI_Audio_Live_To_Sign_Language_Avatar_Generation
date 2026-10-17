@@ -229,6 +229,8 @@ Exemple de sortie :
 | `--hf-repo` | Dépôt HF du modèle STT (défaut `kyutai/stt-1b-en_fr`). |
 | `--stt-device` | `auto` \| `cpu` \| `cuda` \| `mps`. |
 | `--language` | `auto` \| `fr` \| `en` (défaut `auto`). |
+| `--vad-pause` | Seuil de silence (s) validant une phrase (défaut `1.0`). |
+| `--max-words` | Taille cible (mots) des segments envoyés au LLM (défaut `25` ; `0` = désactivé). |
 | `--input-device` | Index du micro. |
 | `-v, --verbose` | Journalisation `DEBUG`. |
 
@@ -242,6 +244,22 @@ silences. Le moteur (`stt_engine/engine.py`) exploite ce signal — une absence 
 nouveau mot pendant `vad_pause_seconds` (défaut **1 s**) valide une **phrase
 complète**, plutôt que des découpages temporels fixes. Réglable dans
 `config.py` (`STTConfig.vad_pause_seconds`).
+
+### Re-découpage des phrases trop longues
+
+Quand le locuteur enchaîne sans pause franche, la VAD peut produire un « pavé »
+de plusieurs phrases (90+ mots). Les LLM **décrochent** sur ces entrées longues
+(translittération mot à mot, fuite de connecteurs). Le composant de
+transcription (`stt_engine/segmenter.py`) **post-traite** donc le texte de la
+VAD — sans la remplacer — pour émettre des segments courts :
+
+1. coupe d'abord sur la ponctuation de **fin de phrase** (`.!?…`) ;
+2. regroupe les phrases courtes voisines jusqu'à `max_sentence_words` mots ;
+3. si une phrase dépasse le plafond, coupe sur la ponctuation **interne**
+   (`,;:`), puis, en dernier recours, par fenêtres de mots.
+
+Réglable via `config.py` (`STTConfig.max_sentence_words`, défaut **25**) ou
+`--max-words N` (mettre `0` pour désactiver).
 
 ---
 

@@ -27,6 +27,7 @@ from typing import Callable, Iterator, Optional
 from config import AudioConfig, STTConfig
 from contracts import TranscriptEvent
 from stt_engine.engine import STTEngine
+from stt_engine.segmenter import split_into_segments
 
 log = logging.getLogger(__name__)
 
@@ -37,6 +38,7 @@ class Transcriber:
     """Composant de transcription : audio -> phrases segmentées (VAD)."""
 
     def __init__(self, config: STTConfig, audio_config: AudioConfig) -> None:
+        self._config = config
         self._engine = STTEngine(config, audio_config)
         self._stop = threading.Event()
 
@@ -64,11 +66,17 @@ class Transcriber:
         """
         self.load()
         stop = should_stop or self._stop.is_set
+        max_words = self._config.max_sentence_words
+
+        def handle(text: str) -> None:
+            # Un « pavé » de la VAD peut contenir plusieurs phrases : on le
+            # recoupe en segments courts, chacun émis comme un TranscriptEvent.
+            for segment in split_into_segments(text, max_words=max_words):
+                on_sentence(TranscriptEvent(text=segment, language=language))
+
         self._engine.run(
             source.frames(),
-            on_sentence=lambda text: on_sentence(
-                TranscriptEvent(text=text, language=language)
-            ),
+            on_sentence=handle,
             should_stop=stop,
         )
 

@@ -49,6 +49,10 @@ def build_config(args: argparse.Namespace):
         cfg = cfg.with_overrides(
             stt=replace(cfg.stt, vad_pause_seconds=args.vad_pause)
         )
+    if args.max_words is not None:
+        cfg = cfg.with_overrides(
+            stt=replace(cfg.stt, max_sentence_words=args.max_words)
+        )
     if args.hf_repo:
         cfg = cfg.with_overrides(stt=replace(cfg.stt, hf_repo=args.hf_repo))
     if args.language:
@@ -200,6 +204,11 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
                    help="Seuil de silence (s) validant une phrase complète "
                         "(défaut: %.1f). Pour régler la découpe VAD."
                         % CONFIG.stt.vad_pause_seconds)
+    p.add_argument("--max-words", type=int, metavar="N",
+                   help="Taille cible (en mots) des segments envoyés au LLM : "
+                        "les phrases plus longues sont recoupées sur la "
+                        "ponctuation (défaut: %d ; 0 = désactivé)."
+                        % CONFIG.stt.max_sentence_words)
     p.add_argument("--realtime", action="store_true",
                    help="Mode fichier : cadence la lecture à la vitesse réelle "
                         "du média (simulation live) au lieu d'aussi vite que "

@@ -43,6 +43,11 @@ class STTConfig:
     # Longueur minimale (en caractères) avant d'autoriser un flush, pour éviter
     # d'émettre des bribes parasites.
     min_sentence_chars: int = 2
+    # Découpe des phrases trop longues AVANT envoi au LLM : si la VAD produit un
+    # « pavé » (locuteur sans pause), il est recoupé sur la ponctuation en
+    # segments d'environ `max_sentence_words` mots, car les LLM décrochent sur
+    # les entrées longues. Mettre à 0 pour désactiver le redécoupage.
+    max_sentence_words: int = 25
     # Échantillonnage déterministe (latence + reproductibilité).
     temp: float = 0.0
     temp_text: float = 0.0
