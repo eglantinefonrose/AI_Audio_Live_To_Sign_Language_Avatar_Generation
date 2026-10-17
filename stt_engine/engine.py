@@ -106,13 +106,16 @@ class STTEngine:
 
     # -- décodage d'un jeton texte --------------------------------------
     def _decode_token(self, token_id: int) -> str:
-        if token_id in _IGNORED_TEXT_TOKENS:
-            return ""
+        """Convertit un jeton texte en morceau de chaîne.
+
+        Peut renvoyer un simple espace `" "` (jeton de frontière de mot `▁`
+        isolé) : cet espace est signifiant et doit être conservé.
+        """
         try:
             piece = self._text_tokenizer.id_to_piece(token_id)
         except Exception:  # jeton de contrôle non décodable
             return ""
-        # SentencePiece : "▁" marque une frontière de mot.
+        # SentencePiece : "▁" marque une frontière de mot (= une espace).
         return piece.replace("▁", " ")
 
     # -- boucle de streaming --------------------------------------------
@@ -140,7 +143,10 @@ class STTEngine:
 
         def flush() -> None:
             nonlocal buffer
-            sentence = buffer.strip()
+            # Normalise les espaces : supprime les bordures et réduit toute
+            # suite d'espaces à une seule (au cas où un jeton `▁` doublerait
+            # une espace déjà présente).
+            sentence = " ".join(buffer.split())
             if len(sentence) >= self.config.min_sentence_chars:
                 on_sentence(sentence)
             buffer = ""
@@ -159,15 +165,22 @@ class STTEngine:
                     if tokens is None:
                         # Phase de latence initiale du modèle.
                         continue
-                    piece = self._decode_token(int(tokens[0, 0, 0].item()))
-                    if piece.strip():
-                        buffer += piece
-                        frames_since_word = 0
-                    else:
+                    token_id = int(tokens[0, 0, 0].item())
+                    if token_id in _IGNORED_TEXT_TOKENS:
+                        # Vrai jeton de silence / padding : aucun texte.
                         frames_since_word += 1
                         # Silence prolongé + phrase en cours => phrase complète.
                         if frames_since_word >= pause_frames and buffer.strip():
                             flush()
+                        continue
+                    # Jeton texte : on conserve le morceau TEL QUEL, y compris
+                    # une espace isolée (frontière de mot), sinon des mots se
+                    # collent ("deentraîner"). Le silence est jugé sur l'id du
+                    # jeton ci-dessus, pas sur le contenu de la chaîne.
+                    piece = self._decode_token(token_id)
+                    if piece:
+                        buffer += piece
+                        frames_since_word = 0
 
         # Émet le reste éventuel à l'arrêt.
         flush()
