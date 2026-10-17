@@ -17,6 +17,7 @@ from __future__ import annotations
 import logging
 import shutil
 import subprocess
+import time
 from pathlib import Path
 from typing import Iterator
 
@@ -37,9 +38,20 @@ class AudioFileError(RuntimeError):
 class FileAudioSource:
     """Lit un fichier média et fournit des trames mono `float32`."""
 
-    def __init__(self, path: str | Path, audio_config: AudioConfig) -> None:
+    def __init__(
+        self,
+        path: str | Path,
+        audio_config: AudioConfig,
+        realtime: bool = False,
+    ) -> None:
+        """:param realtime: si vrai, débite les trames à la vitesse réelle du
+        média (simulation « live ») au lieu d'aussi vite que possible.
+        """
         self.path = Path(path).expanduser()
         self.config = audio_config
+        self.realtime = realtime
+        # Durée audio représentée par une trame (s).
+        self._frame_seconds = audio_config.block_size / audio_config.sample_rate
         self._proc: subprocess.Popen | None = None
 
     # -- cycle de vie ----------------------------------------------------
@@ -92,6 +104,20 @@ class FileAudioSource:
         buf = b""
         stdout = self._proc.stdout
 
+        # Cadencement temps réel : on vise `start + i * frame_seconds` pour la
+        # i-ème trame. On ne dort que si l'on est en avance ; si le STT est plus
+        # lent que le temps réel, aucun ralentissement n'est ajouté.
+        start = time.monotonic()
+        index = 0
+
+        def pace() -> None:
+            nonlocal index
+            if self.realtime:
+                delay = (start + index * self._frame_seconds) - time.monotonic()
+                if delay > 0:
+                    time.sleep(delay)
+            index += 1
+
         while True:
             chunk = stdout.read(read_size)
             if not chunk:
@@ -99,6 +125,7 @@ class FileAudioSource:
             buf += chunk
             while len(buf) >= frame_bytes:
                 raw, buf = buf[:frame_bytes], buf[frame_bytes:]
+                pace()
                 yield np.frombuffer(raw, dtype="<f4").astype(np.float32, copy=True)
 
         # Dernière trame partielle éventuelle, complétée par des zéros.
@@ -106,6 +133,7 @@ class FileAudioSource:
             tail = np.frombuffer(buf, dtype="<f4")
             frame = np.zeros(self.config.block_size, dtype=np.float32)
             frame[: len(tail)] = tail
+            pace()
             yield frame
 
         self._finalize()

@@ -10,6 +10,7 @@ import json
 import logging
 
 from config import OllamaConfig
+from contracts import GlossEvent, TranscriptEvent
 from lsf_translator.prompts import (
     GLOSS_JSON_SCHEMA,
     SYSTEM_PROMPT,
@@ -58,12 +59,15 @@ class LSFTranslator:
                 "Lancez-le avec `ollama serve`."
             ) from exc
 
-        if not self._model_available(listing):
-            log.warning(
-                "Le modèle '%s' n'est pas présent localement. "
-                "Lancez `ollama pull %s`. Tentative malgré tout…",
-                self.config.model,
-                self.config.model,
+        available = self._available_models(listing)
+        if not self._model_available(available):
+            # Échec immédiat et explicite : sinon chaque traduction renverrait
+            # un 404 silencieux => [LSF Gloss] [] en boucle.
+            raise OllamaUnavailableError(
+                f"Le modèle '{self.config.model}' n'est pas installé sur Ollama.\n"
+                f"  Modèles disponibles : {', '.join(available) or '(aucun)'}\n"
+                f"  → `ollama pull {self.config.model}`  ou  "
+                f"relancez avec `--model <un modèle de la liste>`."
             )
         log.info(
             "Traducteur LSF connecté à Ollama (%s, modèle=%s).",
@@ -71,8 +75,9 @@ class LSFTranslator:
             self.config.model,
         )
 
-    def _model_available(self, listing) -> bool:
-        """Vérifie la présence du modèle (gère objets pydantic et dicts)."""
+    @staticmethod
+    def _available_models(listing) -> list[str]:
+        """Noms des modèles installés (gère objets pydantic et dicts)."""
         models = getattr(listing, "models", None)
         if models is None and isinstance(listing, dict):
             models = listing.get("models", [])
@@ -83,6 +88,10 @@ class LSFTranslator:
                 name = m.get("model") or m.get("name")
             if name:
                 names.append(name)
+        return names
+
+    def _model_available(self, names: list[str]) -> bool:
+        """Vrai si le modèle configuré correspond à un modèle installé."""
         target = self.config.model
         return any(n == target or n.split(":")[0] == target.split(":")[0]
                    for n in names)
@@ -122,6 +131,20 @@ class LSFTranslator:
 
         content = self._extract_content(response)
         return self._parse_glosses(content)
+
+    async def translate_event(self, sentence: TranscriptEvent) -> GlossEvent:
+        """Traduit une phrase (interface neutre) en `GlossEvent`.
+
+        C'est le point d'entrée utilisé par l'orchestrateur ; il conserve le
+        texte source et l'horodatage de la phrase d'origine.
+        """
+        glosses = await self.translate(sentence.text, sentence.language)
+        return GlossEvent(
+            source_text=sentence.text,
+            glosses=glosses,
+            language=sentence.language,
+            timestamp=sentence.timestamp,
+        )
 
     @staticmethod
     def _extract_content(response) -> str:

@@ -6,6 +6,7 @@ from stt_engine.audio_capture import (
 )
 from stt_engine.engine import STTEngine, STTUnavailableError
 from stt_engine.file_source import AudioFileError, FileAudioSource
+from stt_engine.transcriber import Transcriber
 
 __all__ = [
     "AudioCapture",
@@ -15,4 +16,5 @@ __all__ = [
     "STTUnavailableError",
     "FileAudioSource",
     "AudioFileError",
+    "Transcriber",
 ]

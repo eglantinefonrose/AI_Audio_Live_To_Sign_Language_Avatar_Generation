@@ -1,32 +1,12 @@
-"""Structures d'événements circulant dans le pipeline.
+"""Ré-export des contrats de données du pipeline.
 
-Ces dataclasses constituent le contrat de données entre les composants. Elles
-ne dépendent d'aucune bibliothèque tierce afin de pouvoir être consommées par
-n'importe quel module en aval (y compris le futur moteur d'avatar 3D).
+Les types sont désormais définis dans le module neutre `contracts` (partagé par
+les deux composants). On les ré-exporte ici pour compatibilité : les imports
+historiques `from pipeline.events import TranscriptEvent, GlossEvent` continuent
+de fonctionner et désignent exactement les mêmes classes.
 """
 from __future__ import annotations
 
-import time
-from dataclasses import dataclass, field
+from contracts import GlossEvent, Sentence, TranscriptEvent
 
-
-@dataclass
-class TranscriptEvent:
-    """Phrase brute validée par la VAD, émise par le moteur STT."""
-
-    text: str
-    language: str | None = None
-    timestamp: float = field(default_factory=time.time)
-
-
-@dataclass
-class GlossEvent:
-    """Résultat de la traduction : gloses LSF dans l'ordre chronologique."""
-
-    source_text: str
-    glosses: list[str]
-    language: str | None = None
-    timestamp: float = field(default_factory=time.time)
-
-
-__all__ = ["TranscriptEvent", "GlossEvent"]
+__all__ = ["TranscriptEvent", "GlossEvent", "Sentence"]

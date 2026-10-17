@@ -64,16 +64,17 @@ def build_config(args: argparse.Namespace):
     return cfg
 
 
+async def print_transcript(transcript: TranscriptEvent) -> None:
+    """Affiche le sous-titre DÈS que la phrase est transcrite (avant le LLM)."""
+    print(f"[STT Raw] {transcript.text}", flush=True)
+
+
 async def print_gloss(transcript: TranscriptEvent, gloss: GlossEvent) -> None:
-    """Callback d'affichage temps réel au format demandé."""
-    print(
-        f"[STT Raw] {transcript.text}\n"
-        f"       -> [LSF Gloss] {gloss.glosses}\n",
-        flush=True,
-    )
+    """Affiche les gloses LSF une fois la traduction du LLM terminée."""
+    print(f"       -> [LSF Gloss] {gloss.glosses}\n", flush=True)
 
 
-async def run(cfg, media: str | None = None) -> int:
+async def run(cfg, media: str | None = None, realtime: bool = False) -> int:
     # Imports tardifs : permet `--list-devices` sans torch/moshi/ollama.
     from avatar_adapter.interface import ConsoleAvatarRenderer
     from lsf_translator.translator import OllamaUnavailableError
@@ -83,12 +84,15 @@ async def run(cfg, media: str | None = None) -> int:
     from stt_engine.file_source import AudioFileError, FileAudioSource
 
     # Source audio : fichier vidéo/audio si fourni, sinon micro.
-    audio_source = FileAudioSource(media, cfg.audio) if media else None
+    audio_source = (
+        FileAudioSource(media, cfg.audio, realtime=realtime) if media else None
+    )
 
     pipeline = Pipeline(
         cfg,
         renderers=[ConsoleAvatarRenderer()],
-        on_gloss=print_gloss,
+        on_transcript=print_transcript,   # sous-titre dès la transcription
+        on_gloss=print_gloss,             # gloses une fois le LLM terminé
         audio_source=audio_source,
     )
 
@@ -107,7 +111,8 @@ async def run(cfg, media: str | None = None) -> int:
     try:
         if media:
             # Flux fini : on transcrit jusqu'à la fin du média puis on s'arrête.
-            print(f"\n🎬  Transcription de « {media} »…\n", flush=True)
+            cadence = "temps réel" if realtime else "aussi vite que possible"
+            print(f"\n🎬  Transcription de « {media} » ({cadence})…\n", flush=True)
             await pipeline.wait()
             print("\n✅  Transcription terminée.", flush=True)
         else:
@@ -122,41 +127,29 @@ async def run(cfg, media: str | None = None) -> int:
     return 0
 
 
-def run_stt_only(cfg, media: str | None = None) -> int:
-    """Exécute le moteur STT seul et affiche la découpe en phrases.
+def run_stt_only(cfg, media: str | None = None, realtime: bool = False) -> int:
+    """Exerce SEUL le composant de transcription et affiche les phrases.
 
-    N'interroge PAS Ollama : utile pour tester/visualiser la segmentation VAD
-    qui alimente ensuite le traducteur LSF. Synchrone (pas d'asyncio) : chaque
-    phrase est affichée dès que le moteur la valide.
+    N'interroge PAS Ollama : montre la découpe (VAD) qui alimente le traducteur.
+    Illustre l'usage autonome du composant `Transcriber` (générateur).
     """
-    import threading
-
     from stt_engine.audio_capture import AudioCapture, AudioDeviceError
-    from stt_engine.engine import STTEngine, STTUnavailableError
+    from stt_engine.engine import STTUnavailableError
     from stt_engine.file_source import AudioFileError, FileAudioSource
+    from stt_engine.transcriber import Transcriber
 
-    source = FileAudioSource(media, cfg.audio) if media else AudioCapture(cfg.audio)
-    engine = STTEngine(cfg.stt, cfg.audio)
+    source = (
+        FileAudioSource(media, cfg.audio, realtime=realtime)
+        if media else AudioCapture(cfg.audio)
+    )
+    transcriber = Transcriber(cfg.stt, cfg.audio)
+    language = None if cfg.pipeline.language == "auto" else cfg.pipeline.language
 
     try:
-        engine.load()        # charge le modèle Kyutai (peut être long)
-        source.start()
-    except (AudioDeviceError, AudioFileError) as exc:
-        log.error("Problème audio : %s", exc)
-        return 3
+        transcriber.load()   # charge le modèle Kyutai (peut être long)
     except STTUnavailableError as exc:
         log.error("Moteur STT indisponible : %s", exc)
         return 4
-
-    stop = threading.Event()
-    count = 0
-
-    def on_sentence(text: str) -> None:
-        nonlocal count
-        count += 1
-        # Ce qui serait transmis tel quel au traducteur LSF.
-        print(f"\n  ┌─ phrase #{count:02d}  →  [envoyée au LLM]\n"
-              f"  └─ {text!r}", flush=True)
 
     if media:
         print(f"\n🎬  STT seul sur « {media} » "
@@ -167,15 +160,18 @@ def run_stt_only(cfg, media: str | None = None) -> int:
               f"(pause VAD = {cfg.stt.vad_pause_seconds}s, Ctrl+C pour quitter)…",
               flush=True)
 
+    count = 0
     try:
-        engine.run(
-            source.frames(), on_sentence=on_sentence, should_stop=stop.is_set
-        )
+        # Le composant gère lui-même le cycle de vie de la source.
+        for sentence in transcriber.transcribe(source, language=language):
+            count += 1
+            print(f"\n  ┌─ phrase #{count:02d}  →  [envoyée au LLM]\n"
+                  f"  └─ {sentence.text!r}", flush=True)
+    except (AudioDeviceError, AudioFileError) as exc:
+        log.error("Problème audio : %s", exc)
+        return 3
     except KeyboardInterrupt:
         print("\nArrêt demandé…", flush=True)
-    finally:
-        stop.set()
-        source.stop()
 
     print(f"\n✅  Terminé — {count} phrase(s) détectée(s).", flush=True)
     return 0
@@ -204,6 +200,10 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
                    help="Seuil de silence (s) validant une phrase complète "
                         "(défaut: %.1f). Pour régler la découpe VAD."
                         % CONFIG.stt.vad_pause_seconds)
+    p.add_argument("--realtime", action="store_true",
+                   help="Mode fichier : cadence la lecture à la vitesse réelle "
+                        "du média (simulation live) au lieu d'aussi vite que "
+                        "possible.")
     p.add_argument("--input-device", type=int,
                    help="Index du périphérique micro (voir --list-devices).")
     p.add_argument("-v", "--verbose", action="store_true",
@@ -232,10 +232,10 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.stt_only:
         # Transcription seule, sans Ollama ni pipeline asyncio.
-        return run_stt_only(cfg, media=args.media)
+        return run_stt_only(cfg, media=args.media, realtime=args.realtime)
 
     try:
-        return asyncio.run(run(cfg, media=args.media))
+        return asyncio.run(run(cfg, media=args.media, realtime=args.realtime))
     except KeyboardInterrupt:  # pragma: no cover
         return 0
 

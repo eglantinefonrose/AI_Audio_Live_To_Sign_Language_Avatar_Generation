@@ -12,21 +12,43 @@ Micro ──▶ STT (Kyutai/Moshi + VAD) ──▶ Traducteur LSF (LLM via Ollam
 
 ## Architecture
 
+Le système repose sur **deux composants métier indépendants**, reliés par une
+interface neutre et orchestrés (mais jamais couplés) par le pipeline :
+
 | Module | Rôle |
 | --- | --- |
 | `config.py` | Configuration centralisée (modèles, endpoints, audio) via dataclasses. |
-| `stt_engine/` | `audio_capture.py` (micro → trames), `file_source.py` (vidéo/audio → trames via ffmpeg) + `engine.py` (Kyutai STT + segmentation VAD). |
-| `lsf_translator/` | `prompts.py` (règles LSF + schéma JSON) + `translator.py` (client Ollama). |
-| `pipeline/` | `events.py` (contrats de données) + `orchestrator.py` (files `asyncio`). |
+| `contracts.py` | **Interface neutre** : `TranscriptEvent` (phrase) et `GlossEvent` (gloses). Ni l'un ni l'autre composant ne dépend de son voisin — seulement de ces types. |
+| `stt_engine/` | **Composant 1 — transcription.** `Transcriber` (façade) au-dessus de `engine.py` (Kyutai STT + VAD) ; sources `audio_capture.py` (micro) et `file_source.py` (vidéo/audio via ffmpeg). |
+| `lsf_translator/` | **Composant 2 — traduction LSF.** `translator.py` (client Ollama) + `prompts.py` (règles LSF + schéma JSON). |
+| `pipeline/` | `orchestrator.py` : chaîne les deux composants via des `asyncio.Queue`. `events.py` ré-exporte les contrats. |
 | `avatar_adapter/` | `AvatarRendererInterface` — classe de base abstraite pour brancher l'avatar 3D. |
 | `cli.py` | Outil ligne de commande : affiche `[STT Raw] → [LSF Gloss]` en direct. |
 
-### Découplage
+### Deux composants, réellement séparés
 
-Les étages communiquent **exclusivement** via des `asyncio.Queue` et des
-événements (`TranscriptEvent`, `GlossEvent`). Le moteur STT (bloquant) tourne
-dans un thread dédié et publie ses phrases dans la boucle asyncio de façon
-thread-safe. Aucun composant ne connaît l'implémentation de son voisin.
+```
+                 contracts.py (interface neutre)
+                 ┌───────────────┴───────────────┐
+   [source audio] ─▶ Transcriber ──TranscriptEvent──▶ LSFTranslator ──GlossEvent──▶ renderers
+                   (composant 1)                     (composant 2)
+```
+
+- **`Transcriber`** transforme une source audio en flux de phrases (`TranscriptEvent`),
+  la découpe étant assurée par la VAD de Kyutai. Utilisable seul :
+  ```python
+  for phrase in Transcriber(cfg.stt, cfg.audio).transcribe(source):
+      print(phrase.text)
+  ```
+- **`LSFTranslator`** convertit une phrase en gloses LSF. Utilisable seul :
+  ```python
+  gloss_event = await LSFTranslator(cfg.ollama).translate_event(phrase)
+  ```
+- Les deux composants **ne s'importent pas l'un l'autre** : ils ne connaissent
+  que `contracts`. L'orchestrateur est le seul à les relier, via des
+  `asyncio.Queue` (la transcription, bloquante, tourne dans un thread dédié et
+  publie de façon thread-safe). On peut tester, remplacer ou réutiliser chaque
+  composant indépendamment.
 
 ---
 
@@ -47,10 +69,14 @@ brew install ollama            # ou https://ollama.com/download
 # Démarrage du serveur (laisser tourner dans un terminal)
 ollama serve
 
-# Téléchargement d'un modèle (dans un autre terminal)
-ollama pull llama3.2           # léger, bon compromis latence/qualité sur M1
-# Alternatives : ollama pull qwen2.5:3b   /   ollama pull mistral
+# Téléchargement du modèle par défaut (dans un autre terminal)
+ollama pull qwen2.5:7b         # modèle par défaut, bons résultats LSF
+# Alternatives : ollama pull qwen2.5:3b (plus léger)  /  ollama pull llama3.2
 ```
+
+> Le modèle configuré doit être **réellement installé** (`ollama list`). Sinon
+> l'application s'arrête au démarrage avec la liste des modèles disponibles.
+> Choisissez-en un autre avec `--model <nom>`.
 
 Endpoint par défaut : `http://localhost:11434` (modifiable via `--ollama-host`).
 
@@ -112,7 +138,7 @@ uv run python cli.py videos/demo.mp4
 uv run python cli.py --language fr media/reunion.mov
 
 # Options courantes
-uv run python cli.py --language fr --model llama3.2 --stt-device cpu
+uv run python cli.py --language fr --model qwen2.5:7b --stt-device cpu
 uv run python cli.py --input-device 1 --verbose
 ```
 
@@ -126,6 +152,24 @@ uv run python cli.py --input-device 1 --verbose
 Le mode fichier accepte tout format géré par ffmpeg (mp4, mov, mkv, webm, wav,
 mp3…) : la piste audio est extraite, rééchantillonnée en 24 kHz mono, puis
 transcrite par le même pipeline. La segmentation en phrases (VAD) est identique.
+
+#### Cadence : `--realtime`
+
+Le pipeline est **toujours en streaming** (STT, traduction et affichage tournent
+en parallèle). Mais par défaut, en mode fichier, le STT traite la vidéo **aussi
+vite que le matériel le permet** (bien plus vite que le temps réel) : le STT
+« termine » donc la vidéo avant que les traductions LLM, plus lentes, ne
+défilent.
+
+Pour un rendu **live** (phrases cadencées au rythme réel de la vidéo) :
+
+```bash
+uv run python cli.py videos/demo.mp4 --realtime
+```
+
+> `--realtime` ralentit seulement si le STT est plus rapide que le temps réel ;
+> si le STT est déjà le goulot d'étranglement, aucun délai n'est ajouté. Au
+> micro, la cadence est intrinsèquement temps réel (option sans effet).
 
 ### Tester uniquement la transcription (`--stt-only`)
 
@@ -178,7 +222,7 @@ Exemple de sortie :
 | Option | Description |
 | --- | --- |
 | `--list-devices` | Liste les périphériques d'entrée et quitte. |
-| `--model` | Modèle Ollama (défaut `llama3.2`). |
+| `--model` | Modèle Ollama (défaut `qwen2.5:7b`). |
 | `--ollama-host` | URL de l'instance Ollama. |
 | `--hf-repo` | Dépôt HF du modèle STT (défaut `kyutai/stt-1b-en_fr`). |
 | `--stt-device` | `auto` \| `cpu` \| `cuda` \| `mps`. |

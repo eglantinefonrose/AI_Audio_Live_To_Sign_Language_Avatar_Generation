@@ -1,20 +1,20 @@
-"""Orchestrateur : relie STT -> Traducteur LSF -> consommateurs (avatars).
+"""Orchestrateur : chaîne les deux composants + diffuse la sortie.
 
-Modèle « écouteur d'événements » basé sur deux `asyncio.Queue` :
+L'orchestrateur n'implémente aucune logique métier : il se contente de relier le
+**composant de transcription** (`Transcriber`) au **composant de traduction LSF**
+(`LSFTranslator`) via deux `asyncio.Queue`, puis d'alimenter les consommateurs
+(renderers / CLI). Les deux composants restent utilisables seuls.
 
-    [AudioCapture] --(thread)--> STTEngine
-          |  on_sentence (thread-safe)
-          v
-    transcript_queue  --(tâche async)-->  LSFTranslator
-          |                                      |
-          |                                      v
-          |                                gloss_queue  --(tâche async)-->
-          |                                      |        renderers + CLI
-          v
+    [source audio] --(thread)--> Transcriber ──TranscriptEvent──┐
+                                                                v
+        transcript_queue  --(tâche async)-->  LSFTranslator.translate_event
+                                                                │ GlossEvent
+                                                                v
+                              gloss_queue  --(tâche async)-->  renderers + CLI
 
-Le moteur STT (bloquant, CPU/GPU) tourne dans un thread dédié ; il publie sur
-`transcript_queue` via `loop.call_soon_threadsafe`. Les étapes aval sont de
-simples coroutines, ce qui garde chaque composant isolé et testable.
+La transcription (bloquante, CPU/GPU) tourne dans un thread dédié ; elle publie
+sur `transcript_queue` via `loop.call_soon_threadsafe`. Les étages aval sont de
+simples coroutines.
 """
 from __future__ import annotations
 
@@ -28,7 +28,7 @@ from config import AppConfig
 from lsf_translator.translator import LSFTranslator
 from pipeline.events import GlossEvent, TranscriptEvent
 from stt_engine.audio_capture import AudioCapture
-from stt_engine.engine import STTEngine
+from stt_engine.transcriber import Transcriber
 
 log = logging.getLogger(__name__)
 
@@ -36,7 +36,10 @@ log = logging.getLogger(__name__)
 _TRANSCRIPT_DONE = object()
 _GLOSS_DONE = object()
 
-# Callback optionnel pour l'affichage CLI : (TranscriptEvent, GlossEvent).
+# Callbacks optionnels pour l'affichage CLI.
+# - on_transcript : appelé DÈS qu'une phrase est transcrite (avant l'appel LLM).
+# - on_gloss      : appelé une fois la traduction LSF disponible.
+OnTranscript = Callable[[TranscriptEvent], Awaitable[None] | None]
 OnGloss = Callable[[TranscriptEvent, GlossEvent], Awaitable[None] | None]
 
 
@@ -48,15 +51,20 @@ class Pipeline:
         config: AppConfig,
         renderers: Sequence[AvatarRendererInterface] | None = None,
         on_gloss: OnGloss | None = None,
+        on_transcript: OnTranscript | None = None,
         audio_source=None,
     ) -> None:
         """:param audio_source: toute source exposant ``start/frames/stop``
         (ex. ``AudioCapture`` pour le micro ou ``FileAudioSource`` pour un
         fichier vidéo/audio). Par défaut : le micro.
+        :param on_transcript: callback déclenché dès qu'une phrase est
+        transcrite, avant l'appel au LLM (affichage du sous-titre en direct).
+        :param on_gloss: callback déclenché une fois la traduction LSF prête.
         """
         self.config = config
         self.renderers: list[AvatarRendererInterface] = list(renderers or [])
         self.on_gloss = on_gloss
+        self.on_transcript = on_transcript
 
         self.transcript_queue: asyncio.Queue = asyncio.Queue(
             maxsize=config.pipeline.transcript_queue_size
@@ -68,8 +76,9 @@ class Pipeline:
         self.audio = audio_source if audio_source is not None else AudioCapture(
             config.audio
         )
-        self.stt = STTEngine(config.stt, config.audio)
-        self.translator = LSFTranslator(config.ollama)
+        # Les deux composants, autonomes et sans lien direct entre eux.
+        self.transcriber = Transcriber(config.stt, config.audio)   # composant 1
+        self.translator = LSFTranslator(config.ollama)             # composant 2
 
         self._loop: asyncio.AbstractEventLoop | None = None
         self._stop_event = threading.Event()
@@ -88,9 +97,9 @@ class Pipeline:
         # 1) Backend LLM (échoue vite si Ollama est éteint).
         await self.translator.connect()
 
-        # 2) Chargement du modèle STT (bloquant => executor).
+        # 2) Chargement du composant de transcription (bloquant => executor).
         log.info("Chargement du moteur STT…")
-        await self._loop.run_in_executor(None, self.stt.load)
+        await self._loop.run_in_executor(None, self.transcriber.load)
 
         # 3) Renderers aval.
         for renderer in self.renderers:
@@ -111,24 +120,22 @@ class Pipeline:
         ]
         log.info("Pipeline démarré.")
 
-    # -- thread STT ------------------------------------------------------
+    # -- thread de transcription ----------------------------------------
     def _run_stt(self) -> None:
-        """Cible du thread STT : convertit les phrases en événements enfilés."""
-        def emit(sentence: str) -> None:
-            event = TranscriptEvent(
-                text=sentence, language=self._source_language()
-            )
+        """Cible du thread : pousse les phrases du composant 1 dans la file."""
+        def emit(event: TranscriptEvent) -> None:
             # Passage thread -> boucle asyncio de façon sûre.
             self._loop.call_soon_threadsafe(self._enqueue_transcript, event)
 
         try:
-            self.stt.run(
-                self.audio.frames(),
+            self.transcriber.run(
+                self.audio,
                 on_sentence=emit,
                 should_stop=self._stop_event.is_set,
+                language=self._source_language(),
             )
         except Exception as exc:  # pragma: no cover
-            log.exception("Le moteur STT s'est arrêté sur une erreur : %s", exc)
+            log.exception("La transcription s'est arrêtée sur une erreur : %s", exc)
         finally:
             self._loop.call_soon_threadsafe(
                 self.transcript_queue.put_nowait, _TRANSCRIPT_DONE
@@ -152,15 +159,15 @@ class Pipeline:
                 await self.gloss_queue.put(_GLOSS_DONE)
                 break
             transcript: TranscriptEvent = item
-            glosses = await self.translator.translate(
-                transcript.text, transcript.language
-            )
-            gloss_event = GlossEvent(
-                source_text=transcript.text,
-                glosses=glosses,
-                language=transcript.language,
-                timestamp=transcript.timestamp,
-            )
+
+            # Sous-titre affiché IMMÉDIATEMENT, avant d'appeler le LLM.
+            if self.on_transcript is not None:
+                result = self.on_transcript(transcript)
+                if asyncio.iscoroutine(result):
+                    await result
+
+            # Composant 2 : phrase -> gloses LSF (appelé juste après l'affichage).
+            gloss_event = await self.translator.translate_event(transcript)
             await self.gloss_queue.put((transcript, gloss_event))
 
     # -- étage sortie / rendu -------------------------------------------
@@ -197,6 +204,7 @@ class Pipeline:
     async def stop(self) -> None:
         log.info("Arrêt du pipeline…")
         self._stop_event.set()
+        self.transcriber.stop()
         self.audio.stop()  # débloque l'itérateur de trames du thread STT
 
         if self._stt_thread is not None:
