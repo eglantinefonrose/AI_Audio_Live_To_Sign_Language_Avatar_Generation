@@ -13,8 +13,7 @@ from config import OllamaConfig
 from contracts import GlossEvent, TranscriptEvent
 from lsf_translator.prompts import (
     GLOSS_JSON_SCHEMA,
-    SYSTEM_PROMPT,
-    build_user_prompt,
+    build_messages,
 )
 
 try:  # import paresseux
@@ -111,10 +110,7 @@ class LSFTranslator:
         try:
             response = await self._client.chat(
                 model=self.config.model,
-                messages=[
-                    {"role": "system", "content": SYSTEM_PROMPT},
-                    {"role": "user", "content": build_user_prompt(text, language)},
-                ],
+                messages=build_messages(text, language),
                 format=GLOSS_JSON_SCHEMA,
                 options={
                     "temperature": self.config.temperature,
