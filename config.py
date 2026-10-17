@@ -54,7 +54,8 @@ class OllamaConfig:
 
     host: str = "http://localhost:11434"
     # Doit être un modèle réellement installé (`ollama list`). Surchargeable
-    # via --model. qwen2.5 donne de bons résultats LSF avec sortie JSON stricte.
+    # via --model. Défaut sûr sur M1 16 Go (laisse la place au modèle STT) ;
+    # voir le README pour des candidats plus récents (gemma2:9b, qwen3:8b).
     model: str = "qwen2.5:7b"
     request_timeout: float = 30.0
     # Maintient le modèle chargé entre deux appels => latence minimale.

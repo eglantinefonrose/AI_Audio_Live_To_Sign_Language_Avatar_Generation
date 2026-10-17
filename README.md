@@ -70,8 +70,10 @@ brew install ollama            # ou https://ollama.com/download
 ollama serve
 
 # Téléchargement du modèle par défaut (dans un autre terminal)
-ollama pull qwen2.5:7b         # modèle par défaut, bons résultats LSF
-# Alternatives : ollama pull qwen2.5:3b (plus léger)  /  ollama pull llama3.2
+ollama pull qwen2.5:7b         # défaut sûr (~4.7 Go), tient sur M1 16 Go avec le STT
+# Qualité supérieure à taille comparable (à comparer via --model) :
+#   ollama pull gemma2:9b      # ~5.4 Go — excellent en français, fidèle au texte
+#   ollama pull qwen3:8b       # ~5.2 Go — génération plus récente (voir note *thinking*)
 ```
 
 > Le modèle configuré doit être **réellement installé** (`ollama list`). Sinon

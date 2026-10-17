@@ -50,6 +50,13 @@ jamais par un auxiliaire. N'emploie PAS "aller"/"avoir" comme auxiliaire : \
 (ex. "je te donne" -> "DONNER-À-TOI").
 10. La possession se marque par un pointage après le nom \
 (ex. "ma voiture" -> "VOITURE" "MOI").
+11. CONSERVE LES MOTS SOURCE TELS QUELS. Ne ré-orthographie pas, ne traduis pas, \
+n'invente aucune graphie. Une glose issue d'un mot de la phrase est ce mot \
+simplement mis en MAJUSCULES, avec ses lettres et accents d'origine. \
+Les noms propres, termes techniques et mots étrangers (ex. "camembert", \
+"random forest", "fine tuning", "dataset") sont repris À L'IDENTIQUE, jamais \
+traduits ni francisés (ex. "forest" -> "FOREST", et NON "FORÊT"). \
+En cas de doute sur un mot, recopie-le tel quel plutôt que de le deviner.
 
 CONTRAINTE DE SORTIE :
 - Réponds UNIQUEMENT par un objet JSON de la forme {"glosses": ["...", "..."]}.
