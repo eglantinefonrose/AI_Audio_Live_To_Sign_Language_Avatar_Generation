@@ -70,3 +70,4 @@ htmlcov/
 
 # pyenv
 # .python-version
+*.mp4

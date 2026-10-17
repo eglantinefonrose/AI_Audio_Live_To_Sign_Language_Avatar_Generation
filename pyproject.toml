@@ -1,0 +1,30 @@
+[project]
+name = "live-langage-sign-generator"
+version = "0.1.0"
+description = "Transcription temps réel de la parole en gloses de Langue des Signes Française (LSF)."
+readme = "README.md"
+# moshi/torch ne supportent pas encore 3.13+ : on borne la version de Python.
+requires-python = ">=3.10,<3.13"
+dependencies = [
+    # --- STT : Kyutai STT via la pile Moshi (tire sentencepiece, sphn…) ---
+    "moshi>=0.2.0",
+    "torch>=2.2.0",
+    "numpy>=1.24",
+    # --- Capture audio (PortAudio requis au niveau système, cf. README) ---
+    "sounddevice>=0.4.6",
+    # --- Backend LLM local ---
+    "ollama>=0.3.0",
+    # --- Téléchargement des poids Kyutai depuis Hugging Face ---
+    "huggingface_hub>=0.23",
+]
+
+[project.optional-dependencies]
+# Backend MLX de Kyutai, plus rapide sur Apple Silicon (M1/M2/M3).
+# Installation : `uv sync --extra mlx`
+mlx = ["moshi_mlx>=0.2.0"]
+
+[tool.uv]
+# Application à layout plat (modules à la racine) : on n'installe PAS le projet
+# lui-même, uv se contente de gérer les dépendances dans le .venv.
+# On lance l'appli avec `uv run python cli.py`.
+package = false

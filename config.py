@@ -1,0 +1,102 @@
+"""Configuration centralisée du pipeline de transcription LSF temps réel.
+
+Tous les paramètres réglables (modèles, points de terminaison API, audio) sont
+regroupés ici sous forme de dataclasses immuables afin que les modules métier
+(`stt_engine`, `lsf_translator`, `pipeline`) restent découplés de la source de
+configuration. Un seul objet `CONFIG` est exposé et peut être surchargé par la
+CLI au démarrage (voir `cli.py`).
+"""
+from __future__ import annotations
+
+import logging
+from dataclasses import dataclass, field, replace
+
+
+@dataclass(frozen=True)
+class AudioConfig:
+    """Paramètres de capture micro.
+
+    Kyutai/Mimi attend un flux mono 24 kHz. Mimi fonctionne à 12.5 Hz, soit
+    1920 échantillons par trame (24000 / 12.5) : on aligne `block_size` dessus
+    pour fournir exactement une trame Mimi par bloc audio.
+    """
+
+    sample_rate: int = 24_000
+    channels: int = 1
+    block_size: int = 1_920
+    dtype: str = "float32"
+    device: int | None = None  # None => périphérique d'entrée par défaut
+
+
+@dataclass(frozen=True)
+class STTConfig:
+    """Paramètres du moteur STT Kyutai (Moshi)."""
+
+    hf_repo: str = "kyutai/stt-1b-en_fr"
+    # auto | cpu | cuda | mps. Sur M1, `auto` tentera `mps` (expérimental dans
+    # Moshi) sinon `cpu`. Voir le README pour la variante MLX, plus rapide.
+    device: str = "auto"
+    # Segmentation VAD : durée de silence (sans nouveau mot) qui valide une
+    # phrase complète. Exploite le rythme d'émission des jetons du modèle, lui
+    # même piloté par la VAD sémantique de Kyutai.
+    vad_pause_seconds: float = 1.0
+    # Longueur minimale (en caractères) avant d'autoriser un flush, pour éviter
+    # d'émettre des bribes parasites.
+    min_sentence_chars: int = 2
+    # Échantillonnage déterministe (latence + reproductibilité).
+    temp: float = 0.0
+    temp_text: float = 0.0
+
+
+@dataclass(frozen=True)
+class OllamaConfig:
+    """Paramètres du backend LLM local (Ollama)."""
+
+    host: str = "http://localhost:11434"
+    model: str = "llama3.2"
+    request_timeout: float = 30.0
+    # Maintient le modèle chargé entre deux appels => latence minimale.
+    keep_alive: str = "10m"
+    temperature: float = 0.0
+    num_ctx: int = 2_048
+
+
+@dataclass(frozen=True)
+class PipelineConfig:
+    """Paramètres de l'orchestrateur et des files d'attente."""
+
+    transcript_queue_size: int = 64
+    gloss_queue_size: int = 64
+    # auto | fr | en. `auto` laisse le LLM détecter la langue source.
+    language: str = "auto"
+
+
+@dataclass(frozen=True)
+class AppConfig:
+    audio: AudioConfig = field(default_factory=AudioConfig)
+    stt: STTConfig = field(default_factory=STTConfig)
+    ollama: OllamaConfig = field(default_factory=OllamaConfig)
+    pipeline: PipelineConfig = field(default_factory=PipelineConfig)
+    log_level: int = logging.INFO
+
+    def with_overrides(self, **sections) -> "AppConfig":
+        """Retourne une copie avec certaines sous-sections remplacées.
+
+        Exemple: ``CONFIG.with_overrides(stt=replace(CONFIG.stt, device="cpu"))``
+        """
+        return replace(self, **sections)
+
+
+# Instance par défaut, importable partout : `from config import CONFIG`.
+CONFIG = AppConfig()
+
+# Ré-export pratique pour la CLI.
+__all__ = [
+    "AudioConfig",
+    "STTConfig",
+    "OllamaConfig",
+    "PipelineConfig",
+    "AppConfig",
+    "CONFIG",
+    "replace",
+]
