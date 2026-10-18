@@ -70,10 +70,10 @@ brew install ollama            # ou https://ollama.com/download
 ollama serve
 
 # Téléchargement du modèle par défaut (dans un autre terminal)
-ollama pull qwen2.5:7b         # défaut sûr (~4.7 Go), tient sur M1 16 Go avec le STT
-# Qualité supérieure à taille comparable (à comparer via --model) :
-#   ollama pull gemma2:9b      # ~5.4 Go — excellent en français, fidèle au texte
-#   ollama pull qwen3:8b       # ~5.2 Go — génération plus récente (voir note *thinking*)
+ollama pull gemma2:9b          # défaut (~5.4 Go) — meilleur en français, fidèle au texte
+# Alternatives (à comparer via --model) :
+#   ollama pull qwen2.5:7b     # ~4.7 Go — plus léger/rapide
+#   ollama pull qwen3:8b       # ~5.2 Go — génération récente (voir note *thinking*)
 ```
 
 > Le modèle configuré doit être **réellement installé** (`ollama list`). Sinon
@@ -224,7 +224,7 @@ Exemple de sortie :
 | Option | Description |
 | --- | --- |
 | `--list-devices` | Liste les périphériques d'entrée et quitte. |
-| `--model` | Modèle Ollama (défaut `qwen2.5:7b`). |
+| `--model` | Modèle Ollama (défaut `gemma2:9b`). |
 | `--ollama-host` | URL de l'instance Ollama. |
 | `--hf-repo` | Dépôt HF du modèle STT (défaut `kyutai/stt-1b-en_fr`). |
 | `--stt-device` | `auto` \| `cpu` \| `cuda` \| `mps`. |

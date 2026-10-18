@@ -59,9 +59,9 @@ class OllamaConfig:
 
     host: str = "http://localhost:11434"
     # Doit être un modèle réellement installé (`ollama list`). Surchargeable
-    # via --model. Défaut sûr sur M1 16 Go (laisse la place au modèle STT) ;
-    # voir le README pour des candidats plus récents (gemma2:9b, qwen3:8b).
-    model: str = "qwen2.5:7b"
+    # via --model. gemma2:9b retenu après comparaison : meilleur en français et
+    # plus fidèle au texte source (~5.4 Go, tient sur M1 16 Go avec le STT).
+    model: str = "gemma2:9b"
     request_timeout: float = 30.0
     # Maintient le modèle chargé entre deux appels => latence minimale.
     keep_alive: str = "10m"
