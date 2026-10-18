@@ -36,16 +36,21 @@ des), prépositions et conjonctions (de, dans, à, pour, que, avec, en...). \
 Ne les transforme JAMAIS en glose.
 4. NÉGATION : place le signe "NON" APRÈS le verbe concerné.
 5. QUESTION : place le marqueur interrogatif EN FIN de séquence \
-("QUOI", "OÙ", "QUI", "QUAND", "POURQUOI", "COMMENT", "COMBIEN") ; pour une \
-question fermée (oui/non), termine par "QUESTION".
+("QUOI", "OÙ", "QUI", "QUAND", "POURQUOI", "COMMENT", "COMBIEN"). N'ajoute \
+"QUESTION" QUE pour une question fermée (oui/non) SANS mot interrogatif — ne \
+mets JAMAIS un mot interrogatif ET "QUESTION" ensemble. La négation ("NON") \
+d'une question reste présente (ex. "pourquoi tu ne viens pas ?" -> \
+"TOI" "VENIR" "NON" "POURQUOI").
 6. Les pronoms deviennent des pointages : je/moi -> "MOI", tu/toi -> "TOI", \
 il/elle -> "LUI", nous -> "NOUS", vous -> "VOUS", ils/elles -> "EUX".
 7. L'adjectif se place APRÈS le nom (ex. "voiture bleue" -> "VOITURE" "BLEU"). \
 Le nombre se place APRÈS le nom (ex. "deux méthodes" -> "MÉTHODE" "DEUX").
-8. Le verbe reste à sa forme de base : la temporalité est portée par une glose \
-de TEMPS en tête ("AVANT" = passé, "BIENTÔT"/"FUTUR" = futur, "MAINTENANT"), \
-jamais par un auxiliaire. N'emploie PAS "aller"/"avoir" comme auxiliaire : \
-"je vais manger" -> "BIENTÔT" "MOI" "MANGER" (et non "MOI" "ALLER" "MANGER").
+8. Le verbe reste à l'INFINITIF (forme de base), jamais conjugué \
+(ex. "tu pars" -> "PARTIR" et non "PARS" ; "il a acheté" -> "ACHETER"). La \
+temporalité est portée par une glose de TEMPS en tête ("AVANT" = passé, \
+"BIENTÔT"/"FUTUR" = futur, "MAINTENANT"), jamais par un auxiliaire. N'emploie \
+PAS "aller"/"avoir" comme auxiliaire : "je vais manger" -> "BIENTÔT" "MOI" \
+"MANGER" (et non "MOI" "ALLER" "MANGER").
 9. Les verbes directionnels incorporent leurs actants \
 (ex. "je te donne" -> "DONNER-À-TOI").
 10. La possession se marque par un pointage après le nom \
@@ -57,6 +62,14 @@ Les noms propres, termes techniques et mots étrangers (ex. "camembert", \
 "random forest", "fine tuning", "dataset") sont repris À L'IDENTIQUE, jamais \
 traduits ni francisés (ex. "forest" -> "FOREST", et NON "FORÊT"). \
 En cas de doute sur un mot, recopie-le tel quel plutôt que de le deviner.
+
+LEXIQUE IMPOSÉ (utilise EXACTEMENT ces gloses, sans les traduire autrement) :
+- "en direct", "en live", "live" -> DIRECT
+- "pour finir", "pour conclure", "en conclusion", "pour terminer" -> ENFIN
+- "du coup", "donc", "alors" (connecteurs de discours) -> SUPPRIMÉS
+- termes techniques ou anglais du domaine ("dataset", "fine tuning", \
+"random forest", "camembert", "machine learning") -> repris À L'IDENTIQUE en \
+MAJUSCULES, jamais traduits ni francisés.
 
 CONTRAINTE DE SORTIE :
 - Réponds UNIQUEMENT par un objet JSON de la forme {"glosses": ["...", "..."]}.
@@ -100,6 +113,14 @@ FEW_SHOT_EXAMPLES: list[tuple[str, list[str]]] = [
     # Marqueur de discours "pour finir" -> "ENFIN" ; verbe directionnel.
     ("Pour finir, je vais vous expliquer les résultats.",
      ["ENFIN", "RÉSULTAT", "MOI", "EXPLIQUER-À-VOUS"]),
+    # Lexique : "en direct" -> DIRECT (jamais "vivant"/"en-direct").
+    ("Je suis l'émission en direct.", ["ÉMISSION", "MOI", "SUIVRE", "DIRECT"]),
+    # Lexique : connecteur "pour conclure" -> ENFIN (exemple sans verbe
+    # directionnel, pour ne pas déborder sur des cas comme "remercier").
+    ("Pour conclure, tout va bien.", ["ENFIN", "TOUT", "CA-VA"]),
+    # Question ouverte + négation : mot interrogatif en fin, "NON" conservé,
+    # PAS de "QUESTION" en plus ; verbe à l'infinitif.
+    ("Pourquoi il ne répond pas ?", ["LUI", "RÉPONDRE", "NON", "POURQUOI"]),
     # Source anglaise : négation après le verbe.
     ("I don't understand.", ["MOI", "COMPRENDRE", "NON"]),
 ]
