@@ -8,6 +8,9 @@ juger « à l'œil » sur quelques phrases).
 eval/
 ├── dataset.jsonl   # paires français -> glose de référence (gold)
 ├── evaluate.py     # scoring : appelle Ollama avec le prompt de PRODUCTION
+├── compare.py      # diff entre deux runs archivés
+├── RESULTS.md      # tableau de bord (une ligne par run --save)
+├── results/        # records JSON immuables (un par run --save)
 └── README.md       # ce fichier
 ```
 
@@ -45,6 +48,67 @@ de règle régresse ou progresse (ex. `negation`, `connecteur`, `lexique-direct`
 > ⚠️ `exact` est volontairement sévère : une phrase correcte mais dans un ordre
 > LSF alternatif (voir ci-dessous) comptera comme non-exact. Regarde **F1** et
 > la ventilation pour le détail, pas seulement `exact`.
+
+## Suivi des résultats dans le temps
+
+Pour comparer proprement un changement (amélioration du prompt **ou** modèle
+fine-tuné), archive chaque run avec `--save` :
+
+```bash
+uv run python eval/evaluate.py --save --label "ajout lexique direct/enfin"
+```
+
+Cela produit **deux** choses :
+
+1. **Un record immuable** `eval/results/<date>__<modèle>__<githash>.json` — il
+   pince les **trois variables** qui déterminent un résultat :
+
+   | Variable | Champ(s) du record |
+   | --- | --- |
+   | Modèle | `model`, `model_digest` (distingue deux versions d'un même tag) |
+   | Prompt | `prompt_hash` (système + few-shot), `git_commit`, `git_dirty` |
+   | Dataset | `dataset`, `dataset_sha`, `dataset_n` |
+
+   Il contient aussi `metrics`, `by_phenomenon`, `prompt_tokens` (alerte si
+   `> num_ctx`), et le **détail par phrase** (`per_sentence`) qui permet le diff.
+
+2. **Une ligne dans `eval/RESULTS.md`** — tableau de bord lisible, versionné
+   dans git : une ligne par run, avec un lien vers le record. Chaque
+   amélioration devient ainsi un **diff visible** dans l'historique.
+
+> `git*` (étoile) dans le tableau = le run a été lancé avec des modifications
+> non commitées. Commite le prompt **et** le record ensemble pour garder le lien
+> « cette version = ces résultats ».
+
+### Comparer deux runs
+
+```bash
+uv run python eval/compare.py <runA.json> <runB.json>   # A = avant, B = après
+# (un simple nom de fichier est résolu sous eval/results/)
+```
+
+Affiche les **deltas** de métriques, les phénomènes qui ont bougé, et surtout
+les phrases dont la sortie a changé, classées **✅ corrigée / ❌ régressée /
+↑ améliorée / ↓ dégradée / ~ modifiée**. Le script **alerte** si les deux runs
+n'ont pas le même `dataset_sha` (comparaison non fiable) ou si prompt **et**
+modèle sont identiques (écarts dus au seul non-déterminisme).
+
+### Workflow type
+
+```bash
+# 1. modifie le prompt (lsf_translator/prompts.py) ou installe un modèle fine-tuné
+# 2. mesure + archive
+uv run python eval/evaluate.py --save --label "ce que j'ai changé"
+# 3. compare au run précédent
+uv run python eval/compare.py <ancien> <nouveau>
+# 4. commite prompt + record + tableau ensemble
+git add eval/ lsf_translator/prompts.py
+git commit -m "prompt: ... (F1 0.87 -> 0.96)"
+```
+
+> **Fine-tune :** un modèle fine-tuné n'est qu'un autre `--model lsf-gemma2:v1`
+> dans Ollama — le même harnais le mesure et le `model_digest` le distingue.
+> Versionne explicitement les tags (`v1`, `v2`…), ne réécris jamais un tag.
 
 ## Format du dataset (`dataset.jsonl`)
 
