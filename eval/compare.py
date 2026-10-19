@@ -43,7 +43,14 @@ def header(tag: str, r: dict) -> None:
     print(f"  {tag}: {r.get('label','?')}")
     print(f"      modèle={r.get('model')} ({r.get('model_digest') or '?'})  "
           f"git={git}  prompt={r.get('prompt_hash','?')}  "
-          f"few_shot={r.get('few_shot','?')}")
+          f"few_shot={r.get('few_shot','?')}  mode={r.get('prompt_mode', 'prod')}")
+    t = r.get("training")
+    if t:
+        d = t.get("duration_s")
+        approx = "~" if t.get("approximate") else ""
+        print(f"      entraîné {approx}{str(t.get('started_at','?'))[:16].replace('T', ' ')}"
+              f" ({approx}{d // 60 if isinstance(d, int) else '?'} min, "
+              f"val loss {t.get('final_val_loss', '?')})")
 
 
 def main() -> int:

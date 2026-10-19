@@ -11,6 +11,11 @@
 # finetune/fused/{model*.safetensors, config.json, tokenizer*}.
 #
 # FROM pointe sur le DOSSIER : Ollama détecte l'architecture et convertit seul.
+#
+# Ollama ne conserve aucune métadonnée (date d'entraînement…) : importe avec
+#   uv run python finetune/register_ollama.py lsf-qwen3b:vN
+# plutôt qu'avec `ollama create` seul, pour enregistrer la provenance dans
+# finetune/models/<tag>.json (lue par eval/evaluate.py et publish_hf.py).
 
 FROM ./fused
 

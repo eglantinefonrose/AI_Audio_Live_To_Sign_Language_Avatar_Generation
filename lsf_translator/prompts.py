@@ -156,6 +156,22 @@ def build_messages(text: str, language: str | None = None) -> list[dict]:
     return messages
 
 
+# System prompt d'ENTRAÎNEMENT (fine-tuning) : le SYSTEM_PROMPT de prod moins la
+# phrase finale qui renvoie aux exemples few-shot (absents du train — sinon
+# consigne mensongère). C'est aussi le SYSTEM de finetune/Modelfile.
+TRAIN_SYSTEM = SYSTEM_PROMPT.split("\nDes exemples te sont fournis")[0].rstrip() + "\n"
+
+
+def build_rules_only_messages(text: str, language: str | None = None) -> list[dict]:
+    """Prompt « règles seules », identique à celui des exemples d'entraînement :
+    [TRAIN_SYSTEM] + [phrase réelle], sans few-shot. À utiliser pour servir ou
+    évaluer un modèle fine-tuné (la connaissance est dans les poids)."""
+    return [
+        {"role": "system", "content": TRAIN_SYSTEM},
+        {"role": "user", "content": build_user_prompt(text, language)},
+    ]
+
+
 # Schéma JSON imposé à Ollama (structured outputs) pour un format strict.
 GLOSS_JSON_SCHEMA = {
     "type": "object",

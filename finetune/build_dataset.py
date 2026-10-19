@@ -39,7 +39,7 @@ from ollama import Client
 from config import CONFIG
 from lsf_translator.prompts import (
     GLOSS_JSON_SCHEMA,
-    SYSTEM_PROMPT,
+    TRAIN_SYSTEM,
     build_messages,
     build_user_prompt,
 )
@@ -87,7 +87,7 @@ def sha(data: bytes) -> str:
 
 
 def prompt_hash() -> str:
-    from lsf_translator.prompts import FEW_SHOT_EXAMPLES
+    from lsf_translator.prompts import FEW_SHOT_EXAMPLES, SYSTEM_PROMPT
     return sha((SYSTEM_PROMPT + repr(FEW_SHOT_EXAMPLES)).encode("utf-8"))
 
 
@@ -144,11 +144,6 @@ def quality_reason(text: str, glosses: list[str]) -> str | None:
 
 
 # -- écriture ------------------------------------------------------------
-# System prompt d'ENTRAÎNEMENT : le SYSTEM_PROMPT de prod moins la phrase finale
-# qui renvoie aux exemples few-shot (absents du train — sinon consigne mensongère).
-TRAIN_SYSTEM = SYSTEM_PROMPT.split("\nDes exemples te sont fournis")[0].rstrip() + "\n"
-
-
 def training_record(text: str, glosses: list[str]) -> dict:
     """Format chat pour LoRA — SANS few-shot (la connaissance va dans les poids)."""
     return {"messages": [

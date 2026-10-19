@@ -109,6 +109,9 @@ git commit -m "prompt: ... (F1 0.87 -> 0.96)"
 > **Fine-tune :** un modèle fine-tuné n'est qu'un autre `--model lsf-gemma2:v1`
 > dans Ollama — le même harnais le mesure et le `model_digest` le distingue.
 > Versionne explicitement les tags (`v1`, `v2`…), ne réécris jamais un tag.
+> Si le tag a été importé via `finetune/register_ollama.py`, le record contient
+> aussi un champ `training` (date, durée, hyperparamètres, val loss) et la ligne
+> de `RESULTS.md` affiche la date d'entraînement à côté du modèle.
 
 ## Format du dataset (`dataset.jsonl`)
 

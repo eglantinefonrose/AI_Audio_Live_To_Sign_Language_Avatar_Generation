@@ -1,6 +1,7 @@
 {
   "label": "qwen2.5:7b — même prompt",
   "timestamp": "2026-10-19T00:41:33",
+  "time": "00:41:33",
   "model": "qwen2.5:7b",
   "model_digest": "7cdf5a0187d5c58cc5d",
   "git_commit": "5ed97b6",

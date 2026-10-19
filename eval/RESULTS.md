@@ -2,8 +2,12 @@
 
 Tableau de bord des runs d'évaluation LSF (généré par `eval/evaluate.py --save`). Une ligne par run ; `git*` = modifs non commitées au moment du run. Détail complet dans `eval/results/`.
 
-| Date | Label | Modèle | git | Exact | F1 | Ordre | Fuites | Record |
-|---|---|---|---|---|---|---|---|---|
-| 2026-10-19 | gemma2 — prompt lexique+questions | gemma2:9b | 5ed97b6* | 31% | 0.957 | 0.821 | 0 | [2026-10-19T00-40-44__gemma2-9b__5ed97b6.json](results/2026-10-19T00-40-44__gemma2-9b__5ed97b6.json) |
-| 2026-10-19 | qwen2.5:7b — même prompt | qwen2.5:7b | 5ed97b6* | 12% | 0.792 | 0.635 | 0 | [2026-10-19T00-41-33__qwen2.5-7b__5ed97b6.json](results/2026-10-19T00-41-33__qwen2.5-7b__5ed97b6.json) |
-| 2026-10-19 | finetune v1 (qwen3b) | lsf-qwen3b:v1 | 885ed73* | 0% | 0.592 | 0.497 | 1 | [2026-10-19T10-42-29__lsf-qwen3b-v1__885ed73.json](results/2026-10-19T10-42-29__lsf-qwen3b-v1__885ed73.json) |
+| Date | Heure | Label | Modèle | git | Exact | F1 | Ordre | Fuites | Record |
+|---|---|---|---|---|---|---|---|---|---|
+| 2026-10-19 | 00:40:44 | gemma2 — prompt lexique+questions | gemma2:9b | 5ed97b6* | 31% | 0.957 | 0.821 | 0 | [2026-10-19T00-40-44__gemma2-9b__5ed97b6.json](results/2026-10-19T00-40-44__gemma2-9b__5ed97b6.json) |
+| 2026-10-19 | 00:41:33 | qwen2.5:7b — même prompt | qwen2.5:7b | 5ed97b6* | 12% | 0.792 | 0.635 | 0 | [2026-10-19T00-41-33__qwen2.5-7b__5ed97b6.json](results/2026-10-19T00-41-33__qwen2.5-7b__5ed97b6.json) |
+| 2026-10-19 | 10:42:29 | finetune v1 (qwen3b) | lsf-qwen3b:v1 | 885ed73* | 0% | 0.592 | 0.497 | 1 | [2026-10-19T10-42-29__lsf-qwen3b-v1__885ed73.json](results/2026-10-19T10-42-29__lsf-qwen3b-v1__885ed73.json) |
+| 2026-10-19 | 14:04:51 | fine-tune v2 (dataset Claude Opus) | lsf-qwen3b:v2 | 9f40c38* | 6% | 0.686 | 0.613 | 0 | [2026-10-19T14-04-51__lsf-qwen3b-v2__9f40c38.json](results/2026-10-19T14-04-51__lsf-qwen3b-v2__9f40c38.json) |
+| 2026-10-19 | 14:22:37 | base qwen2.5:3b — prompt prod | qwen2.5:3b | 9f40c38* | 6% | 0.680 | 0.568 | 5 | [2026-10-19T14-22-37__qwen2.5-3b__9f40c38.json](results/2026-10-19T14-22-37__qwen2.5-3b__9f40c38.json) |
+| 2026-10-19 | 14:22:51 | base qwen2.5:3b — règles seules | qwen2.5:3b | 9f40c38* | 0% | 0.423 | 0.277 | 3 | [2026-10-19T14-22-51__qwen2.5-3b__9f40c38.json](results/2026-10-19T14-22-51__qwen2.5-3b__9f40c38.json) |
+| 2026-10-19 | 14:23:20 | fine-tune v2 — règles seules (prompt d'entraînement) | lsf-qwen3b:v2 (entraîné ~2026-10-19 12:07 (~20 min)) | 9f40c38* | 6% | 0.653 | 0.567 | 0 | [2026-10-19T14-23-20__lsf-qwen3b-v2__9f40c38.json](results/2026-10-19T14-23-20__lsf-qwen3b-v2__9f40c38.json) |

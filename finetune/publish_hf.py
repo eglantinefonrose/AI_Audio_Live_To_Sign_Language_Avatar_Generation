@@ -40,6 +40,7 @@ PROJECT = Path(__file__).resolve().parent.parent
 DATA_DIR = PROJECT / "finetune" / "data"
 ADAPTERS_DIR = PROJECT / "finetune" / "adapters"
 FUSED_DIR = PROJECT / "finetune" / "fused"
+# Repli si training_meta.json est absent ; sinon la base vient de la provenance.
 BASE_MODEL = "mlx-community/Qwen2.5-3B-Instruct-4bit"
 
 
@@ -59,13 +60,14 @@ def _load_json(path: Path) -> dict:
 
 
 def build_model_card(version: str, manifest: dict | None, record: dict | None,
-                     dataset_repo: str | None) -> str:
+                     dataset_repo: str | None, training: dict | None = None) -> str:
     """Construit un README.md (model card) à partir de la provenance disponible."""
     m = record.get("metrics", {}) if record else {}
+    base = (training or {}).get("base_model") or BASE_MODEL
     lines = [
         "---",
         "license: apache-2.0",
-        f"base_model: {BASE_MODEL}",
+        f"base_model: {base}",
         "tags:",
         "  - lsf",
         "  - gloss",
@@ -76,7 +78,7 @@ def build_model_card(version: str, manifest: dict | None, record: dict | None,
         f"# LSF gloss translator — `{version}`",
         "",
         "Adaptateur LoRA pour la traduction **français → glose LSF**, entraîné sur",
-        f"un dataset **synthétique** (distillation) au-dessus de `{BASE_MODEL}`.",
+        f"un dataset **synthétique** (distillation) au-dessus de `{base}`.",
         "",
         "> ⚠️ **Expérimental.** Données générées par un modèle professeur, **non",
         "> validées par un locuteur LSF**. À ne pas utiliser comme vérité terrain.",
@@ -92,6 +94,18 @@ def build_model_card(version: str, manifest: dict | None, record: dict | None,
             f"{manifest.get('valid', '?')} valid (accepté {manifest.get('accepted', '?')})",
             f"- **Dataset synthétique** : {manifest.get('synthetic', True)}, "
             f"validé humain : {manifest.get('human_validated', False)}",
+        ]
+    if training:
+        d = training.get("duration_s")
+        approx = " (approximatif, reconstitué)" if training.get("approximate") else ""
+        hp = training.get("hyperparams") or {}
+        lines += [
+            f"- **Entraîné le** : {training.get('started_at', '?')} → "
+            f"{training.get('ended_at', '?')}{approx}",
+            f"- **Durée d'entraînement** : "
+            f"{f'{d // 3600}h{(d % 3600) // 60:02d}m{d % 60:02d}s' if isinstance(d, int) else '?'}",
+            f"- **Hyperparamètres** : " + (", ".join(f"{k}={v}" for k, v in hp.items()) or "?"),
+            f"- **Val loss finale** : {training.get('final_val_loss', '?')}",
         ]
     if dataset_repo:
         lines.append(f"- **Dataset** : [`{dataset_repo}`](https://huggingface.co/datasets/{dataset_repo})")
@@ -116,7 +130,7 @@ def build_model_card(version: str, manifest: dict | None, record: dict | None,
         "## Usage (MLX)",
         "",
         "```bash",
-        f"uv run mlx_lm.generate --model {BASE_MODEL} \\",
+        f"uv run mlx_lm.generate --model {base} \\",
         "  --adapter-path adapters --prompt \"...\"",
         "```",
         "",
@@ -219,7 +233,16 @@ def main() -> int:
     if args.model_repo:
         if not adapters.is_dir():
             sys.exit(f"Adaptateur introuvable : {adapters} (lance d'abord mlx_lm.lora)")
-        card = build_model_card(args.version, manifest, record, args.dataset_repo)
+        # Provenance d'entraînement : celle du record d'éval (rattachée au tag
+        # Ollama évalué) prime ; sinon celle écrite par train.sh à côté de l'adaptateur.
+        training = (record or {}).get("training")
+        meta_path = adapters / "training_meta.json"
+        if not training and meta_path.exists():
+            training = _load_json(meta_path)
+        if not training:
+            print("⚠️  Aucune date d'entraînement (training_meta.json absent) : "
+                  "entraîne via ./finetune/train.sh.")
+        card = build_model_card(args.version, manifest, record, args.dataset_repo, training)
 
     # Récapitulatif de ce qui part.
     print(f"── Publication ({'privé' if args.private else 'public'}) ──")

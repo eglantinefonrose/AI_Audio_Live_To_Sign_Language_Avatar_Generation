@@ -93,7 +93,18 @@ uv pip install mlx-lm        # outil d'entraînement (dépendance de dev, pas ru
 ## 2. Lancer l'entraînement LoRA
 
 L'élève proposé est **ungated** et déjà en 4-bit (pas de téléchargement gated,
-pas d'étape de quantification) :
+pas d'étape de quantification). Passe par le wrapper, qui horodate le run :
+
+```bash
+./finetune/train.sh                          # défauts : iters=300, num_layers=8, lr=1e-4
+ITERS=200 NUM_LAYERS=4 ./finetune/train.sh   # surcharge des hyperparamètres
+```
+
+Il écrit un log dans `finetune/logs/` et surtout **`finetune/adapters/training_meta.json`** :
+date de début/fin, durée, hyperparamètres, sha du train, manifeste du dataset,
+commit git, dernière val loss. Ce fichier suit ensuite le modèle (Ollama → éval → HF).
+
+Équivalent brut (sans provenance) :
 
 ```bash
 uv run mlx_lm.lora \
@@ -165,8 +176,16 @@ SYSTEM """<les règles LSF + lexique, SANS la mention d'exemples>"""
 ```
 
 ```bash
-ollama create lsf-qwen3b:v1 -f finetune/Modelfile
+uv run python finetune/register_ollama.py lsf-qwen3b:v3
 ```
+
+= `ollama create lsf-qwen3b:v3 -f finetune/Modelfile` **+** enregistrement de la
+provenance dans `finetune/models/<tag>.json` (tag, digest Ollama, copie de
+`training_meta.json`). Ollama ne conserve aucune métadonnée : c'est ce fichier
+(versionné) qui relie un tag à son entraînement. `eval/evaluate.py` le lit pour
+inscrire la date/durée d'entraînement dans le record d'éval (et alerte si le
+digest ne correspond plus), et `publish_hf.py` les reprend dans la model card.
+Le script refuse de réécrire un tag existant.
 
 > Variante GGUF (si tu y tiens) : fuse avec `--de-quantize` seul, puis convertis
 > `finetune/fused/` en GGUF avec `llama.cpp` (`convert_hf_to_gguf.py`). Plus long,
@@ -185,6 +204,31 @@ uv run python eval/compare.py <record_prof_ou_prompt> <record_finetune_v1>
 > (system = `TRAIN_SYSTEM`, pas d'exemples). Sinon tu mesures un modèle sur un
 > prompt qu'il n'a jamais vu → sous-évaluation. Voir la tâche « option
 > rules-only » côté `prompts.py`/`evaluate.py`.
+
+## Variante 7B (même recette, élève plus gros)
+
+Mêmes données et hyperparamètres que la v2 ; seuls la base et les dossiers changent
+(`adapters-*/` et `fused-*/` sont ignorés par git). Sur 16 Go, active le gradient
+checkpointing et quantifie à l'import (le fused fp16 pèse ~15 Go).
+
+```bash
+MODEL=mlx-community/Qwen2.5-7B-Instruct-4bit ADAPTERS=finetune/adapters-7b \
+  GRAD_CHECKPOINT=1 ./finetune/train.sh
+uv run mlx_lm.fuse --model mlx-community/Qwen2.5-7B-Instruct-4bit \
+  --adapter-path finetune/adapters-7b --save-path finetune/fused-7b --de-quantize
+sed 's#^FROM ./fused$#FROM ./fused-7b#' finetune/Modelfile > finetune/Modelfile.7b
+uv run python finetune/register_ollama.py lsf-qwen7b:v1 --modelfile finetune/Modelfile.7b \
+  --meta finetune/adapters-7b/training_meta.json --quantize q4_K_M
+rm -r finetune/fused-7b          # régénérable ; libère ~15 Go une fois importé
+uv run python eval/evaluate.py --model lsf-qwen7b:v1 --prompt rules-only --save \
+  --label "fine-tune qwen7b v1 — règles seules"
+```
+
+Pour la model card HF, `publish_hf.py` lit la base dans `training_meta.json`
+(passe `--adapters finetune/adapters-7b`).
+
+> ⚠️ La fusion `--de-quantize` d'un 7B matérialise ~15 Go de poids fp16 : sur
+> 16 Go de RAM, attends-toi à du swap. Ferme les autres applications.
 
 ## Variante sans Ollama
 

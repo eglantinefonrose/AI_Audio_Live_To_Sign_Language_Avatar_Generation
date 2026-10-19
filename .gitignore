@@ -75,3 +75,8 @@ htmlcov/
 ### Fine-tuning : poids régénérables et volumineux (jamais sur GitHub)
 finetune/fused/
 finetune/adapters/
+finetune/fused-*/
+finetune/adapters-*/
+
+### Logs d'entraînement
+finetune/logs/

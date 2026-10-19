@@ -1,6 +1,7 @@
 {
   "label": "finetune v1 (qwen3b)",
   "timestamp": "2026-10-19T10:42:29",
+  "time": "10:42:29",
   "model": "lsf-qwen3b:v1",
   "model_digest": "4348623953eb714a020",
   "git_commit": "885ed73",

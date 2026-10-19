@@ -1,0 +1,368 @@
+{
+  "label": "base qwen2.5:3b — prompt prod",
+  "timestamp": "2026-10-19T14:22:37",
+  "time": "14:22:37",
+  "model": "qwen2.5:3b",
+  "model_digest": "357c53fb659c5076de1",
+  "training": null,
+  "git_commit": "9f40c38",
+  "git_dirty": true,
+  "prompt_mode": "prod",
+  "prompt_hash": "9d1c9f7b54ba",
+  "num_ctx": 2048,
+  "few_shot": 16,
+  "prompt_tokens": 1992,
+  "dataset": "eval/dataset.jsonl",
+  "dataset_sha": "3db947280fd3",
+  "dataset_n": 16,
+  "metrics": {
+    "exact": 0.0625,
+    "exact_count": 1,
+    "n": 16,
+    "f1": 0.6797,
+    "order": 0.5677,
+    "leaks": 5
+  },
+  "by_phenomenon": {
+    "suppression-mot-outil": 0.667,
+    "verbe-final": 0.68,
+    "lexique-direct": 0.833,
+    "connecteur": 0.533,
+    "directionnel": 0.4,
+    "negation": 0.926,
+    "question-ouverte": 0.75,
+    "temps": 0.788,
+    "possession": 0.667,
+    "adjectif-apres-nom": 0.441,
+    "pluriel-non-marque": 0.58,
+    "temps-passe": 0.667,
+    "question-ouinon": 0.857,
+    "verbatim-technique": 0.182,
+    "verbatim-nom-propre": 0.667
+  },
+  "per_sentence": [
+    {
+      "text": "Le directeur a parlé de ses projets.",
+      "gold": [
+        "DIRECTEUR",
+        "PROJET",
+        "PARLER"
+      ],
+      "pred": [
+        "DIRECTEUR",
+        "PARLER",
+        "DE",
+        "PROJET",
+        "SOUHAITER",
+        "MOI"
+      ],
+      "f1": 0.667,
+      "order": 0.667,
+      "exact": false,
+      "leak": [
+        "DE"
+      ]
+    },
+    {
+      "text": "Nous regardons le match en direct.",
+      "gold": [
+        "NOUS",
+        "MATCH",
+        "REGARDER",
+        "DIRECT"
+      ],
+      "pred": [
+        "NOUS",
+        "REGARDER",
+        "MATCH",
+        "DIRECT"
+      ],
+      "f1": 1.0,
+      "order": 0.75,
+      "exact": false,
+      "leak": []
+    },
+    {
+      "text": "Le concert est diffusé en live.",
+      "gold": [
+        "CONCERT",
+        "DIFFUSER",
+        "DIRECT"
+      ],
+      "pred": [
+        "CONCERT",
+        "SUIVRE",
+        "DIRECT"
+      ],
+      "f1": 0.667,
+      "order": 0.667,
+      "exact": false,
+      "leak": []
+    },
+    {
+      "text": "En conclusion, je vous remercie.",
+      "gold": [
+        "ENFIN",
+        "MOI",
+        "REMERCIER-À-VOUS"
+      ],
+      "pred": [
+        "ENFIN",
+        "REMERCIER-VOUS"
+      ],
+      "f1": 0.4,
+      "order": 0.333,
+      "exact": false,
+      "leak": []
+    },
+    {
+      "text": "Elle n'aime pas du tout le café.",
+      "gold": [
+        "ELLE",
+        "CAFÉ",
+        "AIMER",
+        "NON"
+      ],
+      "pred": [
+        "ELLE",
+        "AIMER",
+        "NON",
+        "TOUT",
+        "CAFÉ"
+      ],
+      "f1": 0.889,
+      "order": 0.75,
+      "exact": false,
+      "leak": []
+    },
+    {
+      "text": "Pourquoi tu ne viens pas demain ?",
+      "gold": [
+        "DEMAIN",
+        "TOI",
+        "VENIR",
+        "NON",
+        "POURQUOI"
+      ],
+      "pred": [
+        "DEMAIN",
+        "TOI",
+        "VENIR",
+        "NON",
+        "POURQUOI"
+      ],
+      "f1": 1.0,
+      "order": 1.0,
+      "exact": true,
+      "leak": []
+    },
+    {
+      "text": "Ce matin, mon frère a acheté une voiture rouge.",
+      "gold": [
+        "MATIN",
+        "FRÈRE",
+        "MOI",
+        "VOITURE",
+        "ROUGE",
+        "ACHETER"
+      ],
+      "pred": [
+        "MATIN",
+        "MON",
+        "FRERE",
+        "ACHETER",
+        "VOITURE",
+        "ROUGE"
+      ],
+      "f1": 0.667,
+      "order": 0.5,
+      "exact": false,
+      "leak": []
+    },
+    {
+      "text": "Les étudiants étrangers adorent Paris.",
+      "gold": [
+        "ÉTUDIANT",
+        "ÉTRANGER",
+        "PARIS",
+        "AIMER",
+        "BEAUCOUP"
+      ],
+      "pred": [
+        "ÉTUDIANT-ÉTRANGER",
+        "ADRESTER",
+        "PARIS"
+      ],
+      "f1": 0.25,
+      "order": 0.2,
+      "exact": false,
+      "leak": []
+    },
+    {
+      "text": "Je ne comprends pas cette phrase.",
+      "gold": [
+        "MOI",
+        "PHRASE",
+        "COMPRENDRE",
+        "NON"
+      ],
+      "pred": [
+        "MOI",
+        "COMPRENDRE",
+        "NON",
+        "CE",
+        "PHRASE"
+      ],
+      "f1": 0.889,
+      "order": 0.75,
+      "exact": false,
+      "leak": [
+        "CE"
+      ]
+    },
+    {
+      "text": "Hier, j'ai mangé une pomme.",
+      "gold": [
+        "AVANT",
+        "MOI",
+        "POMME",
+        "MANGER"
+      ],
+      "pred": [
+        "HIER",
+        "MOI",
+        "MANGER",
+        "UNE",
+        "POMME"
+      ],
+      "f1": 0.667,
+      "order": 0.5,
+      "exact": false,
+      "leak": [
+        "UNE"
+      ]
+    },
+    {
+      "text": "Quand est-ce que tu pars en vacances ?",
+      "gold": [
+        "TOI",
+        "VACANCES",
+        "PARTIR",
+        "QUAND"
+      ],
+      "pred": [
+        "QUAND",
+        "TOI",
+        "PARIR",
+        "QUESTION"
+      ],
+      "f1": 0.5,
+      "order": 0.25,
+      "exact": false,
+      "leak": []
+    },
+    {
+      "text": "Tu veux un café ?",
+      "gold": [
+        "TOI",
+        "CAFÉ",
+        "VOULOIR",
+        "QUESTION"
+      ],
+      "pred": [
+        "TOI",
+        "VOULOIR",
+        "CAFÉ"
+      ],
+      "f1": 0.857,
+      "order": 0.5,
+      "exact": false,
+      "leak": []
+    },
+    {
+      "text": "Le fine tuning utilise des modèles pré-entraînés.",
+      "gold": [
+        "FINE-TUNING",
+        "MODÈLE",
+        "PRÉ-ENTRAÎNÉ",
+        "UTILISER"
+      ],
+      "pred": [
+        "FINE",
+        "TUNING",
+        "UTILISER",
+        "DES",
+        "MODELE",
+        "PRÉ-ENTRAINÉ",
+        "MOI"
+      ],
+      "f1": 0.182,
+      "order": 0.25,
+      "exact": false,
+      "leak": [
+        "DES"
+      ]
+    },
+    {
+      "text": "Camembert est un modèle français.",
+      "gold": [
+        "CAMEMBERT",
+        "MODÈLE",
+        "FRANÇAIS"
+      ],
+      "pred": [
+        "CAMEMBERT",
+        "MODELE",
+        "FRANÇAIS"
+      ],
+      "f1": 0.667,
+      "order": 0.667,
+      "exact": false,
+      "leak": []
+    },
+    {
+      "text": "Pour conclure, je montre les résultats.",
+      "gold": [
+        "ENFIN",
+        "MOI",
+        "RÉSULTAT",
+        "MONTRER"
+      ],
+      "pred": [
+        "ENFIN",
+        "RÉSULTAT",
+        "MOI",
+        "MONTER",
+        "SUIVRE"
+      ],
+      "f1": 0.667,
+      "order": 0.5,
+      "exact": false,
+      "leak": []
+    },
+    {
+      "text": "Demain matin, les élèves visiteront le musée.",
+      "gold": [
+        "DEMAIN",
+        "MATIN",
+        "ÉLÈVE",
+        "MUSÉE",
+        "VISITER"
+      ],
+      "pred": [
+        "DEMAIN",
+        "MATIN",
+        "ÉLÈVE",
+        "VISITER",
+        "LE",
+        "MUSÉE"
+      ],
+      "f1": 0.909,
+      "order": 0.8,
+      "exact": false,
+      "leak": [
+        "LE"
+      ]
+    }
+  ]
+}

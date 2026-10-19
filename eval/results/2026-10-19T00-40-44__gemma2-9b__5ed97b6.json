@@ -1,6 +1,7 @@
 {
   "label": "gemma2 — prompt lexique+questions",
   "timestamp": "2026-10-19T00:40:44",
+  "time": "00:40:44",
   "model": "gemma2:9b",
   "model_digest": "ff02c3702f322b9e075",
   "git_commit": "5ed97b6",

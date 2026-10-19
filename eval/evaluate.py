@@ -48,12 +48,19 @@ from lsf_translator.prompts import (
     FEW_SHOT_EXAMPLES,
     GLOSS_JSON_SCHEMA,
     SYSTEM_PROMPT,
+    TRAIN_SYSTEM,
     build_messages,
+    build_rules_only_messages,
 )
+
+# Modes de prompt : "prod" = prompt de production (règles + few-shot) ;
+# "rules-only" = prompt d'ENTRAÎNEMENT des modèles fine-tunés (règles seules).
+PROMPT_BUILDERS = {"prod": build_messages, "rules-only": build_rules_only_messages}
 
 RESULTS_DIR = PROJECT / "eval" / "results"
 RESULTS_MD = PROJECT / "eval" / "RESULTS.md"
 DATASET = PROJECT / "eval" / "dataset.jsonl"
+MODELS_DIR = PROJECT / "finetune" / "models"   # provenance des modèles fine-tunés
 
 # Gloses "mots-outils" qui ne devraient JAMAIS apparaître (fuite de français).
 FORBIDDEN = {
@@ -92,8 +99,10 @@ def _sha(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()[:12]
 
 
-def prompt_hash() -> str:
+def prompt_hash(mode: str = "prod") -> str:
     """Hash du prompt assemblé : change dès que le système ou un exemple change."""
+    if mode == "rules-only":
+        return _sha(TRAIN_SYSTEM.encode("utf-8"))
     return _sha((SYSTEM_PROMPT + repr(FEW_SHOT_EXAMPLES)).encode("utf-8"))
 
 
@@ -125,12 +134,35 @@ def model_digest(client: Client, name: str) -> str | None:
     return None
 
 
-def measure_prompt_tokens(client: Client, model: str, rows: list[dict]) -> int | None:
+def training_info(model: str, digest: str | None) -> dict | None:
+    """Provenance d'entraînement d'un modèle fine-tuné (finetune/models/<tag>.json,
+    écrit par finetune/register_ollama.py). None pour un modèle de base."""
+    path = MODELS_DIR / (model.replace(":", "-").replace("/", "-") + ".json")
+    if not path.exists():
+        return None
+    reg = json.loads(path.read_text(encoding="utf-8"))
+    info = dict(reg.get("training", {}))
+    # Le tag peut avoir été recréé depuis l'enregistrement : on le signale.
+    info["digest_match"] = bool(digest) and digest == reg.get("ollama_digest")
+    return info
+
+
+def format_training(t: dict | None) -> str:
+    if not t:
+        return ""
+    d = t.get("duration_s")
+    dur = f"{d // 60} min" if isinstance(d, int) else "?"
+    approx = "~" if t.get("approximate") else ""
+    return f"entraîné {approx}{str(t.get('started_at', '?'))[:16].replace('T', ' ')} ({approx}{dur})"
+
+
+def measure_prompt_tokens(client: Client, model: str, rows: list[dict],
+                          mode: str = "prod") -> int | None:
     """Taille réelle du prompt (num_ctx large) pour détecter une troncature."""
     longest = max((r["text"] for r in rows), key=len)
     try:
         r = client.chat(
-            model=model, messages=build_messages(longest, "fr"),
+            model=model, messages=PROMPT_BUILDERS[mode](longest, "fr"),
             format=GLOSS_JSON_SCHEMA, options={"num_ctx": 8192, "temperature": 0.0},
         )
         return r.get("prompt_eval_count")
@@ -139,9 +171,10 @@ def measure_prompt_tokens(client: Client, model: str, rows: list[dict]) -> int |
 
 
 # -- appel LLM -----------------------------------------------------------
-def translate(client: Client, model: str, text: str, language: str) -> list[str]:
+def translate(client: Client, model: str, text: str, language: str,
+              mode: str = "prod") -> list[str]:
     r = client.chat(
-        model=model, messages=build_messages(text, language),
+        model=model, messages=PROMPT_BUILDERS[mode](text, language),
         format=GLOSS_JSON_SCHEMA,
         options={"temperature": 0.0, "num_ctx": CONFIG.ollama.num_ctx},
     )
@@ -172,15 +205,18 @@ def _append_results_md(record: dict, fname: str) -> None:
         "Tableau de bord des runs d'évaluation LSF (généré par "
         "`eval/evaluate.py --save`). Une ligne par run ; `git*` = modifs non "
         "commitées au moment du run. Détail complet dans `eval/results/`.\n\n"
-        "| Date | Label | Modèle | git | Exact | F1 | Ordre | Fuites | Record |\n"
-        "|---|---|---|---|---|---|---|---|---|\n"
+        "| Date | Heure | Label | Modèle | git | Exact | F1 | Ordre | Fuites | Record |\n"
+        "|---|---|---|---|---|---|---|---|---|---|\n"
     )
     if not RESULTS_MD.exists():
         RESULTS_MD.write_text(header, encoding="utf-8")
     m = record["metrics"]
+    trained = format_training(record.get("training"))
+    model_cell = record["model"] + (f" ({trained})" if trained else "")
     git = (record["git_commit"] or "—") + ("*" if record["git_dirty"] else "")
     row = (
-        f"| {record['timestamp'][:10]} | {record['label']} | {record['model']} "
+        f"| {record['timestamp'][:10]} | {record['timestamp'][11:19]} "
+        f"| {record['label']} | {model_cell} "
         f"| {git} | {m['exact']*100:.0f}% | {m['f1']:.3f} | {m['order']:.3f} "
         f"| {m['leaks']} | [{fname}](results/{fname}) |\n"
     )
@@ -193,6 +229,9 @@ def main() -> int:
     ap = argparse.ArgumentParser(description="Évaluation gloses LSF.")
     ap.add_argument("--model", default=CONFIG.ollama.model)
     ap.add_argument("--dataset", default=str(DATASET))
+    ap.add_argument("--prompt", choices=sorted(PROMPT_BUILDERS), default="prod",
+                    help="prod = règles + few-shot (défaut) ; rules-only = prompt "
+                         "d'entraînement, sans exemples (pour les modèles fine-tunés).")
     ap.add_argument("--quiet", action="store_true", help="Agrégats seulement.")
     ap.add_argument("--save", action="store_true",
                     help="Archive le run (JSON + ligne dans RESULTS.md).")
@@ -204,14 +243,23 @@ def main() -> int:
             Path(args.dataset).read_text(encoding="utf-8").splitlines() if l.strip()]
     client = Client(host=CONFIG.ollama.host)
 
-    print(f"Modèle : {args.model}  —  {len(rows)} phrases\n")
+    digest = model_digest(client, args.model)
+    training = training_info(args.model, digest)
+    print(f"Modèle : {args.model}  —  {len(rows)} phrases  —  prompt {args.prompt}")
+    if training:
+        print(f"         {format_training(training)}")
+        if not training["digest_match"]:
+            print("         ⚠️  digest Ollama ≠ celui enregistré : le tag a été recréé "
+                  "depuis finetune/register_ollama.py, provenance douteuse.")
+    print()
     sum_f = sum_o = exact = leaks = 0
     by_phen: dict[str, list[float]] = {}
     per_sentence: list[dict] = []
 
     for row in rows:
         gold = row["glosses"]
-        pred = translate(client, args.model, row["text"], row.get("language", "fr"))
+        pred = translate(client, args.model, row["text"], row.get("language", "fr"),
+                         args.prompt)
         _, _, f = multiset_f1(pred, gold)
         o = order_score(pred, gold)
         is_exact = pred == gold
@@ -254,16 +302,20 @@ def main() -> int:
 
     if args.save:
         commit, dirty = git_info()
-        tokens = measure_prompt_tokens(client, args.model, rows)
+        tokens = measure_prompt_tokens(client, args.model, rows, args.prompt)
+        now = datetime.now()
         record = {
             "label": args.label,
-            "timestamp": datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
+            "timestamp": now.strftime("%Y-%m-%dT%H:%M:%S"),
+            "time": now.strftime("%H:%M:%S"),
             "model": args.model,
-            "model_digest": model_digest(client, args.model),
+            "model_digest": digest,
+            "training": training,
             "git_commit": commit, "git_dirty": dirty,
-            "prompt_hash": prompt_hash(),
+            "prompt_mode": args.prompt,
+            "prompt_hash": prompt_hash(args.prompt),
             "num_ctx": CONFIG.ollama.num_ctx,
-            "few_shot": len(FEW_SHOT_EXAMPLES),
+            "few_shot": len(FEW_SHOT_EXAMPLES) if args.prompt == "prod" else 0,
             "prompt_tokens": tokens,
             "dataset": str(Path(args.dataset).relative_to(PROJECT)),
             "dataset_sha": _sha(Path(args.dataset).read_bytes()),
