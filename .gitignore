@@ -80,3 +80,4 @@ finetune/adapters-*/
 
 ### Logs d'entraînement
 finetune/logs/
+finetune/data/2184f8f3751e/train.jsonl
