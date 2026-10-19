@@ -184,10 +184,11 @@ def build_dataset_card(manifest: dict | None) -> str:
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description="Publie poids + éval sur HuggingFace.")
-    ap.add_argument("--model-repo", required=True,
-                    help="Repo modèle, ex. mon-user/lsf-qwen3b")
-    ap.add_argument("--version", required=True, help="Tag de version, ex. v1")
+    ap = argparse.ArgumentParser(description="Publie poids + éval + dataset sur HuggingFace.")
+    ap.add_argument("--model-repo", default=None,
+                    help="Repo modèle, ex. mon-user/lsf-qwen3b (optionnel : omets pour publier le dataset seul).")
+    ap.add_argument("--version", default=None,
+                    help="Tag de version, ex. v1 (requis avec --model-repo).")
     ap.add_argument("--adapters", default=str(ADAPTERS_DIR),
                     help="Dossier de l'adaptateur LoRA à publier.")
     ap.add_argument("--eval", dest="eval_path", default=None,
@@ -205,64 +206,74 @@ def main() -> int:
                     help="N'upload rien : montre ce qui serait poussé.")
     args = ap.parse_args()
 
-    adapters = Path(args.adapters)
-    if not adapters.is_dir():
-        sys.exit(f"Adaptateur introuvable : {adapters} (lance d'abord mlx_lm.lora)")
+    if not args.model_repo and not args.dataset_repo:
+        sys.exit("Rien à publier : donne --model-repo et/ou --dataset-repo.")
+    if args.model_repo and not args.version:
+        sys.exit("--version est requis avec --model-repo (ex. --version v1).")
 
     manifest = _load_json(Path(args.manifest)) if Path(args.manifest).exists() else None
     record = _load_json(Path(args.eval_path)) if args.eval_path else None
-    card = build_model_card(args.version, manifest, record, args.dataset_repo)
+
+    adapters = Path(args.adapters)
+    card = None
+    if args.model_repo:
+        if not adapters.is_dir():
+            sys.exit(f"Adaptateur introuvable : {adapters} (lance d'abord mlx_lm.lora)")
+        card = build_model_card(args.version, manifest, record, args.dataset_repo)
 
     # Récapitulatif de ce qui part.
-    print(f"── Publication {args.model_repo} @ {args.version} "
-          f"({'privé' if args.private else 'public'}) ──")
-    print(f"  adapters/         ← {adapters}")
-    if record:
-        print(f"  eval/{Path(args.eval_path).name}  ← {args.eval_path}")
-    if manifest:
-        print(f"  manifest.json     ← {args.manifest}")
-    if args.fused:
-        print(f"  fused/            ← {args.fused}  (⚠️ ~6 Go)")
+    print(f"── Publication ({'privé' if args.private else 'public'}) ──")
+    if args.model_repo:
+        print(f"  modèle → {args.model_repo} @ {args.version}")
+        print(f"    adapters/       ← {adapters}")
+        if record:
+            print(f"    eval/{Path(args.eval_path).name}  ← {args.eval_path}")
+        if manifest:
+            print(f"    manifest.json   ← {args.manifest}")
+        if args.fused:
+            print(f"    fused/          ← {args.fused}  (⚠️ ~6 Go)")
+        print(f"    README.md       ← model card auto ({len(card)} car.)")
     if args.dataset_repo:
-        print(f"  dataset → {args.dataset_repo}  ← {args.data}")
-    print(f"  README.md         ← model card auto ({len(card)} car.)")
+        print(f"  dataset → {args.dataset_repo}  ← {args.data}  (+ card auto)")
 
     if args.dry_run:
-        print("\n(dry-run : rien n'a été poussé)\n--- model card ---\n" + card)
+        tail = ("\n--- model card ---\n" + card) if card else ""
+        print("\n(dry-run : rien n'a été poussé)" + tail)
         return 0
 
     api = _require_hub()
 
     # 1) Repo modèle + uploads (commits sur main).
-    api.create_repo(args.model_repo, repo_type="model",
-                    private=args.private, exist_ok=True)
-    api.upload_folder(repo_id=args.model_repo, folder_path=str(adapters),
-                      path_in_repo="adapters",
-                      commit_message=f"{args.version}: adaptateur LoRA")
-    api.upload_file(repo_id=args.model_repo, path_in_repo="README.md",
-                    path_or_fileobj=card.encode("utf-8"),
-                    commit_message=f"{args.version}: model card")
-    if record:
-        api.upload_file(repo_id=args.model_repo,
-                        path_in_repo=f"eval/{Path(args.eval_path).name}",
-                        path_or_fileobj=args.eval_path,
-                        commit_message=f"{args.version}: éval")
-    if manifest:
-        api.upload_file(repo_id=args.model_repo, path_in_repo="manifest.json",
-                        path_or_fileobj=args.manifest,
-                        commit_message=f"{args.version}: provenance")
-    if args.fused:
-        api.upload_folder(repo_id=args.model_repo, folder_path=args.fused,
-                          path_in_repo="fused",
-                          commit_message=f"{args.version}: modèle fusionné")
+    if args.model_repo:
+        api.create_repo(args.model_repo, repo_type="model",
+                        private=args.private, exist_ok=True)
+        api.upload_folder(repo_id=args.model_repo, folder_path=str(adapters),
+                          path_in_repo="adapters",
+                          commit_message=f"{args.version}: adaptateur LoRA")
+        api.upload_file(repo_id=args.model_repo, path_in_repo="README.md",
+                        path_or_fileobj=card.encode("utf-8"),
+                        commit_message=f"{args.version}: model card")
+        if record:
+            api.upload_file(repo_id=args.model_repo,
+                            path_in_repo=f"eval/{Path(args.eval_path).name}",
+                            path_or_fileobj=args.eval_path,
+                            commit_message=f"{args.version}: éval")
+        if manifest:
+            api.upload_file(repo_id=args.model_repo, path_in_repo="manifest.json",
+                            path_or_fileobj=args.manifest,
+                            commit_message=f"{args.version}: provenance")
+        if args.fused:
+            api.upload_folder(repo_id=args.model_repo, folder_path=args.fused,
+                              path_in_repo="fused",
+                              commit_message=f"{args.version}: modèle fusionné")
 
-    # 2) Tag immuable de la version (pointe sur le dernier commit de main).
-    try:
-        api.create_tag(args.model_repo, tag=args.version, repo_type="model")
-        print(f"✅ tag {args.version} posé")
-    except Exception as exc:  # tag déjà présent = on ne réécrit jamais un tag
-        print(f"⚠️  tag non posé ({exc}). N'écrase jamais un tag : "
-              f"utilise une nouvelle version.")
+        # 2) Tag immuable de la version (pointe sur le dernier commit de main).
+        try:
+            api.create_tag(args.model_repo, tag=args.version, repo_type="model")
+            print(f"✅ tag {args.version} posé")
+        except Exception as exc:  # tag déjà présent = on ne réécrit jamais un tag
+            print(f"⚠️  tag non posé ({exc}). N'écrase jamais un tag : "
+                  f"utilise une nouvelle version.")
 
     # 3) Dataset (repo séparé, optionnel).
     if args.dataset_repo:
@@ -270,7 +281,7 @@ def main() -> int:
                         private=args.private, exist_ok=True)
         api.upload_folder(repo_id=args.dataset_repo, repo_type="dataset",
                           folder_path=args.data,
-                          commit_message=f"dataset ({args.version})")
+                          commit_message=f"dataset ({args.version or 'update'})")
         # Dataset card : déclare les splits, sinon le Viewer HF reste vide
         # (train/valid au format chat + pairs au format lisible = schémas mixtes).
         api.upload_file(repo_id=args.dataset_repo, repo_type="dataset",
@@ -279,7 +290,11 @@ def main() -> int:
                         commit_message="dataset card + config splits")
         print(f"✅ dataset + card poussés → {args.dataset_repo}")
 
-    print(f"\n🔗 https://huggingface.co/{args.model_repo}/tree/{args.version}")
+    print("")
+    if args.model_repo:
+        print(f"🔗 modèle  : https://huggingface.co/{args.model_repo}/tree/{args.version}")
+    if args.dataset_repo:
+        print(f"🔗 dataset : https://huggingface.co/datasets/{args.dataset_repo}")
     return 0
 
 
