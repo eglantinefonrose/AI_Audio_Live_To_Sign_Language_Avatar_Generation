@@ -1,0 +1,17 @@
+{
+  "created": "2026-10-19T20:41:19",
+  "teacher": "claude-opus-5-5 (rédaction manuelle, conventions v1)",
+  "prompt_hash": "b9f4c4860f4a",
+  "synthetic": true,
+  "human_validated": false,
+  "generated": 453,
+  "accepted": 453,
+  "train": 408,
+  "valid": 45,
+  "drops": {},
+  "per_category": 25,
+  "seed": 0,
+  "eval_excluded": 74,
+  "source": "pairs",
+  "conventions_sha": "becbdc52032f"
+}

@@ -66,7 +66,9 @@ class OllamaConfig:
     # Maintient le modèle chargé entre deux appels => latence minimale.
     keep_alive: str = "10m"
     temperature: float = 0.0
-    num_ctx: int = 2_048
+    # Prompt de prod (règles + few-shot) ≈ 2 300 tokens : 2 048 tronquait le
+    # début du prompt (les règles). 4 096 laisse la marge pour la réponse.
+    num_ctx: int = 4_096
 
 
 @dataclass(frozen=True)

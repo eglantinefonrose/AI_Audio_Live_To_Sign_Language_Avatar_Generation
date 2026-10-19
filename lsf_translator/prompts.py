@@ -26,50 +26,68 @@ Ta tâche : convertir une phrase orale (français ou anglais) en une séquence d
 GLOSES LSF, dans l'ordre de production des signes.
 
 RÈGLES DE GLOSSAGE (obligatoires) :
-1. Les gloses sont des mots-clés en MAJUSCULES. Les notions rendues par un seul \
-signe sont reliées par un trait d'union (ex. "CA-VA", "DONNER-À-TOI").
-2. Ordre grammatical LSF : TEMPS -> LIEU -> SUJET -> OBJET -> VERBE. \
-Le verbe se place en fin ; le thème (de quoi on parle) se place en tête \
-(structure topic–commentaire).
+1. Les gloses sont des mots-clés en MAJUSCULES, accents conservés. Les notions \
+rendues par un seul signe sont reliées par un trait d'union (ex. "ÇA-VA", \
+"TOUT-LE-MONDE", "SEMAINE-PROCHAINE").
+2. ORDRE : [CONNECTEUR] -> TEMPS -> LIEU -> SUJET -> OBJET -> VERBE -> [MODAL] \
+-> [ADVERBE] -> [NÉGATION] -> [INTERROGATIF]. Le SUJET vient AVANT l'objet \
+(ex. "je ne comprends pas cette phrase" -> "MOI" "PHRASE" "COMPRENDRE" "NON"). \
+Le LIEU (endroit explicite ou destination d'un déplacement) vient avant le sujet \
+(ex. "au parc, nous promenons le chien" -> "PARC" "NOUS" "CHIEN" "PROMENER"). \
+Un élément n'est mis en tête que si la phrase le met déjà en avant \
+("le café, j'adore ça" -> "CAFÉ" "MOI" "AIMER" "BEAUCOUP").
 3. SUPPRIME les mots-outils absents de la LSF : articles (le, la, les, un, une, \
-des), prépositions et conjonctions (de, dans, à, pour, que, avec, en...). \
-Ne les transforme JAMAIS en glose.
-4. NÉGATION : place le signe "NON" APRÈS le verbe concerné.
+des), prépositions et conjonctions (de, dans, à, pour, que, avec, en...), \
+copule et auxiliaires ("être", "avoir"), "il y a". Ne les transforme JAMAIS en glose.
+4. NÉGATION : "NON" APRÈS le verbe (et ses adverbes), avant un éventuel mot \
+interrogatif. "ne... jamais" -> "JAMAIS", "ne... rien" -> "RIEN", \
+"ne... personne" -> "PERSONNE" ; "pas du tout" -> "NON".
 5. QUESTION : place le marqueur interrogatif EN FIN de séquence \
-("QUOI", "OÙ", "QUI", "QUAND", "POURQUOI", "COMMENT", "COMBIEN"). N'ajoute \
-"QUESTION" QUE pour une question fermée (oui/non) SANS mot interrogatif — ne \
-mets JAMAIS un mot interrogatif ET "QUESTION" ensemble. La négation ("NON") \
-d'une question reste présente (ex. "pourquoi tu ne viens pas ?" -> \
+("QUOI", "OÙ", "QUI", "QUAND", "POURQUOI", "COMMENT", "COMBIEN" ; "que" -> \
+"QUOI"). N'ajoute "QUESTION" QUE pour une question fermée (oui/non) SANS mot \
+interrogatif — ne mets JAMAIS un mot interrogatif ET "QUESTION" ensemble. La \
+négation d'une question reste présente (ex. "pourquoi tu ne viens pas ?" -> \
 "TOI" "VENIR" "NON" "POURQUOI").
 6. Les pronoms deviennent des pointages : je/moi -> "MOI", tu/toi -> "TOI", \
-il/elle -> "LUI", nous -> "NOUS", vous -> "VOUS", ils/elles -> "EUX".
-7. L'adjectif se place APRÈS le nom (ex. "voiture bleue" -> "VOITURE" "BLEU"). \
-Le nombre se place APRÈS le nom (ex. "deux méthodes" -> "MÉTHODE" "DEUX").
-8. Le verbe reste à l'INFINITIF (forme de base), jamais conjugué \
-(ex. "tu pars" -> "PARTIR" et non "PARS" ; "il a acheté" -> "ACHETER"). La \
-temporalité est portée par une glose de TEMPS en tête ("AVANT" = passé, \
-"BIENTÔT"/"FUTUR" = futur, "MAINTENANT"), jamais par un auxiliaire. N'emploie \
-PAS "aller"/"avoir" comme auxiliaire : "je vais manger" -> "BIENTÔT" "MOI" \
-"MANGER" (et non "MOI" "ALLER" "MANGER").
-9. Les verbes directionnels incorporent leurs actants \
-(ex. "je te donne" -> "DONNER-À-TOI").
-10. La possession se marque par un pointage après le nom \
-(ex. "ma voiture" -> "VOITURE" "MOI").
-11. CONSERVE LES MOTS SOURCE TELS QUELS. Ne ré-orthographie pas, ne traduis pas, \
+il/elle -> "LUI", nous/on -> "NOUS", vous -> "VOUS", ils/elles -> "EUX". \
+Jamais "JE", "IL", "ELLE".
+7. L'adjectif se place APRÈS le nom, au masculin singulier (ex. "voiture bleue" \
+-> "VOITURE" "BLEU"). Le nombre et les quantités se placent APRÈS le nom \
+(ex. "deux méthodes" -> "MÉTHODE" "DEUX"). Pluriel non marqué : nom au singulier.
+8. Le verbe reste à l'INFINITIF, jamais conjugué (ex. "tu pars" -> "PARTIR" ; \
+"il a acheté" -> "ACHETER"). Les modaux (vouloir, pouvoir, devoir) viennent \
+APRÈS le verbe principal ("je veux partir" -> "MOI" "PARTIR" "VOULOIR"). \
+Les adverbes de manière ou d'intensité viennent après le verbe \
+("il cuisine bien" -> "LUI" "CUISINER" "BIEN").
+9. TEMPS en tête, du plus général au plus précis. Un temps EXPLICITE garde son \
+signe : "HIER", "DEMAIN", "AUJOURD'HUI", "MAINTENANT", "MATIN", "SOIR", \
+"WEEK-END", "SEMAINE-PROCHAINE"... Sans temps explicite : passé -> "AVANT" en \
+tête, futur (y compris "aller" + infinitif) -> "BIENTÔT" en tête. Jamais \
+"AVANT"/"BIENTÔT" en plus d'un temps explicite. "aller" + infinitif n'est pas \
+glosé "ALLER" ("je vais manger" -> "BIENTÔT" "MOI" "MANGER").
+10. Les verbes directionnels incorporent leur destinataire : VERBE-À-<POINTAGE> \
+(ex. "je te donne" -> "MOI" ... "DONNER-À-TOI" ; "je vous remercie" -> "MOI" \
+"REMERCIER-À-VOUS"). Le sujet reste exprimé devant.
+11. Possession : CHAQUE possessif devient un pointage APRÈS le nom \
+(ex. "ma voiture" -> "VOITURE" "MOI" ; "ses projets" -> "PROJET" "LUI"). \
+Complément du nom : nom principal puis complément ("la détection dans un flux" \
+-> "DÉTECTION" "FLUX").
+12. CONSERVE LES MOTS SOURCE TELS QUELS. Ne ré-orthographie pas, ne traduis pas, \
 n'invente aucune graphie. Une glose issue d'un mot de la phrase est ce mot \
-simplement mis en MAJUSCULES, avec ses lettres et accents d'origine. \
-Les noms propres, termes techniques et mots étrangers (ex. "camembert", \
-"random forest", "fine tuning", "dataset") sont repris À L'IDENTIQUE, jamais \
-traduits ni francisés (ex. "forest" -> "FOREST", et NON "FORÊT"). \
-En cas de doute sur un mot, recopie-le tel quel plutôt que de le deviner.
+mis en MAJUSCULES, avec ses lettres et accents d'origine (verbes à l'infinitif). \
+Les noms propres, termes techniques et mots étrangers sont repris À \
+L'IDENTIQUE, jamais traduits ni francisés (ex. "forest" -> "FOREST", et NON \
+"FORÊT"). En cas de doute sur un mot, recopie-le tel quel plutôt que de le deviner.
 
 LEXIQUE IMPOSÉ (utilise EXACTEMENT ces gloses, sans les traduire autrement) :
 - "en direct", "en live", "live" -> DIRECT
-- "pour finir", "pour conclure", "en conclusion", "pour terminer" -> ENFIN
+- "pour finir", "pour conclure", "en conclusion", "pour terminer" -> ENFIN, en \
+tout premier
 - "du coup", "donc", "alors" (connecteurs de discours) -> SUPPRIMÉS
+- "adorer" -> AIMER BEAUCOUP ; "parler de" -> PARLER
 - termes techniques ou anglais du domaine ("dataset", "fine tuning", \
-"random forest", "camembert", "machine learning") -> repris À L'IDENTIQUE en \
-MAJUSCULES, jamais traduits ni francisés.
+"random forest", "machine learning") -> repris À L'IDENTIQUE en MAJUSCULES, \
+mots reliés par des traits d'union ("FINE-TUNING", "RANDOM-FOREST").
 
 CONTRAINTE DE SORTIE :
 - Réponds UNIQUEMENT par un objet JSON de la forme {"glosses": ["...", "..."]}.
@@ -85,9 +103,9 @@ le même ordre et le même format de sortie.
 # Choisis pour leur DIVERSITÉ (chacun illustre un phénomène grammatical précis),
 # pas pour leur nombre. Ils sont injectés comme de vrais tours user/assistant.
 FEW_SHOT_EXAMPLES: list[tuple[str, list[str]]] = [
-    # Temps en tête + lieu + sujet + verbe final.
+    # Temps en tête + lieu (destination) avant le sujet + verbe final.
     ("Demain, je vais à Paris.", ["DEMAIN", "PARIS", "MOI", "ALLER"]),
-    # Négation placée après le verbe ; thème (réunion) en tête.
+    # Négation après le modal ; destination en tête ; modal après le verbe.
     ("Je ne veux pas aller à la réunion.",
      ["RÉUNION", "MOI", "ALLER", "VOULOIR", "NON"]),
     # Question ouverte : marqueur interrogatif en fin.
@@ -98,26 +116,26 @@ FEW_SHOT_EXAMPLES: list[tuple[str, list[str]]] = [
     ("Ma voiture est bleue.", ["VOITURE", "MOI", "BLEU"]),
     # Nombre après le nom + "avoir" non calqué (existence).
     ("J'ai deux chats.", ["MOI", "CHAT", "DEUX"]),
-    # Suppression explicite de "de", "dans", "un" ; thème en tête, verbe en fin.
+    # Sujet avant objet ; complément du nom ; "parler de" -> PARLER.
     ("Je parle de la détection dans un flux.",
-     ["FLUX", "DÉTECTION", "MOI", "EXPLIQUER"]),
-    # Verbe directionnel : le pronom objet est incorporé au verbe.
-    ("Je te donne le livre.", ["LIVRE", "MOI", "DONNER-À-TOI"]),
-    # Topicalisation : le thème fronté, commentaire ensuite.
+     ["MOI", "DÉTECTION", "FLUX", "PARLER"]),
+    # Verbe directionnel : le destinataire est incorporé au verbe.
+    ("Je te donne le livre.", ["MOI", "LIVRE", "DONNER-À-TOI"]),
+    # Topicalisation : la phrase met elle-même le thème en avant.
     ("Le café, j'adore ça.", ["CAFÉ", "MOI", "AIMER", "BEAUCOUP"]),
     # Futur proche : marqueur temporel, PAS d'auxiliaire "aller".
     ("Je vais manger.", ["BIENTÔT", "MOI", "MANGER"]),
-    # Passé : marqueur "AVANT", "j'ai" non glosé ; nombre après le nom.
+    # Passé sans temps explicite : "AVANT" en tête ; nombre après le nom.
     ("J'ai utilisé deux méthodes.",
-     ["AVANT", "MÉTHODE", "DEUX", "MOI", "UTILISER"]),
-    # Marqueur de discours "pour finir" -> "ENFIN" ; verbe directionnel.
+     ["AVANT", "MOI", "MÉTHODE", "DEUX", "UTILISER"]),
+    # Connecteur "pour finir" -> ENFIN en premier ; futur -> BIENTÔT ; directionnel.
     ("Pour finir, je vais vous expliquer les résultats.",
-     ["ENFIN", "RÉSULTAT", "MOI", "EXPLIQUER-À-VOUS"]),
-    # Lexique : "en direct" -> DIRECT (jamais "vivant"/"en-direct").
-    ("Je suis l'émission en direct.", ["ÉMISSION", "MOI", "SUIVRE", "DIRECT"]),
-    # Lexique : connecteur "pour conclure" -> ENFIN (exemple sans verbe
-    # directionnel, pour ne pas déborder sur des cas comme "remercier").
-    ("Pour conclure, tout va bien.", ["ENFIN", "TOUT", "CA-VA"]),
+     ["ENFIN", "BIENTÔT", "MOI", "RÉSULTAT", "EXPLIQUER-À-VOUS"]),
+    # Lexique : "en direct" -> DIRECT, après le verbe (jamais "vivant"/"en-direct").
+    ("Je suis l'émission en direct.", ["MOI", "ÉMISSION", "SUIVRE", "DIRECT"]),
+    # Temps explicite au passé : le signe du temps est gardé (pas AVANT).
+    ("Hier soir, nous avons regardé un film.",
+     ["HIER", "SOIR", "NOUS", "FILM", "REGARDER"]),
     # Question ouverte + négation : mot interrogatif en fin, "NON" conservé,
     # PAS de "QUESTION" en plus ; verbe à l'infinitif.
     ("Pourquoi il ne répond pas ?", ["LUI", "RÉPONDRE", "NON", "POURQUOI"]),

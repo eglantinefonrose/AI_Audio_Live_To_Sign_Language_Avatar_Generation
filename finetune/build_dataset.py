@@ -37,6 +37,7 @@ if str(PROJECT) not in sys.path:
 from ollama import Client
 
 from config import CONFIG
+from lsf_translator.conventions import check as check_conventions
 from lsf_translator.prompts import (
     GLOSS_JSON_SCHEMA,
     TRAIN_SYSTEM,
@@ -52,7 +53,7 @@ EVAL_DATASET = PROJECT / "eval" / "dataset.jsonl"
 FORBIDDEN = {
     "DE", "DANS", "POUR", "LE", "LA", "LES", "UN", "UNE", "DES", "À", "AU",
     "ET", "OU", "QUE", "AVEC", "EN", "DU", "CE", "CETTE", "SE", "NE", "ON", "VA",
-    "QUE", "QUI", "SUR", "SES", "MON", "MA", "TON", "TA",
+    "QUE", "SUR", "SES", "MON", "MA", "TON", "TA",   # (QUI = interrogatif, autorisé)
 }
 
 # Catégories de génération : (étiquette-phénomène, consigne pour le professeur).
@@ -128,19 +129,45 @@ def to_gloss(client: Client, teacher: str, text: str) -> list[str]:
 
 # -- contrôle qualité (remplace l'annotateur) ----------------------------
 def quality_reason(text: str, glosses: list[str]) -> str | None:
-    """Retourne None si la paire est acceptable, sinon la raison du rejet."""
+    """Retourne None si la paire est acceptable, sinon la raison du rejet.
+
+    Inclut les conventions de CONVENTIONS.md (lsf_translator/conventions.py).
+    """
     if not glosses:
         return "glose vide"
     if any(g in FORBIDDEN for g in glosses):
         return "mot-outil présent"
     if any(g != g.upper() for g in glosses):
         return "glose non MAJUSCULE"
-    if any(not re.fullmatch(r"[A-ZÀ-ÖØ-Þ0-9'\-]+", g) for g in glosses):
+    if any(not re.fullmatch(r"[A-ZÀ-ÖØ-ÞŒÆ0-9'\-]+", g) for g in glosses):
         return "caractère inattendu"
     nw = len(text.split())
     if len(glosses) > max(3, round(nw * 1.8)):
         return "trop de gloses vs source"
+    errs = check_conventions(text, glosses)
+    if errs:
+        return "conventions : " + errs[0]
     return None
+
+
+def load_pairs(path: Path, eval_norm: set[str]) -> tuple[int, list[dict], dict[str, int]]:
+    """Charge des paires rédigées et applique les mêmes filtres que la génération."""
+    rows = [json.loads(l) for l in path.read_text(encoding="utf-8").splitlines() if l.strip()]
+    accepted: list[dict] = []
+    drops: dict[str, int] = {}
+    seen: set[str] = set()
+    for r in rows:
+        key = normalize(r["text"])
+        reason = ("recouvre l'éval" if key in eval_norm else
+                  "doublon" if key in seen else quality_reason(r["text"], r["glosses"]))
+        if reason:
+            drops[reason] = drops.get(reason, 0) + 1
+            print(f"  rejet ({reason}) : {r['text']}")
+            continue
+        seen.add(key)
+        accepted.append({"text": r["text"], "glosses": r["glosses"],
+                         "phenomenon": r.get("phenomenon", "?")})
+    return len(rows), accepted, drops
 
 
 # -- écriture ------------------------------------------------------------
@@ -169,6 +196,9 @@ def main() -> int:
     ap.add_argument("--per-category", type=int, default=25,
                     help="Nb de phrases demandées par catégorie (avant filtrage).")
     ap.add_argument("--val-frac", type=float, default=0.1)
+    ap.add_argument("--from-pairs", default=None, metavar="JSONL",
+                    help="Paires déjà rédigées {text, glosses, phenomenon} : saute la "
+                         "génération, applique contrôle qualité + conventions + anti-fuite.")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--out", default=None,
                     help="Dossier d'écriture intermédiaire (défaut : temporaire). Le "
@@ -189,41 +219,48 @@ def main() -> int:
             if line.strip():
                 eval_norm.add(normalize(json.loads(line)["text"]))
 
-    print(f"Professeur : {args.teacher}  —  {args.per_category}/catégorie  "
-          f"({len(CATEGORIES)} catégories)\n")
+    if args.from_pairs:
+        # Paires déjà rédigées (ex. par un assistant) : pas de génération, mais
+        # mêmes contrôles (qualité + conventions + anti-fuite éval + dédup).
+        n_generated, accepted, drops = load_pairs(Path(args.from_pairs), eval_norm)
+        print(f"Paires fournies : {args.from_pairs}  —  professeur : {args.teacher}")
+    else:
+        print(f"Professeur : {args.teacher}  —  {args.per_category}/catégorie  "
+              f"({len(CATEGORIES)} catégories)\n")
 
-    # 1) Génération des phrases sources.
-    seen: set[str] = set()
-    sources: list[tuple[str, str]] = []  # (texte, phénomène)
-    for phen, desc in CATEGORIES:
-        got = gen_sentences(client, args.teacher, desc, args.per_category)
-        kept = 0
-        for s in got:
-            key = normalize(s)
-            if not key or key in seen or key in eval_norm:
+        # 1) Génération des phrases sources.
+        seen: set[str] = set()
+        sources: list[tuple[str, str]] = []  # (texte, phénomène)
+        for phen, desc in CATEGORIES:
+            got = gen_sentences(client, args.teacher, desc, args.per_category)
+            kept = 0
+            for s in got:
+                key = normalize(s)
+                if not key or key in seen or key in eval_norm:
+                    continue
+                seen.add(key)
+                sources.append((s, phen))
+                kept += 1
+            print(f"  {phen:18s} : {kept} phrases retenues (sur {len(got)} générées)")
+
+        # 2) Traduction + 3) contrôle qualité.
+        accepted: list[dict] = []
+        drops: dict[str, int] = {}
+        pair_keys: set[str] = set()
+        print("\nTraduction + contrôle qualité…")
+        for text, phen in sources:
+            glosses = to_gloss(client, args.teacher, text)
+            reason = quality_reason(text, glosses)
+            if reason:
+                drops[reason] = drops.get(reason, 0) + 1
                 continue
-            seen.add(key)
-            sources.append((s, phen))
-            kept += 1
-        print(f"  {phen:18s} : {kept} phrases retenues (sur {len(got)} générées)")
-
-    # 2) Traduction + 3) contrôle qualité.
-    accepted: list[dict] = []
-    drops: dict[str, int] = {}
-    pair_keys: set[str] = set()
-    print("\nTraduction + contrôle qualité…")
-    for text, phen in sources:
-        glosses = to_gloss(client, args.teacher, text)
-        reason = quality_reason(text, glosses)
-        if reason:
-            drops[reason] = drops.get(reason, 0) + 1
-            continue
-        pkey = normalize(text) + "|" + "|".join(glosses)
-        if pkey in pair_keys:
-            drops["doublon"] = drops.get("doublon", 0) + 1
-            continue
-        pair_keys.add(pkey)
-        accepted.append({"text": text, "glosses": glosses, "phenomenon": phen})
+            pkey = normalize(text) + "|" + "|".join(glosses)
+            if pkey in pair_keys:
+                drops["doublon"] = drops.get("doublon", 0) + 1
+                continue
+            pair_keys.add(pkey)
+            accepted.append({"text": text, "glosses": glosses, "phenomenon": phen})
+        n_generated = len(sources)
 
     # 4) Split train/val.
     rng.shuffle(accepted)
@@ -240,11 +277,13 @@ def main() -> int:
         "teacher": args.teacher,
         "prompt_hash": prompt_hash(),
         "synthetic": True, "human_validated": False,
-        "generated": len(sources), "accepted": len(accepted),
+        "generated": n_generated, "accepted": len(accepted),
         "train": len(train), "valid": len(val),
         "drops": drops,
         "per_category": args.per_category, "seed": args.seed,
         "eval_excluded": len(eval_norm),
+        "source": "pairs" if args.from_pairs else "generated",
+        "conventions_sha": sha((PROJECT / "CONVENTIONS.md").read_bytes()),
     }
     (out / "manifest.json").write_text(
         json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -254,7 +293,7 @@ def main() -> int:
     train_sha, frozen = freeze(out, move=staging)
 
     print("\n── Bilan ─────────────────────────────────")
-    print(f"  Générées   : {len(sources)}")
+    print(f"  Générées   : {n_generated}")
     print(f"  Acceptées  : {len(accepted)}  (train {len(train)} / valid {len(val)})")
     print(f"  Rejetées   : {sum(drops.values())}  {drops or ''}")
     print(f"  Sorties    : {frozen.relative_to(PROJECT)}/ (train.jsonl, valid.jsonl, "
