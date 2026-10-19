@@ -44,7 +44,7 @@ from lsf_translator.prompts import (
     build_user_prompt,
 )
 
-OUT_DIR = PROJECT / "finetune" / "data"
+OUT_DIR = PROJECT / "finetune" / "data"   # rangé par hash : data/<train_sha>/
 EVAL_DATASET = PROJECT / "eval" / "dataset.jsonl"
 
 # Gloses "mots-outils" interdites (mêmes que l'éval) : une sortie qui en contient
@@ -170,10 +170,14 @@ def main() -> int:
                     help="Nb de phrases demandées par catégorie (avant filtrage).")
     ap.add_argument("--val-frac", type=float, default=0.1)
     ap.add_argument("--seed", type=int, default=0)
-    ap.add_argument("--out", default=str(OUT_DIR))
+    ap.add_argument("--out", default=None,
+                    help="Dossier d'écriture intermédiaire (défaut : temporaire). Le "
+                         "dataset est ensuite rangé dans finetune/data/<train_sha>/.")
     args = ap.parse_args()
 
-    out = Path(args.out)
+    staging = args.out is None
+    out = Path(args.out) if args.out else \
+        OUT_DIR / f".staging-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
     out.mkdir(parents=True, exist_ok=True)
     client = Client(host=CONFIG.ollama.host)
     rng = random.Random(args.seed)
@@ -245,12 +249,16 @@ def main() -> int:
     (out / "manifest.json").write_text(
         json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
 
+    # 5) Rangement par hash (jamais réécrit) : finetune/data/<train_sha>/.
+    from snapshot_data import freeze
+    train_sha, frozen = freeze(out, move=staging)
+
     print("\n── Bilan ─────────────────────────────────")
     print(f"  Générées   : {len(sources)}")
     print(f"  Acceptées  : {len(accepted)}  (train {len(train)} / valid {len(val)})")
     print(f"  Rejetées   : {sum(drops.values())}  {drops or ''}")
-    print(f"  Sorties    : {out.relative_to(PROJECT)}/ (train.jsonl, valid.jsonl, "
-          f"pairs.jsonl, manifest.json)")
+    print(f"  Sorties    : {frozen.relative_to(PROJECT)}/ (train.jsonl, valid.jsonl, "
+          f"pairs.jsonl, manifest.json) — train_sha {train_sha}")
     if not accepted:
         print("  ⚠️  Rien d'accepté — vérifie qu'Ollama et le professeur répondent.")
     return 0

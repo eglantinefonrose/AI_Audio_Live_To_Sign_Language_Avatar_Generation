@@ -48,9 +48,10 @@ def header(tag: str, r: dict) -> None:
     if t:
         d = t.get("duration_s")
         approx = "~" if t.get("approximate") else ""
-        print(f"      entraîné {approx}{str(t.get('started_at','?'))[:16].replace('T', ' ')}"
+        when = (t.get("started_at") or t.get("ended_at") or "?")[:16].replace("T", " ")
+        print(f"      entraîné {approx}{when}"
               f" ({approx}{d // 60 if isinstance(d, int) else '?'} min, "
-              f"val loss {t.get('final_val_loss', '?')})")
+              f"val loss {t.get('final_val_loss') or '?'}, train {t.get('train_sha') or '?'})")
 
 
 def main() -> int:

@@ -19,6 +19,7 @@
     "final_val_loss": null,
     "data_dir": "finetune/data",
     "train_sha": "e604d1cd6448",
+    "train_snapshot": "finetune/data/e604d1cd6448",
     "dataset_manifest": {
       "created": "2026-10-19T11:38:40",
       "teacher": "claude-opus-4-8",

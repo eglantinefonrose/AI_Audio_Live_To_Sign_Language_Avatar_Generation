@@ -105,7 +105,8 @@ def main() -> int:
     out.write_text(json.dumps(record, ensure_ascii=False, indent=2), encoding="utf-8")
     approx = " (approximatif)" if meta.get("approximate") else ""
     print(f"✅ {args.tag} ({record['ollama_digest']}) — entraîné le "
-          f"{meta.get('started_at', '?')}, {meta.get('duration_s', '?')} s{approx}")
+          f"{meta.get('started_at') or meta.get('ended_at') or '?'}, "
+          f"{meta.get('duration_s') or '?'} s{approx}")
     print(f"   Provenance : {out.relative_to(PROJECT)}")
     return 0
 

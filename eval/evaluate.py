@@ -31,6 +31,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import shutil
 import subprocess
 import sys
 from collections import Counter
@@ -60,6 +61,8 @@ PROMPT_BUILDERS = {"prod": build_messages, "rules-only": build_rules_only_messag
 RESULTS_DIR = PROJECT / "eval" / "results"
 RESULTS_MD = PROJECT / "eval" / "RESULTS.md"
 DATASET = PROJECT / "eval" / "dataset.jsonl"
+# Copies figées des datasets évalués : eval/datasets/<dataset_sha>/<nom>.jsonl
+DATASETS_DIR = PROJECT / "eval" / "datasets"
 MODELS_DIR = PROJECT / "finetune" / "models"   # provenance des modèles fine-tunés
 
 # Gloses "mots-outils" qui ne devraient JAMAIS apparaître (fuite de français).
@@ -151,9 +154,11 @@ def format_training(t: dict | None) -> str:
     if not t:
         return ""
     d = t.get("duration_s")
-    dur = f"{d // 60} min" if isinstance(d, int) else "?"
     approx = "~" if t.get("approximate") else ""
-    return f"entraîné {approx}{str(t.get('started_at', '?'))[:16].replace('T', ' ')} ({approx}{dur})"
+    # Début inconnu (run reconstitué) : on date par la fin d'entraînement.
+    when = (t.get("started_at") or t.get("ended_at") or "?")[:16].replace("T", " ")
+    dur = f"{approx}{d // 60} min" if isinstance(d, int) else "durée inconnue"
+    return f"entraîné {approx}{when} ({dur})"
 
 
 def measure_prompt_tokens(client: Client, model: str, rows: list[dict],
@@ -188,6 +193,20 @@ def translate(client: Client, model: str, text: str, language: str,
 
 
 # -- sauvegarde ----------------------------------------------------------
+def snapshot_dataset(path: Path, sha: str) -> Path:
+    """Fige une copie du dataset évalué sous eval/datasets/<sha>/ (jamais
+    réécrite) : un record reste ainsi rejouable même si dataset.jsonl évolue."""
+    dest = DATASETS_DIR / sha / path.name
+    if dest.exists():
+        if _sha(dest.read_bytes()) != sha:
+            sys.exit(f"Copie altérée : {dest} ne correspond plus au hash {sha}.")
+        return dest
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(path, dest)
+    dest.chmod(0o444)   # lecture seule : une copie figée ne se modifie pas
+    return dest
+
+
 def save_record(record: dict) -> Path:
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
     safe_model = record["model"].replace(":", "-").replace("/", "-")
@@ -205,23 +224,37 @@ def _append_results_md(record: dict, fname: str) -> None:
         "Tableau de bord des runs d'évaluation LSF (généré par "
         "`eval/evaluate.py --save`). Une ligne par run ; `git*` = modifs non "
         "commitées au moment du run. Détail complet dans `eval/results/`.\n\n"
-        "| Date | Heure | Label | Modèle | git | Exact | F1 | Ordre | Fuites | Record |\n"
-        "|---|---|---|---|---|---|---|---|---|---|\n"
+        "| Date | Heure | Label | Modèle | git | Dataset éval | Dataset train "
+        "| Exact | F1 | Ordre | Fuites | Record |\n"
+        "|---|---|---|---|---|---|---|---|---|---|---|---|\n"
     )
     if not RESULTS_MD.exists():
         RESULTS_MD.write_text(header, encoding="utf-8")
+    with RESULTS_MD.open("a", encoding="utf-8") as fh:
+        fh.write(results_row(record, fname))
+
+
+def results_row(record: dict, fname: str) -> str:
+    """Une ligne du tableau RESULTS.md pour un record."""
     m = record["metrics"]
+    # Dataset d'entraînement : seulement pour un modèle fine-tuné (sinon « — »).
+    t = record.get("training") or {}
+    train_sha = t.get("train_sha")
+    if train_sha and t.get("train_snapshot"):   # lien vers la copie figée
+        train_cell = f"[{train_sha}](../{t['train_snapshot']}/)"
+    else:
+        train_cell = train_sha or "—"
     trained = format_training(record.get("training"))
     model_cell = record["model"] + (f" ({trained})" if trained else "")
     git = (record["git_commit"] or "—") + ("*" if record["git_dirty"] else "")
-    row = (
+    return (
         f"| {record['timestamp'][:10]} | {record['timestamp'][11:19]} "
         f"| {record['label']} | {model_cell} "
-        f"| {git} | {m['exact']*100:.0f}% | {m['f1']:.3f} | {m['order']:.3f} "
+        f"| {git} | [{record['dataset_sha']}](datasets/{record['dataset_sha']}/) "
+        f"| {train_cell} "
+        f"| {m['exact']*100:.0f}% | {m['f1']:.3f} | {m['order']:.3f} "
         f"| {m['leaks']} | [{fname}](results/{fname}) |\n"
     )
-    with RESULTS_MD.open("a", encoding="utf-8") as fh:
-        fh.write(row)
 
 
 # -- boucle --------------------------------------------------------------
@@ -303,6 +336,8 @@ def main() -> int:
     if args.save:
         commit, dirty = git_info()
         tokens = measure_prompt_tokens(client, args.model, rows, args.prompt)
+        ds_sha = _sha(Path(args.dataset).read_bytes())
+        snapshot = snapshot_dataset(Path(args.dataset), ds_sha)
         now = datetime.now()
         record = {
             "label": args.label,
@@ -318,7 +353,8 @@ def main() -> int:
             "few_shot": len(FEW_SHOT_EXAMPLES) if args.prompt == "prod" else 0,
             "prompt_tokens": tokens,
             "dataset": str(Path(args.dataset).relative_to(PROJECT)),
-            "dataset_sha": _sha(Path(args.dataset).read_bytes()),
+            "dataset_sha": ds_sha,
+            "dataset_snapshot": str(snapshot.relative_to(PROJECT)),
             "dataset_n": n,
             "metrics": metrics,
             "by_phenomenon": by_phen_avg,

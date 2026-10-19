@@ -36,8 +36,9 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
+from snapshot_data import latest
+
 PROJECT = Path(__file__).resolve().parent.parent
-DATA_DIR = PROJECT / "finetune" / "data"
 ADAPTERS_DIR = PROJECT / "finetune" / "adapters"
 FUSED_DIR = PROJECT / "finetune" / "fused"
 # Repli si training_meta.json est absent ; sinon la base vient de la provenance.
@@ -100,8 +101,9 @@ def build_model_card(version: str, manifest: dict | None, record: dict | None,
         approx = " (approximatif, reconstitué)" if training.get("approximate") else ""
         hp = training.get("hyperparams") or {}
         lines += [
-            f"- **Entraîné le** : {training.get('started_at', '?')} → "
-            f"{training.get('ended_at', '?')}{approx}",
+            f"- **Entraîné le** : {training.get('started_at') or '?'} → "
+            f"{training.get('ended_at') or '?'}{approx}",
+            f"- **Dataset d'entraînement (sha)** : `{training.get('train_sha') or '?'}`",
             f"- **Durée d'entraînement** : "
             f"{f'{d // 3600}h{(d % 3600) // 60:02d}m{d % 60:02d}s' if isinstance(d, int) else '?'}",
             f"- **Hyperparamètres** : " + (", ".join(f"{k}={v}" for k, v in hp.items()) or "?"),
@@ -207,14 +209,15 @@ def main() -> int:
                     help="Dossier de l'adaptateur LoRA à publier.")
     ap.add_argument("--eval", dest="eval_path", default=None,
                     help="Record d'éval JSON de cette version (eval/results/...).")
-    ap.add_argument("--manifest", default=str(DATA_DIR / "manifest.json"),
-                    help="Manifeste du dataset (provenance).")
+    ap.add_argument("--manifest", default=None,
+                    help="Manifeste du dataset (défaut : <dataset>/manifest.json).")
     ap.add_argument("--fused", nargs="?", const=str(FUSED_DIR), default=None,
                     help="Publier AUSSI le modèle fusionné (~6 Go). Lourd.")
     ap.add_argument("--dataset-repo", default=None,
                     help="Repo dataset, ex. mon-user/lsf-fr-gloss (optionnel).")
-    ap.add_argument("--data", default=str(DATA_DIR),
-                    help="Dossier dataset à publier dans --dataset-repo.")
+    ap.add_argument("--data", default=None,
+                    help="Dataset à publier (défaut : celui de l'entraînement, "
+                         "train_snapshot, sinon le plus récent de finetune/data/).")
     ap.add_argument("--private", action="store_true", help="Repos privés.")
     ap.add_argument("--dry-run", action="store_true",
                     help="N'upload rien : montre ce qui serait poussé.")
@@ -225,20 +228,33 @@ def main() -> int:
     if args.model_repo and not args.version:
         sys.exit("--version est requis avec --model-repo (ex. --version v1).")
 
-    manifest = _load_json(Path(args.manifest)) if Path(args.manifest).exists() else None
     record = _load_json(Path(args.eval_path)) if args.eval_path else None
-
     adapters = Path(args.adapters)
+
+    # Provenance d'entraînement : celle du record d'éval (rattachée au tag
+    # Ollama évalué) prime ; sinon celle écrite par train.sh à côté de l'adaptateur.
+    training = (record or {}).get("training")
+    meta_path = adapters / "training_meta.json"
+    if not training and meta_path.exists():
+        training = _load_json(meta_path)
+
+    # Dataset : celui qui a réellement servi à l'entraînement, sinon le plus récent.
+    snap = (training or {}).get("train_snapshot")
+    if args.data:
+        data_dir = Path(args.data)
+    elif snap and (PROJECT / snap).is_dir():
+        data_dir = PROJECT / snap
+    else:
+        data_dir = latest()
+    args.data = str(data_dir)
+    manifest_path = Path(args.manifest) if args.manifest else data_dir / "manifest.json"
+    args.manifest = str(manifest_path)
+    manifest = _load_json(manifest_path) if manifest_path.exists() else None
+
     card = None
     if args.model_repo:
         if not adapters.is_dir():
             sys.exit(f"Adaptateur introuvable : {adapters} (lance d'abord mlx_lm.lora)")
-        # Provenance d'entraînement : celle du record d'éval (rattachée au tag
-        # Ollama évalué) prime ; sinon celle écrite par train.sh à côté de l'adaptateur.
-        training = (record or {}).get("training")
-        meta_path = adapters / "training_meta.json"
-        if not training and meta_path.exists():
-            training = _load_json(meta_path)
         if not training:
             print("⚠️  Aucune date d'entraînement (training_meta.json absent) : "
                   "entraîne via ./finetune/train.sh.")

@@ -14,6 +14,7 @@
   "prompt_tokens": 1143,
   "dataset": "eval/dataset.jsonl",
   "dataset_sha": "3db947280fd3",
+  "dataset_snapshot": "eval/datasets/3db947280fd3/dataset.jsonl",
   "dataset_n": 16,
   "metrics": {
     "exact": 0.0,

@@ -75,7 +75,18 @@ d'où le nom) — quelques colonnes seulement — donc **minuscules** : on entra
 ```bash
 # professeur = le meilleur modèle mesuré via eval/evaluate.py
 uv run python finetune/build_dataset.py --teacher qwen2.5:14b --per-category 40
-# produit finetune/data/{train.jsonl, valid.jsonl, pairs.jsonl, manifest.json}
+# produit finetune/data/<train_sha>/{train.jsonl, valid.jsonl, pairs.jsonl, manifest.json}
+```
+
+Chaque dataset est **rangé par hash** : `finetune/data/<train_sha>/` (hash de
+`train.jsonl`, celui de la colonne « Dataset train » de `eval/RESULTS.md`), en
+lecture seule, jamais réécrit. Une nouvelle génération crée un nouveau dossier ;
+les anciennes versions restent intactes.
+
+```
+finetune/data/
+├── fa6131f5e0ee/   # v1 (professeur gemma2:9b, 20 train)
+└── e604d1cd6448/   # v2 (Claude Opus, 92 train)
 ```
 
 MLX-LM lit automatiquement `train.jsonl` et `valid.jsonl` dans `--data <dir>`,
@@ -96,11 +107,18 @@ L'élève proposé est **ungated** et déjà en 4-bit (pas de téléchargement g
 pas d'étape de quantification). Passe par le wrapper, qui horodate le run :
 
 ```bash
-./finetune/train.sh                          # défauts : iters=300, num_layers=8, lr=1e-4
+./finetune/train.sh                          # défauts : dataset le plus récent, iters=300, num_layers=8, lr=1e-4
+DATA=finetune/data/fa6131f5e0ee ./finetune/train.sh   # un dataset précis
 ITERS=200 NUM_LAYERS=4 ./finetune/train.sh   # surcharge des hyperparamètres
 ```
 
-Il écrit un log dans `finetune/logs/` et surtout **`finetune/adapters/training_meta.json`** :
+Sans `DATA`, il prend le **dataset le plus récent** (`created` du manifeste). Il
+vérifie que le dossier est intact (`snapshot_data.py`) ; un dossier hors de
+`finetune/data/` est d'abord copié et rangé sous son hash. L'entraînement lit
+toujours la version rangée : chaque modèle garde le lien (`train_snapshot`) vers
+les données exactes qui l'ont produit.
+
+Il écrit ensuite un log dans `finetune/logs/` et surtout **`finetune/adapters/training_meta.json`** :
 date de début/fin, durée, hyperparamètres, sha du train, manifeste du dataset,
 commit git, dernière val loss. Ce fichier suit ensuite le modèle (Ollama → éval → HF).
 
@@ -110,7 +128,7 @@ commit git, dernière val loss. Ce fichier suit ensuite le modèle (Ollama → �
 uv run mlx_lm.lora \
   --model mlx-community/Qwen2.5-3B-Instruct-4bit \
   --train \
-  --data finetune/data \
+  --data finetune/data/<train_sha> \
   --adapter-path finetune/adapters \
   --mask-prompt \
   --batch-size 1 \

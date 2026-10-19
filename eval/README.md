@@ -11,6 +11,7 @@ eval/
 ├── compare.py      # diff entre deux runs archivés
 ├── RESULTS.md      # tableau de bord (une ligne par run --save)
 ├── results/        # records JSON immuables (un par run --save)
+├── datasets/       # copies figées des datasets évalués : <dataset_sha>/dataset.jsonl
 └── README.md       # ce fichier
 ```
 
@@ -58,7 +59,7 @@ fine-tuné), archive chaque run avec `--save` :
 uv run python eval/evaluate.py --save --label "ajout lexique direct/enfin"
 ```
 
-Cela produit **deux** choses :
+Cela produit **trois** choses :
 
 1. **Un record immuable** `eval/results/<date>__<modèle>__<githash>.json` — il
    pince les **trois variables** qui déterminent un résultat :
@@ -67,13 +68,24 @@ Cela produit **deux** choses :
    | --- | --- |
    | Modèle | `model`, `model_digest` (distingue deux versions d'un même tag) |
    | Prompt | `prompt_hash` (système + few-shot), `git_commit`, `git_dirty` |
-   | Dataset | `dataset`, `dataset_sha`, `dataset_n` |
+   | Dataset | `dataset`, `dataset_sha`, `dataset_snapshot`, `dataset_n` |
 
    Il contient aussi `metrics`, `by_phenomenon`, `prompt_tokens` (alerte si
    `> num_ctx`), et le **détail par phrase** (`per_sentence`) qui permet le diff.
 
-2. **Une ligne dans `eval/RESULTS.md`** — tableau de bord lisible, versionné
-   dans git : une ligne par run, avec un lien vers le record. Chaque
+2. **Une copie figée du dataset** `eval/datasets/<dataset_sha>/dataset.jsonl`
+   (lecture seule, jamais réécrite ; créée au premier run sur ce contenu).
+   `dataset.jsonl` peut ainsi évoluer librement : chaque record pointe
+   (`dataset_snapshot`) vers le contenu exact sur lequel il a été mesuré. Si une
+   copie existante ne correspond plus à son hash, `--save` s'arrête.
+
+3. **Une ligne dans `eval/RESULTS.md`** — tableau de bord lisible, versionné
+   dans git : une ligne par run, avec un lien vers le record. Deux colonnes
+   de dataset à ne pas confondre : **Dataset éval** = hash du jeu de test
+   (`dataset_sha`, renseigné pour **tous** les runs, lien vers sa copie figée) ;
+   **Dataset train** = hash du `train.jsonl` d'entraînement (`training.train_sha`),
+   renseigné **uniquement pour un modèle fine-tuné**, « — » pour un modèle de base,
+   avec un lien vers son dossier `finetune/data/<train_sha>/`. Chaque
    amélioration devient ainsi un **diff visible** dans l'historique.
 
 > `git*` (étoile) dans le tableau = le run a été lancé avec des modifications
