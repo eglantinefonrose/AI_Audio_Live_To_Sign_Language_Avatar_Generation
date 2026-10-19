@@ -140,26 +140,19 @@ Un objet JSON par ligne :
 - `phenomena` : étiquettes libres servant à la ventilation (choisis des noms
   cohérents d'une ligne à l'autre).
 
-## Conventions de glose retenues
+## Conventions de glose
 
-Ce sont les règles appliquées **à la fois** dans le prompt (`prompts.py`) et dans
-le gold de ce dataset, pour que la mesure soit cohérente :
+Le gold suit **[CONVENTIONS.md](../CONVENTIONS.md)**, la référence unique partagée
+avec le prompt (`prompts.py`) et les datasets d'entraînement. Avant de modifier ou
+d'ajouter une phrase, vérifie-la :
 
-1. Gloses en MAJUSCULES ; une notion = un signe, les composés reliés par
-   trait d'union (`CA-VA`, `DONNER-À-TOI`).
-2. Ordre `TEMPS → LIEU → SUJET → OBJET → VERBE` ; verbe en fin.
-3. Suppression des mots-outils (articles, prépositions, conjonctions).
-4. Négation `NON` **après** le verbe.
-5. Question : mot interrogatif **en fin** ; `QUESTION` uniquement pour une
-   question fermée **sans** mot interrogatif (jamais les deux).
-6. Verbe à l'**infinitif** ; temporalité portée par une glose de temps
-   (`AVANT`, `BIENTÔT`…), pas par un auxiliaire.
-7. Adjectif et nombre **après** le nom ; pluriel non marqué.
-8. Verbes directionnels incorporés (`EXPLIQUER-À-VOUS`) ; possession par
-   pointage (`VOITURE MOI`).
-9. Lexique imposé : `en direct/en live → DIRECT` ; `pour finir/pour conclure/
-   en conclusion → ENFIN` ; termes techniques/anglais (`DATASET`, `FINE-TUNING`,
-   `CAMEMBERT`) **repris à l'identique**.
+```bash
+uv run python -m lsf_translator.conventions          # gold + exemples du prompt
+```
+
+Le vérificateur contrôle ce qui est mécanique (forme, mots-outils, pronoms,
+possessifs, négation, questions, lexique imposé, temps, directionnels) ; l'ordre
+sujet/objet et le choix des signes restent à relire.
 
 ## Limites à connaître (important)
 
@@ -171,13 +164,18 @@ le gold de ce dataset, pour que la mesure soit cohérente :
   fréquent). La métrique `ordre` peut donc pénaliser une sortie *correcte* qui
   ne suit pas l'ordre figé du gold. Ne sur-optimise pas `ordre` sans un gold
   validé.
-- **Petit échantillon** (16 phrases) : utile pour détecter de grosses
-  régressions, insuffisant pour des conclusions fines. Étendre à ~40-50 phrases
-  variées améliorerait la stabilité des mesures.
+- **Échantillon encore modeste** (74 phrases, une phrase ≈ 1,4 point
+  d'« exact ») : suffisant pour voir un écart de quelques points de F1, pas pour
+  départager deux runs à 1-2 points près. Regarde aussi la ventilation par
+  phénomène (3 à 15 phrases chacun).
+- Les runs antérieurs au dataset `01f21c7fbf2d` (74 phrases) ont été mesurés sur
+  l'ancien gold de 16 phrases (`3db947280fd3`) : **ne compare que des runs de
+  même « Dataset éval »** (`compare.py` alerte sinon).
 
 ## Étendre le dataset
 
 Ajoute des lignes à `dataset.jsonl` (idéalement validées LSF). Pour éviter de
 fausser la mesure, **n'y mets pas** les phrases déjà présentes comme exemples
 few-shot dans `lsf_translator/prompts.py` (`FEW_SHOT_EXAMPLES`) : le modèle les a
-déjà vues, elles gonfleraient artificiellement le score.
+déjà vues, elles gonfleraient artificiellement le score. De même, garde-les **hors** des datasets
+d'entraînement : `build_dataset.py` rejette toute paire qui recouvre l'éval.
