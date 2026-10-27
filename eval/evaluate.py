@@ -158,6 +158,9 @@ def format_training(t: dict | None) -> str:
     # Début inconnu (run reconstitué) : on date par la fin d'entraînement.
     when = (t.get("started_at") or t.get("ended_at") or "?")[:16].replace("T", " ")
     dur = f"{approx}{d // 60} min" if isinstance(d, int) else "durée inconnue"
+    if t.get("interrupted"):
+        it = (t.get("hyperparams") or {})
+        dur = f"interrompu {it.get('iters', '?')}/{it.get('iters_planned', '?')} itér."
     return f"entraîné {approx}{when} ({dur})"
 
 

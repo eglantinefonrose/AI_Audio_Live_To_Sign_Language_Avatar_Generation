@@ -18,7 +18,8 @@
 #
 # Hyperparamètres surchargeables par variable d'environnement :
 #   MODEL, DATA (défaut : dataset le plus récent de finetune/data/), ADAPTERS,
-#   ITERS, NUM_LAYERS, LR
+#   ITERS, NUM_LAYERS, LR, VAL_BATCHES (lots de validation par éval, défaut 25 ;
+#   chaque lot = une passe avant, ~9 s sur un 9B : baisse-le pour les gros modèles)
 #   GRAD_CHECKPOINT=1 : gradient checkpointing (beaucoup moins de mémoire, ~20-30 %
 #   plus lent) — recommandé au-delà de 3B sur 16 Go.
 set -euo pipefail
@@ -30,6 +31,7 @@ ADAPTERS="${ADAPTERS:-finetune/adapters}"
 ITERS="${ITERS:-300}"
 NUM_LAYERS="${NUM_LAYERS:-8}"
 LR="${LR:-1e-4}"
+VAL_BATCHES="${VAL_BATCHES:-25}"
 GRAD_CHECKPOINT="${GRAD_CHECKPOINT:-0}"
 EXTRA_ARGS=()
 [[ "$GRAD_CHECKPOINT" == "1" ]] && EXTRA_ARGS+=(--grad-checkpoint)
@@ -51,7 +53,7 @@ STARTED_AT="$(date '+%Y-%m-%dT%H:%M:%S%z')"
   echo "Modèle  : $MODEL"
   echo "Données : $TRAIN_DATA (train_sha $TRAIN_SHA)${DATA:+  ← $DATA}"
   echo "Adaptateur : $ADAPTERS"
-  echo "Params  : iters=$ITERS  num_layers=$NUM_LAYERS  lr=$LR  batch=1  mask-prompt  grad_checkpoint=$GRAD_CHECKPOINT"
+  echo "Params  : iters=$ITERS  num_layers=$NUM_LAYERS  lr=$LR  batch=1  mask-prompt  grad_checkpoint=$GRAD_CHECKPOINT  val_batches=$VAL_BATCHES"
   echo "---"
 } | tee "$LOG"
 
@@ -60,7 +62,7 @@ uv run mlx_lm.lora \
   --model "$MODEL" \
   --train --data "$TRAIN_DATA" --adapter-path "$ADAPTERS" \
   --mask-prompt --batch-size 1 --num-layers "$NUM_LAYERS" --iters "$ITERS" \
-  --learning-rate "$LR" --steps-per-eval 50 --steps-per-report 25 \
+  --learning-rate "$LR" --steps-per-eval 50 --steps-per-report 25 --val-batches "$VAL_BATCHES" \
   ${EXTRA_ARGS[@]+"${EXTRA_ARGS[@]}"} \
   2>&1 | tee -a "$LOG"
 
@@ -78,7 +80,7 @@ VAL_LOSS="$(grep -oE 'Val loss [0-9.]+' "$LOG" | tail -1 | awk '{print $3}' || t
 STARTED_AT="$STARTED_AT" ENDED_AT="$ENDED_AT" DURATION_S="$DUR" VAL_LOSS="$VAL_LOSS" \
 MODEL="$MODEL" DATA="$DATA" TRAIN_DATA="$TRAIN_DATA" TRAIN_SHA="$TRAIN_SHA" \
 ADAPTERS="$ADAPTERS" ITERS="$ITERS" \
-NUM_LAYERS="$NUM_LAYERS" LR="$LR" GRAD_CHECKPOINT="$GRAD_CHECKPOINT" LOG="$LOG" \
+NUM_LAYERS="$NUM_LAYERS" LR="$LR" VAL_BATCHES="$VAL_BATCHES" GRAD_CHECKPOINT="$GRAD_CHECKPOINT" LOG="$LOG" \
 uv run python - <<'PY'
 import json, os, subprocess
 from pathlib import Path
@@ -97,7 +99,8 @@ meta = {
     "base_model": env["MODEL"],
     "hyperparams": {"iters": int(env["ITERS"]), "num_layers": int(env["NUM_LAYERS"]),
                     "learning_rate": float(env["LR"]), "batch_size": 1, "mask_prompt": True,
-                    "grad_checkpoint": env["GRAD_CHECKPOINT"] == "1"},
+                    "grad_checkpoint": env["GRAD_CHECKPOINT"] == "1",
+                    "val_batches": int(env["VAL_BATCHES"])},
     "final_val_loss": float(env["VAL_LOSS"]) if env.get("VAL_LOSS") else None,
     "data_dir": env["DATA"] or str(snapshot),
     "train_sha": env["TRAIN_SHA"],

@@ -1,0 +1,61 @@
+{
+  "tag": "lsf-qwen3b:v3",
+  "ollama_digest": "bf8692ba96b3c4fe902",
+  "quantization": null,
+  "registered_at": "2026-10-21T00:32:49+0200",
+  "training": {
+    "started_at": "2026-10-19T21:09:47+0200",
+    "ended_at": "2026-10-20T09:47:11+0200",
+    "duration_s": 45444,
+    "approximate": false,
+    "interrupted": true,
+    "interruption_note": "Run arrêté à la main à l'itération 525/800 (Mac trop chargé) ; adaptateur retenu = checkpoint 500 (identique à adapters.safetensors). Durée = temps écoulé jusqu'au checkpoint 500, Mac en veille possible pendant la nuit : ne reflète pas la vitesse d'entraînement.",
+    "base_model": "mlx-community/Qwen2.5-3B-Instruct-4bit",
+    "hyperparams": {
+      "iters": 500,
+      "iters_planned": 800,
+      "num_layers": 8,
+      "learning_rate": 0.0001,
+      "batch_size": 1,
+      "mask_prompt": true,
+      "grad_checkpoint": false
+    },
+    "final_val_loss": 0.205,
+    "val_loss_history": {
+      "1": 2.27,
+      "50": 0.464,
+      "100": 0.319,
+      "150": 0.294,
+      "200": 0.275,
+      "250": 0.287,
+      "300": 0.211,
+      "350": 0.179,
+      "400": 0.215,
+      "450": 0.19,
+      "500": 0.205
+    },
+    "data_dir": "finetune/data/2184f8f3751e",
+    "train_sha": "2184f8f3751e",
+    "train_snapshot": "finetune/data/2184f8f3751e",
+    "dataset_manifest": {
+      "created": "2026-10-19T21:09:31",
+      "teacher": "claude-opus-5-5 (rédaction manuelle, conventions v1, 100 % français)",
+      "prompt_hash": "b9f4c4860f4a",
+      "synthetic": true,
+      "human_validated": false,
+      "generated": 453,
+      "accepted": 453,
+      "train": 408,
+      "valid": 45,
+      "drops": {},
+      "per_category": 25,
+      "seed": 0,
+      "eval_excluded": 74,
+      "source": "pairs",
+      "conventions_sha": "becbdc52032f"
+    },
+    "git_commit": "4d5ff73",
+    "git_dirty": true,
+    "log": "finetune/logs/train_20261019-210947.log"
+  }
+}

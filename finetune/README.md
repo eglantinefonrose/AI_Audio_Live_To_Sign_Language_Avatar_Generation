@@ -248,6 +248,45 @@ Pour la model card HF, `publish_hf.py` lit la base dans `training_meta.json`
 > ⚠️ La fusion `--de-quantize` d'un 7B matérialise ~15 Go de poids fp16 : sur
 > 16 Go de RAM, attends-toi à du swap. Ferme les autres applications.
 
+## Variante Gemma 2 (9B)
+
+Le chat template de Gemma 2 n'a **pas de rôle `system`** (« System role not
+supported » dès le premier exemple). On dérive donc une variante du dataset où le
+system est placé en tête du premier message user, rangée sous son propre hash :
+
+```bash
+uv run python finetune/gemma_variant.py finetune/data/2184f8f3751e
+# -> eaa7c0947e75 finetune/data/eaa7c0947e75   (manifeste : variant + derived_from)
+```
+
+Les variantes ne sont jamais choisies par défaut par `train.sh` (passe `DATA=`).
+Test court (20 itér.) pour mesurer vitesse et mémoire avant un vrai run sur 16 Go ;
+`--steps-per-report 10` car `It/sec` est calculé sur `steps_per_report` pas,
+donc faux si `iters` n'en est pas un multiple :
+
+Sur M1 Pro 16 Go, sans `MLX_MAX_OPS_PER_BUFFER`/`MLX_MAX_MB_PER_BUFFER`, le premier
+pas plante (`kIOGPUCommandBufferCallbackErrorImpactingInteractivity` : le chien de
+garde GPU de macOS tue un command buffer trop long). Avec ces variables et
+`--num-layers 4` : ~12 s/itér., pic mémoire 10,5 Go, ~9 s par lot de validation.
+
+```bash
+MLX_MAX_OPS_PER_BUFFER=10 MLX_MAX_MB_PER_BUFFER=10 caffeinate -i uv run mlx_lm.lora \
+  --model mlx-community/gemma-2-9b-it-4bit \
+  --train --data finetune/data/eaa7c0947e75 --adapter-path finetune/adapters-gemma-test \
+  --mask-prompt --batch-size 1 --num-layers 4 --iters 20 --learning-rate 1e-4 \
+  --steps-per-report 10 --steps-per-eval 20 --val-batches 2 --grad-checkpoint \
+  2>&1 | tee finetune/logs/test_gemma_$(date +%Y%m%d-%H%M%S).log
+```
+
+Vrai run (~2 h ; `VAL_BATCHES=10` pour ne pas passer ~40 min en évaluations) :
+
+```bash
+MLX_MAX_OPS_PER_BUFFER=10 MLX_MAX_MB_PER_BUFFER=10 \
+  MODEL=mlx-community/gemma-2-9b-it-4bit DATA=finetune/data/eaa7c0947e75 \
+  ADAPTERS=finetune/adapters-gemma9b ITERS=500 NUM_LAYERS=4 GRAD_CHECKPOINT=1 \
+  VAL_BATCHES=10 caffeinate -i ./finetune/train.sh
+```
+
 ## Variante sans Ollama
 
 Au lieu des étapes 4-5, tu peux servir directement l'adaptateur en MLX :

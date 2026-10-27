@@ -1,0 +1,20 @@
+{
+  "created": "2026-10-27T11:32:09",
+  "teacher": "claude-opus-5-5 (rédaction manuelle, conventions v1, 100 % français)",
+  "prompt_hash": "b9f4c4860f4a",
+  "synthetic": true,
+  "human_validated": false,
+  "generated": 453,
+  "accepted": 453,
+  "train": 408,
+  "valid": 45,
+  "drops": {},
+  "per_category": 25,
+  "seed": 0,
+  "eval_excluded": 74,
+  "source": "pairs",
+  "conventions_sha": "becbdc52032f",
+  "variant": "gemma-no-system",
+  "variant_note": "system fusionné en tête du 1er message user (Gemma 2 n'a pas de rôle system)",
+  "derived_from": "2184f8f3751e"
+}

@@ -57,7 +57,10 @@ def latest() -> Path:
             if c:
                 return c
         return "0000"   # sans manifeste : passe après les datasets datés
-    found = datasets()
+    def is_variant(d: Path) -> bool:   # variantes dérivées (ex. gemma_variant.py) : jamais par défaut
+        m = d / "manifest.json"
+        return m.exists() and "variant" in json.loads(m.read_text(encoding="utf-8"))
+    found = [d for d in datasets() if not is_variant(d)]
     if not found:
         sys.exit(f"Aucun dataset dans {_rel(DATA_DIR)}/ : lance finetune/build_dataset.py.")
     return max(found, key=lambda d: (created(d), (d / "train.jsonl").stat().st_mtime))
