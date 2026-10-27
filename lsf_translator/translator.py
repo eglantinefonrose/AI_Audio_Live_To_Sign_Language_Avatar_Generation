@@ -126,7 +126,15 @@ class LSFTranslator:
             return []
 
         content = self._extract_content(response)
-        return self._parse_glosses(content, text)
+        glosses = self._parse_glosses(content, text)
+        if glosses and self.config.postprocess:
+            # Import local : `python -m lsf_translator.postprocess` reste propre.
+            from lsf_translator.postprocess import postprocess
+            raw = glosses
+            glosses, rules = postprocess(text, raw)
+            if rules:
+                log.debug("Post-traitement %s : %s -> %s", rules, raw, glosses)
+        return glosses
 
     async def translate_event(self, sentence: TranscriptEvent) -> GlossEvent:
         """Traduit une phrase (interface neutre) en `GlossEvent`.

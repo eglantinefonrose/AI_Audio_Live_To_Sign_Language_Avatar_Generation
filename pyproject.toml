@@ -17,6 +17,7 @@ dependencies = [
     # --- Téléchargement des poids Kyutai depuis Hugging Face ---
     "huggingface-hub>=0.23",
     "mlx-lm>=0.26.4",
+    "simplemma>=2.0.0",
 ]
 
 [project.optional-dependencies]

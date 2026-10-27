@@ -287,6 +287,39 @@ MLX_MAX_OPS_PER_BUFFER=10 MLX_MAX_MB_PER_BUFFER=10 \
   VAL_BATCHES=10 caffeinate -i ./finetune/train.sh
 ```
 
+Import Ollama : pas de safetensors direct (Ollama 0.40 quantifie les safetensors via
+son moteur MLX, qui refuse `Gemma2ForCausalLM`). Fusion fp16, puis GGUF avec
+llama.cpp (`brew install llama.cpp` pour `llama-quantize` ; `convert_hf_to_gguf.py`
+vient du dépôt llama.cpp, même version). Le convertisseur gemma exige
+`tokenizer.model`, absent du repo mlx-community : le copier depuis
+`unsloth/gemma-2-9b-it` (même vocabulaire). Le `TEMPLATE` de
+`finetune/Modelfile.gemma9b` place le system dans le 1er message user, comme à
+l'entraînement.
+
+```bash
+uv run mlx_lm.fuse --model mlx-community/gemma-2-9b-it-4bit \
+  --adapter-path finetune/adapters-gemma9b --save-path finetune/fused-gemma9b --de-quantize
+uv run --with <llama.cpp>/gguf-py --with sentencepiece --with "protobuf<5" \
+  python <llama.cpp>/convert_hf_to_gguf.py finetune/fused-gemma9b --outtype bf16 \
+  --outfile finetune/fused-gemma9b-gguf/lsf-gemma9b-v1-bf16.gguf
+llama-quantize finetune/fused-gemma9b-gguf/lsf-gemma9b-v1-bf16.gguf \
+  finetune/fused-gemma9b-gguf/lsf-gemma9b-v1-Q4_K_M.gguf Q4_K_M
+uv run python finetune/register_ollama.py lsf-gemma9b:v1 --modelfile finetune/Modelfile.gemma9b \
+  --meta finetune/adapters-gemma9b/training_meta.json
+```
+
+Publication HF : repo séparé (licence **Gemma**, déduite de la base par
+`publish_hf.py`), avec le GGUF et le Modelfile pour servir sans refaire la chaîne :
+
+```bash
+uv run python finetune/publish_hf.py --model-repo <user>/lsf-gemma9b --version v1 \
+  --adapters finetune/adapters-gemma9b \
+  --eval eval/results/<record prompt prod>.json --eval eval/results/<record règles seules>.json \
+  --modelfile finetune/Modelfile.gemma9b \
+  --gguf finetune/fused-gemma9b-gguf/lsf-gemma9b-v1-Q4_K_M.gguf \
+  --dataset-repo <user>/lsf-fr-gloss
+```
+
 ## Variante sans Ollama
 
 Au lieu des étapes 4-5, tu peux servir directement l'adaptateur en MLX :

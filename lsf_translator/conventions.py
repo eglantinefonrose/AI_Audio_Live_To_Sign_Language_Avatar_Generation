@@ -90,6 +90,35 @@ def _strip(s: str) -> str:
                    if unicodedata.category(c) != "Mn")
 
 
+# Repères de temps non glosables en un signe isolé : leur présence dispense de
+# AVANT/BIENTÔT (on ne sait pas les remplacer, mais on n'en ajoute pas).
+OTHER_TIME_RE = re.compile(r"tout à l'heure|\bdans \w+ (jours?|semaines?|mois|ans?)\b|"
+                           r"\b(semaine|année|mois) (prochaine?|dernière?)\b|"
+                           r"\b(lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche)\b|"
+                           r"\bbientôt\b|\bdéjà\b|\b\w+ heures?\b")
+NEAR_FUTURE_RE = re.compile(r"\b(vais|vas|va|allons|allez|vont)\s+((vous|te|me|le|la|les|lui|leur|nous|t'|m')\s*)?"
+                            r"\w+(er|ir|re|oir)\b")
+
+
+def explicit_times(text: str) -> set[str]:
+    """Gloses des temps explicites de la phrase (HIER, DEMAIN, SOIR…)."""
+    low = text.lower()
+    return {gl for w, gl in EXPLICIT_TIME.items() if re.search(rf"\b{re.escape(w)}\b", low)}
+
+
+def implicit_time(text: str) -> str | None:
+    """Marqueur de temps attendu en tête faute de temps explicite (règle 9) :
+    "AVANT" (passé), "BIENTÔT" (futur), ou None."""
+    low = text.lower()
+    if explicit_times(text) or OTHER_TIME_RE.search(low):
+        return None
+    if PAST_RE.search(low):
+        return "AVANT"
+    if any(m.group(0).split()[-1] not in NOT_FUTURE for m in FUTURE_RE.finditer(low)):
+        return "BIENTÔT"
+    return None
+
+
 def check(text: str, glosses: list[str]) -> list[str]:
     """Liste des écarts aux conventions (vide = conforme)."""
     errs: list[str] = []
@@ -150,7 +179,7 @@ def check(text: str, glosses: list[str]) -> list[str]:
             errs.append(f"terme « {src} » non repris tel quel ({gl})")
 
     # 7. Temps : explicite gardé, pas de AVANT/BIENTÔT en plus, temps en tête
-    explicit = {gl for w, gl in EXPLICIT_TIME.items() if re.search(rf"\b{re.escape(w)}\b", low)}
+    explicit = explicit_times(text)
     for gl in explicit:
         if gl not in g:
             errs.append(f"temps explicite non gardé ({gl})")
@@ -167,10 +196,7 @@ def check(text: str, glosses: list[str]) -> list[str]:
                 break
 
     # 7 bis. Passé / futur sans temps explicite -> AVANT / BIENTÔT en tête
-    no_time = not explicit and not re.search(r"tout à l'heure|\bdans \w+ (jours?|semaines?|mois|ans?)\b|"
-                                             r"\b(semaine|année|mois) (prochaine?|dernière?)\b|"
-                                             r"\b(lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche)\b|"
-                                             r"\bbientôt\b|\bdéjà\b|\b\w+ heures?\b", low)
+    no_time = not explicit and not OTHER_TIME_RE.search(low)
     fut = [m.group(0) for m in FUTURE_RE.finditer(low)
            if m.group(0).split()[-1] not in NOT_FUTURE and not m.group(0).startswith(("va ", "vas "))
            or m.group(0).startswith(("va ", "vas ")) and m.group(0).split()[-1] not in NOT_FUTURE]
@@ -178,8 +204,7 @@ def check(text: str, glosses: list[str]) -> list[str]:
         errs.append("passé sans temps explicite : AVANT attendu en tête")
     if no_time and fut and "BIENTÔT" not in g:
         errs.append(f"futur sans temps explicite (« {fut[0]} ») : BIENTÔT attendu en tête")
-    if re.search(r"\b(vais|vas|va|allons|allez|vont)\s+((vous|te|me|le|la|les|lui|leur|nous|t'|m')\s*)?"
-                 r"\w+(er|ir|re|oir)\b", low) and "ALLER" in g:
+    if NEAR_FUTURE_RE.search(low) and "ALLER" in g:
         errs.append("« aller » + infinitif glosé ALLER (futur proche → BIENTÔT)")
 
     # 4 bis. Pronoms sujets et possessifs de la source -> pointages présents

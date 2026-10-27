@@ -488,6 +488,7 @@ dependencies = [
     { name = "moshi" },
     { name = "numpy" },
     { name = "ollama" },
+    { name = "simplemma" },
     { name = "sounddevice" },
     { name = "torch" },
 ]
@@ -505,6 +506,7 @@ requires-dist = [
     { name = "moshi-mlx", marker = "extra == 'mlx'", specifier = ">=0.2.0" },
     { name = "numpy", specifier = ">=1.24" },
     { name = "ollama", specifier = ">=0.3.0" },
+    { name = "simplemma", specifier = ">=2.0.0" },
     { name = "sounddevice", specifier = ">=0.4.6" },
     { name = "torch", specifier = ">=2.2.0" },
 ]
@@ -1349,6 +1351,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/6d/44/f5da03a8ef95d369145c5bb53050e7877c9f3d312e128605fd9504829143/setuptools-84.0.0.tar.gz", hash = "sha256:f4695c21257f0d9b537ec2692c941d02ee143b7cc1276941349a546573b2ef73", size = 1168449, upload-time = "2026-08-08T18:27:58.365Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/95/9c/c510029fc6ef33a6275cd2c5d3cecd6613dfd6aa401d57c54f1c18852ccf/setuptools-84.0.0-py3-none-any.whl", hash = "sha256:51a52592b3b99e102b609654876bd65f19f999935166d1352678931132b0c670", size = 818216, upload-time = "2026-08-08T18:27:56.719Z" },
+]
+
+[[package]]
+name = "simplemma"
+version = "2.0.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/09/bf/c5f923da5eb468c6d4a86c6b3250ef92470a0d31bb51cd7d2fbbea22b7c0/simplemma-2.0.0.tar.gz", hash = "sha256:03f9ba792aa51ebbe18a78fc3138c0c0087d81b284eefa534f6f2015233dcb8d", size = 19084504, upload-time = "2026-08-12T13:48:07.179Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e2/e4/078d18631ce1c012af0f25e753f473745c0b139757334175a76d6b910c82/simplemma-2.0.0-py3-none-any.whl", hash = "sha256:db33b15f5aed6485a748ce34d1f510ca760af2633289ab9a8493e2afa785c352", size = 18954708, upload-time = "2026-08-12T13:47:55.162Z" },
 ]
 
 [[package]]

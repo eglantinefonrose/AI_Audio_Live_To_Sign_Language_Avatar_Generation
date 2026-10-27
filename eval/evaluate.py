@@ -25,11 +25,15 @@ Usage :
     uv run python eval/evaluate.py --save --label "..."  # mesure + archive
     uv run python eval/evaluate.py --model qwen2.5:7b
     uv run python eval/evaluate.py --quiet               # agrégats seulement
+    uv run python eval/evaluate.py --postprocess         # + post-traitement déterministe
+                                                         # (lsf_translator/postprocess.py)
+    uv run python eval/evaluate.py --dataset eval/dev.jsonl   # jeu de DEV (mise au point)
 """
 from __future__ import annotations
 
 import argparse
 import hashlib
+import inspect
 import json
 import shutil
 import subprocess
@@ -45,6 +49,7 @@ if str(PROJECT) not in sys.path:
 from ollama import Client
 
 from config import CONFIG
+from lsf_translator import conventions, lexicon, postprocess
 from lsf_translator.prompts import (
     FEW_SHOT_EXAMPLES,
     GLOSS_JSON_SCHEMA,
@@ -107,6 +112,23 @@ def prompt_hash(mode: str = "prod") -> str:
     if mode == "rules-only":
         return _sha(TRAIN_SYSTEM.encode("utf-8"))
     return _sha((SYSTEM_PROMPT + repr(FEW_SHOT_EXAMPLES)).encode("utf-8"))
+
+
+def postprocess_hash() -> str:
+    """Version du post-traitement (règles + détecteurs + lexique) : change dès
+    qu'une règle ou le lexique change, comme prompt_hash pour le prompt."""
+    lex = lexicon.LEXICON_PATH.read_bytes() if lexicon.LEXICON_PATH.exists() else b""
+    src = "".join(inspect.getsource(m) for m in (postprocess, lexicon, conventions))
+    return _sha(src.encode("utf-8") + lex)
+
+
+def _rel(path: Path) -> str:
+    """Chemin relatif au projet si possible (dataset hors projet : absolu)."""
+    path = path.resolve()
+    try:
+        return str(path.relative_to(PROJECT))
+    except ValueError:
+        return str(path)
 
 
 def git_info() -> tuple[str | None, bool]:
@@ -227,9 +249,9 @@ def _append_results_md(record: dict, fname: str) -> None:
         "Tableau de bord des runs d'évaluation LSF (généré par "
         "`eval/evaluate.py --save`). Une ligne par run ; `git*` = modifs non "
         "commitées au moment du run. Détail complet dans `eval/results/`.\n\n"
-        "| Date | Heure | Label | Modèle | git | Dataset éval | Dataset train "
+        "| Date | Heure | Label | Méthode | Modèle | git | Dataset éval | Dataset train "
         "| Exact | F1 | Ordre | Fuites | Record |\n"
-        "|---|---|---|---|---|---|---|---|---|---|---|---|\n"
+        "|---|---|---|---|---|---|---|---|---|---|---|---|---|\n"
     )
     if not RESULTS_MD.exists():
         RESULTS_MD.write_text(header, encoding="utf-8")
@@ -250,9 +272,12 @@ def results_row(record: dict, fname: str) -> str:
     trained = format_training(record.get("training"))
     model_cell = record["model"] + (f" ({trained})" if trained else "")
     git = (record["git_commit"] or "—") + ("*" if record["git_dirty"] else "")
+    method = record.get("method") or "aucune"
+    method_cell = "—" if method == "aucune" else \
+        f"{method} ({record['method_hash']})" if record.get("method_hash") else method
     return (
         f"| {record['timestamp'][:10]} | {record['timestamp'][11:19]} "
-        f"| {record['label']} | {model_cell} "
+        f"| {record['label']} | {method_cell} | {model_cell} "
         f"| {git} | [{record['dataset_sha']}](datasets/{record['dataset_sha']}/) "
         f"| {train_cell} "
         f"| {m['exact']*100:.0f}% | {m['f1']:.3f} | {m['order']:.3f} "
@@ -268,12 +293,19 @@ def main() -> int:
     ap.add_argument("--prompt", choices=sorted(PROMPT_BUILDERS), default="prod",
                     help="prod = règles + few-shot (défaut) ; rules-only = prompt "
                          "d'entraînement, sans exemples (pour les modèles fine-tunés).")
+    ap.add_argument("--postprocess", action="store_true",
+                    help="Applique le post-traitement déterministe aux gloses du modèle "
+                         "(lsf_translator/postprocess.py) ; le record garde la sortie brute.")
     ap.add_argument("--quiet", action="store_true", help="Agrégats seulement.")
     ap.add_argument("--save", action="store_true",
                     help="Archive le run (JSON + ligne dans RESULTS.md).")
+    ap.add_argument("--out", default=None, metavar="FICHIER.json",
+                    help="Écrit le record JSON à cet endroit SANS l'ajouter à RESULTS.md "
+                         "(essais sur le jeu de dev).")
     ap.add_argument("--label", default="(sans label)",
                     help="Description courte du run (ex. 'ajout lexique').")
     args = ap.parse_args()
+    method = "post-traitement" if args.postprocess else "aucune"
 
     rows = [json.loads(l) for l in
             Path(args.dataset).read_text(encoding="utf-8").splitlines() if l.strip()]
@@ -281,7 +313,8 @@ def main() -> int:
 
     digest = model_digest(client, args.model)
     training = training_info(args.model, digest)
-    print(f"Modèle : {args.model}  —  {len(rows)} phrases  —  prompt {args.prompt}")
+    print(f"Modèle : {args.model}  —  {len(rows)} phrases  —  prompt {args.prompt}"
+          f"  —  méthode {method}")
     if training:
         print(f"         {format_training(training)}")
         if not training["digest_match"]:
@@ -296,6 +329,10 @@ def main() -> int:
         gold = row["glosses"]
         pred = translate(client, args.model, row["text"], row.get("language", "fr"),
                          args.prompt)
+        extra: dict = {}
+        if args.postprocess:
+            extra["raw"] = pred
+            pred, extra["rules"] = postprocess.postprocess(row["text"], pred)
         _, _, f = multiset_f1(pred, gold)
         o = order_score(pred, gold)
         is_exact = pred == gold
@@ -309,16 +346,18 @@ def main() -> int:
         per_sentence.append({
             "text": row["text"], "gold": gold, "pred": pred,
             "f1": round(f, 3), "order": round(o, 3),
-            "exact": is_exact, "leak": leak,
+            "exact": is_exact, "leak": leak, **extra,
         })
 
         if not args.quiet:
             flag = "✅" if is_exact else ("🟡" if f >= 0.8 else "❌")
-            extra = f"  | fuite: {leak}" if leak else ""
+            leak_note = f"  | fuite: {leak}" if leak else ""
             print(f"{flag} {row['text']}")
             print(f"    attendu : {gold}")
             print(f"    obtenu  : {pred}")
-            print(f"    F1={f:.2f}  ordre={o:.2f}{extra}\n")
+            if extra.get("rules"):
+                print(f"    brut    : {extra['raw']}  ← {', '.join(extra['rules'])}")
+            print(f"    F1={f:.2f}  ordre={o:.2f}{leak_note}\n")
 
     n = len(rows)
     metrics = {
@@ -336,11 +375,13 @@ def main() -> int:
     for ph in sorted(by_phen_avg, key=by_phen_avg.get):
         print(f"  {ph:24s} {by_phen_avg[ph]:.2f}  (n={len(by_phen[ph])})")
 
-    if args.save:
+    if args.save or args.out:
         commit, dirty = git_info()
         tokens = measure_prompt_tokens(client, args.model, rows, args.prompt)
         ds_sha = _sha(Path(args.dataset).read_bytes())
-        snapshot = snapshot_dataset(Path(args.dataset), ds_sha)
+        # Un essai --out seul ne fige pas le dataset (pas de record archivé).
+        snapshot = snapshot_dataset(Path(args.dataset), ds_sha) if args.save \
+            else Path(args.dataset).resolve()
         now = datetime.now()
         record = {
             "label": args.label,
@@ -352,17 +393,25 @@ def main() -> int:
             "git_commit": commit, "git_dirty": dirty,
             "prompt_mode": args.prompt,
             "prompt_hash": prompt_hash(args.prompt),
+            "method": method,
+            "method_hash": postprocess_hash() if args.postprocess else None,
             "num_ctx": CONFIG.ollama.num_ctx,
             "few_shot": len(FEW_SHOT_EXAMPLES) if args.prompt == "prod" else 0,
             "prompt_tokens": tokens,
-            "dataset": str(Path(args.dataset).relative_to(PROJECT)),
+            "dataset": _rel(Path(args.dataset)),
             "dataset_sha": ds_sha,
-            "dataset_snapshot": str(snapshot.relative_to(PROJECT)),
+            "dataset_snapshot": _rel(snapshot),
             "dataset_n": n,
             "metrics": metrics,
             "by_phenomenon": by_phen_avg,
             "per_sentence": per_sentence,
         }
+        if args.out:
+            Path(args.out).write_text(json.dumps(record, ensure_ascii=False, indent=2),
+                                      encoding="utf-8")
+            print(f"\n💾  Record (hors RESULTS.md) : {args.out}")
+            if not args.save:
+                return 0
         path = save_record(record)
         warn = ""
         if tokens and tokens > CONFIG.ollama.num_ctx:

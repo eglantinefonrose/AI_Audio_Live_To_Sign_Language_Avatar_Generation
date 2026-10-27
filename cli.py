@@ -39,6 +39,8 @@ def build_config(args: argparse.Namespace):
     cfg = CONFIG
     if args.model:
         cfg = cfg.with_overrides(ollama=replace(cfg.ollama, model=args.model))
+    if args.postprocess:
+        cfg = cfg.with_overrides(ollama=replace(cfg.ollama, postprocess=True))
     if args.ollama_host:
         cfg = cfg.with_overrides(
             ollama=replace(cfg.ollama, host=args.ollama_host)
@@ -191,6 +193,8 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     p.add_argument("--list-devices", action="store_true",
                    help="Liste les périphériques d'entrée audio et quitte.")
     p.add_argument("--model", help="Modèle Ollama (défaut: config).")
+    p.add_argument("--postprocess", action="store_true",
+                   help="Post-traitement déterministe des gloses (lsf_translator/postprocess.py).")
     p.add_argument("--ollama-host", help="URL de l'instance Ollama.")
     p.add_argument("--hf-repo", help="Dépôt HF du modèle STT Kyutai.")
     p.add_argument("--stt-device", choices=["auto", "cpu", "cuda", "mps"],

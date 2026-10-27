@@ -24,9 +24,24 @@ Exemple :
       --dataset-repo mon-user/lsf-fr-gloss \
       --private
 
-⚠️  Le modèle de base (Qwen2.5-3B-Instruct) est Apache-2.0 : les dérivés sont
-    autorisés, mentionne la base et la licence dans la model card (fait ci-dessous).
+Gemma 2 (repo séparé, licence Gemma, prompt sans rôle system) :
+  uv run python finetune/publish_hf.py \
+      --model-repo mon-user/lsf-gemma9b --version v1 \
+      --adapters finetune/adapters-gemma9b \
+      --eval eval/results/<…>__lsf-gemma9b-v1__<…>.json --eval <record règles seules> \
+      --modelfile finetune/Modelfile.gemma9b \
+      --gguf finetune/fused-gemma9b-gguf/lsf-gemma9b-v1-Q4_K_M.gguf \
+      --dataset-repo mon-user/lsf-fr-gloss
+
+⚠️  Licence : déduite du modèle de base (FAMILIES). Qwen2.5 = Apache-2.0 ; Gemma =
+    Gemma Terms of Use (dérivés autorisés, mais la notice et les restrictions
+    d'usage doivent accompagner les poids : la model card les reprend).
     Données 100 % synthétiques non validées → marque le run « expérimental ».
+
+Dataset : chaque version poussée sur le repo dataset reçoit un tag = son train_sha,
+et la model card pointe sur ce tag (données exactes de l'entraînement). Un modèle
+entraîné sur une variante (ex. gemma_variant.py) publie et cite la SOURCE
+(`derived_from`) : la variante s'en déduit de façon déterministe.
 """
 from __future__ import annotations
 
@@ -41,8 +56,43 @@ from snapshot_data import latest
 PROJECT = Path(__file__).resolve().parent.parent
 ADAPTERS_DIR = PROJECT / "finetune" / "adapters"
 FUSED_DIR = PROJECT / "finetune" / "fused"
+DATA_DIR = PROJECT / "finetune" / "data"
 # Repli si training_meta.json est absent ; sinon la base vient de la provenance.
 BASE_MODEL = "mlx-community/Qwen2.5-3B-Instruct-4bit"
+
+# Licence et particularités de prompt, par famille du modèle de base.
+FAMILIES = {
+    "qwen": {
+        "license": ["license: apache-2.0"],
+        "notice": [],
+        "prompt": ["Prompt d'entraînement : `system` = règles LSF (`TRAIN_SYSTEM`),",
+                   "`user` = phrase à transcrire, réponse = `{\"glosses\": [...]}`."],
+    },
+    "gemma": {
+        "license": ["license: gemma",
+                    "license_link: https://ai.google.dev/gemma/terms"],
+        "notice": [
+            "## Licence",
+            "",
+            "Gemma is provided under and subject to the Gemma Terms of Use found at",
+            "[ai.google.dev/gemma/terms](https://ai.google.dev/gemma/terms).",
+            "",
+            "Ce modèle est une **modification** de Gemma 2 (adaptateur LoRA entraîné",
+            "sur des gloses LSF). Son usage est soumis aux mêmes conditions, dont la",
+            "[Gemma Prohibited Use Policy](https://ai.google.dev/gemma/prohibited_use_policy),",
+            "à transmettre à toute personne à qui tu redistribues ces poids.",
+            "",
+        ],
+        "prompt": ["Gemma 2 n'a **pas de rôle `system`** : à l'entraînement, les règles LSF",
+                   "(`TRAIN_SYSTEM`) sont placées en tête du **premier message user**, suivies",
+                   "d'une ligne vide puis de la phrase. Le `Modelfile` fourni reproduit ce",
+                   "rendu pour Ollama : envoie `system` + `user` normalement, il les fusionne."],
+    },
+}
+
+
+def family(base: str) -> str:
+    return "gemma" if "gemma" in base.lower() else "qwen"
 
 
 def _require_hub():
@@ -60,14 +110,16 @@ def _load_json(path: Path) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def build_model_card(version: str, manifest: dict | None, record: dict | None,
-                     dataset_repo: str | None, training: dict | None = None) -> str:
+def build_model_card(version: str, manifest: dict | None, records: list[dict],
+                     dataset_repo: str | None, training: dict | None = None,
+                     dataset_rev: str | None = None, extras: dict | None = None) -> str:
     """Construit un README.md (model card) à partir de la provenance disponible."""
-    m = record.get("metrics", {}) if record else {}
+    extras = extras or {}
     base = (training or {}).get("base_model") or BASE_MODEL
+    fam = FAMILIES[family(base)]
     lines = [
         "---",
-        "license: apache-2.0",
+        *fam["license"],
         f"base_model: {base}",
         "tags:",
         "  - lsf",
@@ -96,6 +148,10 @@ def build_model_card(version: str, manifest: dict | None, record: dict | None,
             f"- **Dataset synthétique** : {manifest.get('synthetic', True)}, "
             f"validé humain : {manifest.get('human_validated', False)}",
         ]
+        if manifest.get("variant"):
+            lines.append(f"- **Variante** : `{manifest['variant']}` dérivée de "
+                         f"`{manifest.get('derived_from', '?')}` "
+                         f"({manifest.get('variant_note', 'finetune/gemma_variant.py')})")
     if training:
         d = training.get("duration_s")
         approx = " (approximatif, reconstitué)" if training.get("approximate") else ""
@@ -110,25 +166,47 @@ def build_model_card(version: str, manifest: dict | None, record: dict | None,
             f"- **Val loss finale** : {training.get('final_val_loss', '?')}",
         ]
     if dataset_repo:
-        lines.append(f"- **Dataset** : [`{dataset_repo}`](https://huggingface.co/datasets/{dataset_repo})")
-    if m:
+        url = f"https://huggingface.co/datasets/{dataset_repo}"
+        if dataset_rev:
+            url += f"/tree/{dataset_rev}"
+        lines.append(f"- **Dataset** : [`{dataset_repo}`"
+                     f"{f' @ {dataset_rev}' if dataset_rev else ''}]({url})")
+    scored = [r for r in records if r.get("metrics")]
+    if scored:
+        modes = {"prod": "prod (règles + few-shot)", "rules-only": "règles seules (prompt d'entraînement)"}
         lines += [
             "",
             "## Évaluation",
             "",
-            f"Mesuré avec `eval/evaluate.py` sur `{record.get('dataset', '?')}` "
-            f"({record.get('dataset_n', '?')} phrases).",
+            f"Mesuré avec `eval/evaluate.py` sur `{scored[0].get('dataset', '?')}` "
+            f"(sha `{scored[0].get('dataset_sha', '?')}`, {scored[0].get('dataset_n', '?')} phrases).",
             "",
-            "| Exact | F1 | Ordre | Fuites |",
-            "|---|---|---|---|",
-            f"| {m.get('exact', 0)*100:.0f}% | {m.get('f1', 0):.3f} | "
-            f"{m.get('order', 0):.3f} | {m.get('leaks', '?')} |",
+            "| Prompt | Exact | F1 | Ordre | Fuites |",
+            "|---|---|---|---|---|",
+        ]
+        for r in scored:
+            m = r["metrics"]
+            lines.append(f"| {modes.get(r.get('prompt_mode'), r.get('prompt_mode') or '?')} | "
+                         f"{m.get('exact', 0)*100:.0f}% | {m.get('f1', 0):.3f} | "
+                         f"{m.get('order', 0):.3f} | {m.get('leaks', '?')} |")
+        if not any(r.get("prompt_mode") == "rules-only" for r in scored):
+            lines += ["",
+                      "> ⚠️ Aucune éval avec le **prompt d'entraînement** (règles seules) :",
+                      "> le score peut être sous- ou sur-évalué."]
+    lines += ["", "## Format du prompt", "", *fam["prompt"], ""]
+    if extras.get("gguf"):
+        lines += [
+            "## Usage (Ollama)",
             "",
-            "> ⚠️ Vérifie que l'éval a utilisé le **même prompt** qu'à l'entraînement",
-            "> (règles seules, sans few-shot), sinon le score est sous-évalué.",
+            f"`{extras['gguf']}` (GGUF, llama.cpp) + `Modelfile` (template et règles LSF) :",
+            "",
+            "```bash",
+            f"huggingface-cli download {extras.get('repo', '<ce-repo>')} --local-dir lsf-model",
+            "cd lsf-model && ollama create lsf -f Modelfile",
+            "```",
+            "",
         ]
     lines += [
-        "",
         "## Usage (MLX)",
         "",
         "```bash",
@@ -136,6 +214,7 @@ def build_model_card(version: str, manifest: dict | None, record: dict | None,
         "  --adapter-path adapters --prompt \"...\"",
         "```",
         "",
+        *fam["notice"],
         f"_Publié le {datetime.now(timezone.utc).strftime('%Y-%m-%d')}._",
         "",
     ]
@@ -207,12 +286,17 @@ def main() -> int:
                     help="Tag de version, ex. v1 (requis avec --model-repo).")
     ap.add_argument("--adapters", default=str(ADAPTERS_DIR),
                     help="Dossier de l'adaptateur LoRA à publier.")
-    ap.add_argument("--eval", dest="eval_path", default=None,
-                    help="Record d'éval JSON de cette version (eval/results/...).")
+    ap.add_argument("--eval", dest="eval_paths", action="append", default=[],
+                    help="Record d'éval JSON de cette version (eval/results/...). "
+                         "Répétable (ex. prompt prod + règles seules).")
     ap.add_argument("--manifest", default=None,
                     help="Manifeste du dataset (défaut : <dataset>/manifest.json).")
     ap.add_argument("--fused", nargs="?", const=str(FUSED_DIR), default=None,
                     help="Publier AUSSI le modèle fusionné (~6 Go). Lourd.")
+    ap.add_argument("--gguf", default=None,
+                    help="Publier AUSSI un GGUF prêt à servir (ex. Q4_K_M), dans gguf/.")
+    ap.add_argument("--modelfile", default=None,
+                    help="Modelfile Ollama à publier (FROM réécrit vers le GGUF publié).")
     ap.add_argument("--dataset-repo", default=None,
                     help="Repo dataset, ex. mon-user/lsf-fr-gloss (optionnel).")
     ap.add_argument("--data", default=None,
@@ -228,7 +312,8 @@ def main() -> int:
     if args.model_repo and not args.version:
         sys.exit("--version est requis avec --model-repo (ex. --version v1).")
 
-    record = _load_json(Path(args.eval_path)) if args.eval_path else None
+    records = [_load_json(Path(p)) for p in args.eval_paths]
+    record = records[0] if records else None
     adapters = Path(args.adapters)
 
     # Provenance d'entraînement : celle du record d'éval (rattachée au tag
@@ -246,10 +331,17 @@ def main() -> int:
         data_dir = PROJECT / snap
     else:
         data_dir = latest()
-    args.data = str(data_dir)
     manifest_path = Path(args.manifest) if args.manifest else data_dir / "manifest.json"
     args.manifest = str(manifest_path)
     manifest = _load_json(manifest_path) if manifest_path.exists() else None
+    # Variante (ex. gemma_variant.py) : on publie et cite la SOURCE, dont la
+    # variante se déduit de façon déterministe ; le manifeste de la variante reste
+    # celui poussé avec le modèle.
+    source = (manifest or {}).get("derived_from")
+    if source and not args.data and (DATA_DIR / source).is_dir():
+        data_dir = DATA_DIR / source
+    args.data = str(data_dir)
+    dataset_rev = data_dir.name if args.dataset_repo else None   # tag = train_sha
 
     card = None
     if args.model_repo:
@@ -258,22 +350,33 @@ def main() -> int:
         if not training:
             print("⚠️  Aucune date d'entraînement (training_meta.json absent) : "
                   "entraîne via ./finetune/train.sh.")
-        card = build_model_card(args.version, manifest, record, args.dataset_repo, training)
+        if args.modelfile and not args.gguf:
+            sys.exit("--modelfile sans --gguf : le FROM pointerait sur des poids non publiés.")
+        extras = {"repo": args.model_repo}
+        if args.gguf:
+            extras["gguf"] = f"gguf/{Path(args.gguf).name}"
+        card = build_model_card(args.version, manifest, records, args.dataset_repo, training,
+                                dataset_rev, extras)
 
     # Récapitulatif de ce qui part.
     print(f"── Publication ({'privé' if args.private else 'public'}) ──")
     if args.model_repo:
         print(f"  modèle → {args.model_repo} @ {args.version}")
         print(f"    adapters/       ← {adapters}")
-        if record:
-            print(f"    eval/{Path(args.eval_path).name}  ← {args.eval_path}")
+        for path in args.eval_paths:
+            print(f"    eval/{Path(path).name}  ← {path}")
         if manifest:
             print(f"    manifest.json   ← {args.manifest}")
         if args.fused:
             print(f"    fused/          ← {args.fused}  (⚠️ ~6 Go)")
+        if args.gguf:
+            size = Path(args.gguf).stat().st_size / 1e9
+            print(f"    gguf/{Path(args.gguf).name}  ← {args.gguf}  ({size:.1f} Go)")
+        if args.modelfile:
+            print(f"    Modelfile       ← {args.modelfile}  (FROM → ./gguf/{Path(args.gguf).name})")
         print(f"    README.md       ← model card auto ({len(card)} car.)")
     if args.dataset_repo:
-        print(f"  dataset → {args.dataset_repo}  ← {args.data}  (+ card auto)")
+        print(f"  dataset → {args.dataset_repo} @ tag {dataset_rev}  ← {args.data}  (+ card auto)")
 
     if args.dry_run:
         tail = ("\n--- model card ---\n" + card) if card else ""
@@ -292,10 +395,10 @@ def main() -> int:
         api.upload_file(repo_id=args.model_repo, path_in_repo="README.md",
                         path_or_fileobj=card.encode("utf-8"),
                         commit_message=f"{args.version}: model card")
-        if record:
+        for path in args.eval_paths:
             api.upload_file(repo_id=args.model_repo,
-                            path_in_repo=f"eval/{Path(args.eval_path).name}",
-                            path_or_fileobj=args.eval_path,
+                            path_in_repo=f"eval/{Path(path).name}",
+                            path_or_fileobj=path,
                             commit_message=f"{args.version}: éval")
         if manifest:
             api.upload_file(repo_id=args.model_repo, path_in_repo="manifest.json",
@@ -305,6 +408,17 @@ def main() -> int:
             api.upload_folder(repo_id=args.model_repo, folder_path=args.fused,
                               path_in_repo="fused",
                               commit_message=f"{args.version}: modèle fusionné")
+        if args.gguf:
+            api.upload_file(repo_id=args.model_repo, path_in_repo=extras["gguf"],
+                            path_or_fileobj=args.gguf,
+                            commit_message=f"{args.version}: GGUF")
+        if args.modelfile:
+            # FROM local (./fused-…) → GGUF publié, chemin relatif à la racine du repo.
+            mf = Path(args.modelfile).read_text(encoding="utf-8").splitlines()
+            mf = [f"FROM ./{extras['gguf']}" if l.startswith("FROM ") else l for l in mf]
+            api.upload_file(repo_id=args.model_repo, path_in_repo="Modelfile",
+                            path_or_fileobj="\n".join(mf).encode("utf-8") + b"\n",
+                            commit_message=f"{args.version}: Modelfile Ollama")
 
         # 2) Tag immuable de la version (pointe sur le dernier commit de main).
         try:
@@ -316,6 +430,9 @@ def main() -> int:
 
     # 3) Dataset (repo séparé, optionnel).
     if args.dataset_repo:
+        # Manifeste du dataset POUSSÉ (la source, si le modèle a appris sur une variante).
+        dm = Path(args.data) / "manifest.json"
+        data_manifest = _load_json(dm) if dm.exists() else manifest
         api.create_repo(args.dataset_repo, repo_type="dataset",
                         private=args.private, exist_ok=True)
         api.upload_folder(repo_id=args.dataset_repo, repo_type="dataset",
@@ -325,9 +442,13 @@ def main() -> int:
         # (train/valid au format chat + pairs au format lisible = schémas mixtes).
         api.upload_file(repo_id=args.dataset_repo, repo_type="dataset",
                         path_in_repo="README.md",
-                        path_or_fileobj=build_dataset_card(manifest).encode("utf-8"),
+                        path_or_fileobj=build_dataset_card(data_manifest).encode("utf-8"),
                         commit_message="dataset card + config splits")
-        print(f"✅ dataset + card poussés → {args.dataset_repo}")
+        try:   # tag = train_sha : la model card pointe sur ces données exactes
+            api.create_tag(args.dataset_repo, tag=dataset_rev, repo_type="dataset")
+        except Exception as exc:   # déjà taggé (même contenu) : on ne réécrit pas
+            print(f"⚠️  tag dataset {dataset_rev} non posé ({exc}).")
+        print(f"✅ dataset + card poussés → {args.dataset_repo} @ {dataset_rev}")
 
     print("")
     if args.model_repo:

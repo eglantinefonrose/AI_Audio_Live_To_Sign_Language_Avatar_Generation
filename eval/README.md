@@ -125,6 +125,33 @@ git commit -m "prompt: ... (F1 0.87 -> 0.96)"
 > aussi un champ `training` (date, durée, hyperparamètres, val loss) et la ligne
 > de `RESULTS.md` affiche la date d'entraînement à côté du modèle.
 
+### Post-traitement déterministe
+
+`--postprocess` applique aux gloses du modèle les corrections de
+`lsf_translator/postprocess.py` : règles de CONVENTIONS.md vérifiables à partir
+de la phrase source (temps AVANT/BIENTÔT, QUESTION / interrogatif en fin,
+négation après le verbe, ils/elles -> EUX, verbes directionnels, possessifs,
+lexique imposé, orthographe des mots source, gloses inventées). Le modèle et le
+prompt ne changent pas. La colonne « Méthode » de `RESULTS.md` affiche
+`post-traitement (<hash>)` : le hash change dès qu'une règle ou le lexique
+change, comme `prompt_hash` pour le prompt. Le record garde, par phrase, la
+sortie brute du modèle (`raw`) et les règles appliquées (`rules`). La prod
+utilise le même code (`config.py: OllamaConfig.postprocess`, `cli.py --postprocess`).
+
+**Mise au point sur le jeu de DEV, jamais sur l'éval** : `eval/dev.jsonl` = le
+split valid de `finetune/data/2184f8f3751e` (45 phrases, ni train ni éval).
+`--out` écrit le record sans l'ajouter à `RESULTS.md` :
+
+```bash
+uv run python eval/evaluate.py --model lsf-gemma9b:v1 --postprocess \
+  --dataset eval/dev.jsonl --out /tmp/dev_pp.json
+```
+
+Garde-fou sans LLM : `python -m lsf_translator.postprocess` applique les règles
+aux gloses de RÉFÉRENCE (train + dev) et doit n'en modifier aucune. Le lexique
+(`lsf_translator/lexicon.txt`) vient du seul split train :
+`python -m lsf_translator.lexicon finetune/data/<sha>`.
+
 ## Format du dataset (`dataset.jsonl`)
 
 Un objet JSON par ligne :

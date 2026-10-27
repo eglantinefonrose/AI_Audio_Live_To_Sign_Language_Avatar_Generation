@@ -69,6 +69,9 @@ class OllamaConfig:
     # Prompt de prod (règles + few-shot) ≈ 2 300 tokens : 2 048 tronquait le
     # début du prompt (les règles). 4 096 laisse la marge pour la réponse.
     num_ctx: int = 4_096
+    # Post-traitement déterministe des gloses (lsf_translator/postprocess.py),
+    # mesuré dans eval/RESULTS.md (eval/evaluate.py --postprocess).
+    postprocess: bool = False
 
 
 @dataclass(frozen=True)
