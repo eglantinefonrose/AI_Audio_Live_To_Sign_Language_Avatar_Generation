@@ -1,0 +1,404 @@
+# Gloses à télécharger depuis LSFB-ISOL (une par ligne, # = commentaire).
+# Généré depuis avatar/lsfb_mapping.csv. Voir avatar/README.md.
+
+# --- Correspondance sûre (354) : exact / directionnel ---
+ABOYER
+ACCOMPAGNER-À-TOI
+ACHETER
+ADRESSE
+AFFAIRE
+AIDER-À-MOI
+AIDER-À-TOI
+AIMER
+ALCOOL
+ALLER
+AMI
+ANCIEN
+ANGLAIS
+ANNULER
+APPARAÎTRE
+APPARTEMENT
+APPELER
+APPELER-À-TOI
+APPORTER-À-NOUS
+APPRENDRE
+APPRENDRE-À-TOI
+ARGENT
+ARRIVER
+ARTICLE
+ASSEZ
+ATTENDRE
+ATTENTION
+AUJOURD'HUI
+AUTOMATIQUE
+AVANT
+AVIS
+BANQUE
+BEAUCOUP
+BESOIN
+BIBLIOTHÈQUE
+BIEN
+BIENTÔT
+BILLET
+BLEU
+BOIRE
+BON
+BRUIT
+BUREAU
+BUS
+CADEAU
+CAFÉ
+CALME
+CASSER
+CHAMBRE
+CHANGER
+CHANTER
+CHAUD
+CHEMIN
+CHER
+CHERCHER
+CHERCHER-À-MOI
+CHIEN
+CHOCOLAT
+CINQ
+CINÉMA
+CLAIR
+CLÉ
+CODE
+COMBIEN
+COMMANDER
+COMMENCER
+COMMENT
+COMPARER
+COMPRENDRE
+CONCOURS
+CONDUIRE
+CONFÉRENCE
+CONNAÎTRE
+CONSTRUIRE
+CONTENT
+COUPER
+COURIR
+COURS
+COUSIN
+CUISINE
+DEHORS
+DEMAIN
+DEMANDER
+DEMANDER-À-LUI
+DEMANDER-À-NOUS
+DEMANDER-À-TOI
+DENT
+DERNIER
+DESSERT
+DEUX
+DEUX-CENTS
+DEVOIR
+DIFFUSER
+DIFFÉRENT
+DIRE
+DIRE-À-LUI
+DIRE-À-TOI
+DIRECT
+DIRECTEUR
+DIX
+DONNER
+DONNER-À-EUX
+DONNER-À-MOI
+DONNER-À-NOUS
+DONNER-À-TOI
+DORMIR
+DÉJÀ
+DÉLICIEUX
+DÉMÉNAGER
+DÉPASSER
+DÉVELOPPER
+EMAIL
+ENCORE
+ENFANT
+ENFIN
+ENSEMBLE
+ENTRAÎNEMENT
+ENVOYER-À-NOUS
+ENVOYER-À-TOI
+ENVOYER-À-VOUS
+ERREUR
+ESSAYER
+EXAMEN
+EXEMPLE
+EXERCICE
+EXPLIQUER-À-LUI
+EXPLIQUER-À-NOUS
+EXPLIQUER-À-TOI
+EXPLIQUER-À-VOUS
+FAIM
+FAIRE
+FALLOIR
+FENÊTRE
+FERMER
+FILM
+FILS
+FINIR
+FLOU
+FOOTBALL
+FORT
+FRANÇAIS
+FROID
+FROMAGE
+FRÈRE
+FUMER
+FÊTE
+GAGNER
+GARDER
+GARE
+GARÇON
+GRAND-MÈRE
+GRAND-PÈRE
+GRIS
+GROS
+GÂTEAU
+HABITER
+HEURE
+HIER
+ICI
+IDÉE
+IMAGE
+IMPORTANT
+INFORMER-À-NOUS
+INGÉNIEUR
+INTERVIEW
+INTÉRESSANT
+INVITÉ
+JAMAIS
+JARDIN
+JOUER
+JOUR
+JOURNAL
+LABORATOIRE
+LANGUE
+LENT
+LETTRE
+LIEN
+LIRE
+LIVRE
+LUNDI
+LUNETTES
+MAGASIN
+MAI
+MAISON
+MAL
+MALADE
+MAMAN
+MANGER
+MARCHER
+MARCHÉ
+MARDI
+MATCH
+MATIN
+MEILLEUR
+MENU
+MER
+MERCI
+MIDI
+MILLE
+MINUTE
+MODÈLE
+MONTAGNE
+MONTRER
+MONTRER-À-NOUS
+MONTRER-À-VOUS
+MUSIQUE
+MUSÉE
+MÉDECIN
+MÉDICAMENT
+MÉMOIRE
+MÉTHODE
+MÉTÉO
+NAGER
+NEIGE
+NETTOYER
+NOIR
+NON
+NOUVEAU
+NUIT
+ONCLE
+ORDINATEUR
+OUBLIER
+OUVRIR
+PAIN
+PANTALON
+PAPA
+PARALLÈLE
+PARC
+PARLER
+PARTIR
+PENSER
+PERDRE
+PERSONNE
+PETIT
+PHOTO
+PHRASE
+PIANO
+PISCINE
+PLANTER
+PLEURER
+PLUS
+PLUSIEURS
+POISSON
+POMME
+PORTE
+PORTER
+POURQUOI
+POUVOIR
+PRENDRE
+PROBLÈME
+PROFESSEUR
+PROFOND
+PROJET
+PROMENER
+PROPRE
+PRÉPARER
+PRÉSENTER
+PRÉSENTER-À-VOUS
+PUBLIC
+PULL
+QUATRE
+QUESTION
+QUI
+QUOI
+RACONTER
+RAISON
+RANGER
+RAPIDE
+RAPPORT
+RATER
+RECEVOIR
+REGARDER
+RENCONTRER
+RENDEZ-VOUS
+RESTAURANT
+RESTER
+RETARD
+RIEN
+ROBE
+ROUGE
+RÉPARER
+RÉPONDRE
+RÉPONDRE-À-TOI
+RÉSEAU
+RÉSULTAT
+RÉUNION
+RÉUSSIR
+SAC
+SALE
+SALLE
+SAMEDI
+SEIZE
+SEMAINE
+SERVEUR
+SERVIR
+SITE
+SOIR
+SOUVENIR
+SOUVENT
+SPORT
+SUIVRE
+SYSTÈME
+SŒUR
+TARD
+TEXTE
+THÉ
+TOMBER
+TOUT
+TRADUIRE
+TRAIN
+TRANSFORMER
+TRAVAIL
+TRAVAILLER
+TROIS
+TROMPER
+TROUVER
+TÉLÉPHONE
+TÉLÉVISION
+TÔT
+UNIVERSITÉ
+VACANCES
+VASE
+VENDRE
+VENIR
+VERSION
+VERT
+VIANDE
+VIDÉO
+VILLE
+VINGT
+VISITER
+VITE
+VOIR
+VOISIN
+VOITURE
+VOULOIR
+VOYAGE
+VRAI
+VÉLO
+WEEK-END
+YEUX
+YOUTUBE
+ÇA-VA
+ÉCOLE
+ÉCRIRE
+ÉCRIRE-À-MOI
+ÉLEVÉ
+ÉLÈVE
+ÉPINARD
+ÉQUIPE
+ÉTOILE
+ÉTRANGER
+ÉTUDIANT
+ÉTUDIER
+
+# --- À valider (44) : décommenter ET lancer avec --inclure-incertains ---
+# APPLICATION            -> APPLICATION.A-CLIC [variante] plusieurs signes possibles, choisir le bon
+# CHAT                   -> CHAT.F [variante] plusieurs signes possibles, choisir le bon
+# COLLÈGUE               -> COLLEGUE.COLLABORATION [variante] plusieurs signes possibles, choisir le bon
+# COÛTER                 -> PRIX [synonyme] équivalent proposé à la main, à valider
+# CUISINER               -> CUISINE [synonyme] équivalent proposé à la main, à valider
+# D'ACCORD               -> ACCORD [synonyme] équivalent proposé à la main, à valider
+# DÎNER                  -> MANGER [synonyme] équivalent proposé à la main, à valider
+# FATIGUÉ                -> FATIGUER [synonyme] équivalent proposé à la main, à valider
+# FILMER                 -> FILMER.TOURNER [variante] plusieurs signes possibles, choisir le bon
+# GRAND                  -> GRAND.HAUTEUR [variante] plusieurs signes possibles, choisir le bon
+# GRÈCE                  -> NS:GRECE [nom-propre] signe-nom belge ; épellation dactylologique possible à la place
+# JAPON                  -> NS:JAPON [nom-propre] signe-nom belge ; épellation dactylologique possible à la place
+# LAVER                  -> LAVER.REPASSER [variante] plusieurs signes possibles, choisir le bon
+# LSF                    -> LS [synonyme] équivalent proposé à la main, à valider
+# LUNDI-DERNIER          -> LUNDI+DERNIER [décomposé] composé absent : signes séparés, enchaînement à valider
+# MARIE                  -> NS:MARIE [nom-propre] signe-nom belge ; épellation dactylologique possible à la place
+# MÈRE                   -> MAMAN [synonyme] équivalent proposé à la main, à valider
+# NEIGER                 -> NEIGE [synonyme] équivalent proposé à la main, à valider
+# OÙ                     -> OU [incertain] OU (« ou » ?) / OU.OU : où ≠ ou, à vérifier dans la vidéo
+# PARENT                 -> PARENTS [synonyme] équivalent proposé à la main, à valider
+# PARIS                  -> NS:PARIS [nom-propre] signe-nom belge ; épellation dactylologique possible à la place
+# PASSER                 -> PASSER.APRES [variante] plusieurs signes possibles, choisir le bon
+# PAUL                   -> NS:PAUL [nom-propre] signe-nom belge ; épellation dactylologique possible à la place
+# PLEUVOIR               -> PLUIE [synonyme] équivalent proposé à la main, à valider
+# PRÊT                   -> PRET.PAILLE [variante] plusieurs signes possibles, choisir le bon
+# PRÊTER-À-MOI           -> PRETER.L [variante] forme de citation ; orientation vers MOI à produire par l'avatar ; plusieurs signes possibles, choisir le bon
+# PÈRE                   -> PAPA [synonyme] équivalent proposé à la main, à valider
+# QUAND                  -> QUAND.1 [variante] plusieurs signes possibles, choisir le bon
+# REMERCIER              -> MERCI [synonyme] équivalent proposé à la main, à valider
+# REMERCIER-À-TOI        -> MERCI [synonyme] forme de citation ; orientation vers TOI à produire par l'avatar ; équivalent proposé à la main, à valider
+# REMERCIER-À-VOUS       -> MERCI [synonyme] forme de citation ; orientation vers VOUS à produire par l'avatar ; équivalent proposé à la main, à valider
+# REMPLIR                -> REMPLIR.NIVEAU [variante] plusieurs signes possibles, choisir le bon
+# REVENIR                -> RETOUR [synonyme] équivalent proposé à la main, à valider
+# ROME                   -> NS:ROME [nom-propre] signe-nom belge ; épellation dactylologique possible à la place
+# RÉPÉTER                -> REPETER.ROUE [variante] plusieurs signes possibles, choisir le bon
+# SALON                  -> SALON.8 [variante] plusieurs signes possibles, choisir le bon
+# SEUL                   -> SEULE [synonyme] équivalent proposé à la main, à valider
+# SOUS-TITRE             -> SOUS+TITRE [décomposé] composé absent : signes séparés, enchaînement à valider
+# SUCCÈS                 -> REUSSIR [synonyme] équivalent proposé à la main, à valider
+# SYMPA                  -> SYMPATHIQUE [synonyme] équivalent proposé à la main, à valider
+# THOMAS                 -> NS:THOMAS [nom-propre] signe-nom belge ; épellation dactylologique possible à la place
+# TOURNER                -> TOURNER.SAUTER [variante] plusieurs signes possibles, choisir le bon
+# TOUT-LE-MONDE          -> TOUT+MONDE [synonyme] équivalent proposé à la main, à valider
+# TÉLÉPHONER-À-MOI       -> TELEPHONE [synonyme] forme de citation ; orientation vers MOI à produire par l'avatar ; équivalent proposé à la main, à valider
