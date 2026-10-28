@@ -1,16 +1,16 @@
 """Téléchargement d'un sous-ensemble de LSFB-ISOL (Université de Namur), glose par glose.
 
 LSFB = langue des signes de Belgique francophone, PAS la LSF de France : voir
-`sign_language_3d_avatar/dataset_generation/README.md` avant d'animer un avatar avec ces données.
+`src/sign_language_3d_avatar/dataset_generation/README.md` avant d'animer un avatar avec ces données.
 
 Licence des données : CC BY-NC-SA 4.0 (pas d'usage commercial, citation obligatoire).
 Le `Downloader` officiel (`lsfb-dataset`) ne filtre que par split et par signeur ;
 ce script lit l'index `instances.csv` et ne récupère que les instances des gloses
 choisies. Bibliothèque standard uniquement.
 
-    uv run python sign_language_3d_avatar/dataset_generation/lsfb_subset.py map            # correspondances -> sign_language_3d_avatar/dataset_generation/lsfb_mapping.csv
-    uv run python sign_language_3d_avatar/dataset_generation/lsfb_subset.py download --words MAISON,AIDER-À-TOI --dry-run
-    uv run python sign_language_3d_avatar/dataset_generation/lsfb_subset.py download --words-file sign_language_3d_avatar/dataset_generation/lsfb_words.txt
+    uv run python src/sign_language_3d_avatar/dataset_generation/lsfb_subset.py map            # correspondances -> src/sign_language_3d_avatar/dataset_generation/lsfb_mapping.csv
+    uv run python src/sign_language_3d_avatar/dataset_generation/lsfb_subset.py download --words MAISON,AIDER-À-TOI --dry-run
+    uv run python src/sign_language_3d_avatar/dataset_generation/lsfb_subset.py download --words-file src/sign_language_3d_avatar/dataset_generation/lsfb_words.txt
 """
 from __future__ import annotations
 
@@ -27,8 +27,8 @@ from collections import Counter, defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
-BASE = Path(__file__).resolve().parent.parent   # sign_language_3d_avatar/
-ROOT = BASE.parent                               # racine du projet
+BASE = Path(__file__).resolve().parent.parent   # src/sign_language_3d_avatar/
+ROOT = BASE.parent                               # src/ (lsf_translator/, eval/)
 SOURCE = "https://lsfb.info.unamur.be/static/datasets/lsfb_v2/isol"
 DEFAULT_DEST = BASE / "dataset_generation" / "data" / "lsfb"
 MAPPING_PATH = BASE / "dataset_generation" / "lsfb_mapping.csv"
@@ -367,9 +367,9 @@ def cmd_download(args) -> None:
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--dest", type=Path, default=DEFAULT_DEST, help="dossier des données (défaut sign_language_3d_avatar/dataset_generation/data/lsfb)")
+    ap.add_argument("--dest", type=Path, default=DEFAULT_DEST, help="dossier des données (défaut src/sign_language_3d_avatar/dataset_generation/data/lsfb)")
     sub = ap.add_subparsers(dest="cmd", required=True)
-    sub.add_parser("map", help="écrit sign_language_3d_avatar/dataset_generation/lsfb_mapping.csv (gloses du projet -> étiquettes LSFB)")
+    sub.add_parser("map", help="écrit src/sign_language_3d_avatar/dataset_generation/lsfb_mapping.csv (gloses du projet -> étiquettes LSFB)")
     d = sub.add_parser("download", help="télécharge les instances des gloses choisies")
     d.add_argument("--words", help="gloses séparées par des virgules (projet, ou lsfb:ÉTIQUETTE)")
     d.add_argument("--words-file", help="une glose par ligne, # pour commenter")

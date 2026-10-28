@@ -1,7 +1,7 @@
 # Génération de données pour l'avatar
 
 Données de signes servant à animer l'avatar (l'animation elle-même est dans
-`sign_language_3d_avatar/avatar_animation/`) :
+`src/sign_language_3d_avatar/avatar_animation/`) :
 
 - **sous-ensemble LSFB** (`lsfb_subset.py`) : vraies captures de mouvement, en LSFB ;
 - **lexique SiGML** (`sigml/lexique_brouillon.sigml`) : descriptions de signes en
@@ -43,26 +43,26 @@ Conséquences pour l'avatar :
     en libre accès de vidéos et d'annotations de la langue des signes de Belgique
     francophone (LSFB). LSFB-Lab, FRS-FNRS et Université de Namur*, plus l'article
     LSFB-ISOL : https://ieeexplore.ieee.org/abstract/document/9534336.
-  - Les données vont dans `sign_language_3d_avatar/dataset_generation/data/`, ignoré par git. Ne pas les commiter.
+  - Les données vont dans `src/sign_language_3d_avatar/dataset_generation/data/`, ignoré par git. Ne pas les commiter.
 
 ## Utilisation
 
 ```bash
-uv run python sign_language_3d_avatar/dataset_generation/lsfb_subset.py map
+uv run python src/sign_language_3d_avatar/dataset_generation/lsfb_subset.py map
 ```
 
-Cette commande télécharge les index (~12 Mo) et écrit `sign_language_3d_avatar/dataset_generation/lsfb_mapping.csv` :
+Cette commande télécharge les index (~12 Mo) et écrit `src/sign_language_3d_avatar/dataset_generation/lsfb_mapping.csv` :
 glose projet → étiquette LSFB, statut, nombre d'instances, autres variantes, note.
 
 ```bash
-uv run python sign_language_3d_avatar/dataset_generation/lsfb_subset.py download --words-file sign_language_3d_avatar/dataset_generation/lsfb_words.txt --dry-run
+uv run python src/sign_language_3d_avatar/dataset_generation/lsfb_subset.py download --words-file src/sign_language_3d_avatar/dataset_generation/lsfb_words.txt --dry-run
 ```
 
 `--dry-run` affiche, glose par glose, le nombre d'instances et la taille estimée
 (requêtes HEAD sur un échantillon, extrapolées à la durée), sans rien télécharger.
 
 ```bash
-uv run python sign_language_3d_avatar/dataset_generation/lsfb_subset.py download --words-file sign_language_3d_avatar/dataset_generation/lsfb_words.txt
+uv run python src/sign_language_3d_avatar/dataset_generation/lsfb_subset.py download --words-file src/sign_language_3d_avatar/dataset_generation/lsfb_words.txt
 ```
 
 Options utiles :
@@ -76,7 +76,7 @@ Options utiles :
 **Reprise** : relancer la même commande. Les fichiers complets sont sautés et les
 `.part` reprennent là où ils s'étaient arrêtés (en-tête HTTP Range).
 
-**Manifeste** : `sign_language_3d_avatar/dataset_generation/data/lsfb/manifest.csv`, avec pour chaque ligne la glose,
+**Manifeste** : `src/sign_language_3d_avatar/dataset_generation/data/lsfb/manifest.csv`, avec pour chaque ligne la glose,
 l'étiquette, l'id d'instance, le signeur, le début et la fin (ms), les fichiers,
 la source et la licence. Il est complété à chaque exécution.
 
@@ -106,7 +106,7 @@ Même `exact` ne garantit pas le sens : `AIMER` a aussi `AIMER.PLAISIR`, et le
 clip sans suffixe peut mélanger plusieurs signes annotés pareil. Il faut regarder
 quelques vidéos (`--videos --max-par-glose 3`) avant de figer un signe.
 
-`sign_language_3d_avatar/dataset_generation/lsfb_words.txt` contient la liste proposée : les gloses sûres sont actives,
+`src/sign_language_3d_avatar/dataset_generation/lsfb_words.txt` contient la liste proposée : les gloses sûres sont actives,
 celles à valider sont commentées. Pour régénérer la table après une mise à jour de
 `lexicon.txt` ou de `eval/dataset.jsonl`, relancer `map`.
 
@@ -115,5 +115,5 @@ celles à valider sont commentées. Pour régénérer la table après une mise �
 Descriptions de signes en SiGML (notation HamNoSys en XML, balises de la DTD
 officielle `sigmlhns.dtd` de l'UEA) : MOI, TOI, MERCI, MAISON, DONNER-À-TOI,
 DONNER-À-MOI. Ce sont des **brouillons rédigés par une IA, non validés** par un
-locuteur LSF. Ils sont joués par `sign_language_3d_avatar/avatar_animation/sigml_blender.py` (conventions
-et balises gérées décrites dans `sign_language_3d_avatar/avatar_animation/README.md`).
+locuteur LSF. Ils sont joués par `src/sign_language_3d_avatar/avatar_animation/sigml_blender.py` (conventions
+et balises gérées décrites dans `src/sign_language_3d_avatar/avatar_animation/README.md`).

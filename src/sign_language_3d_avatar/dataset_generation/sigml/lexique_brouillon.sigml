@@ -8,7 +8,7 @@
 
   Main dominante = main droite. Directions vues du signeur : u haut, d bas,
   l gauche, r droite, o vers l'avant (loin du corps), i vers le corps.
-  Orientation de la paume (hampalm*) : convention de sign_language_3d_avatar/avatar_animation/sigml_blender.py
+  Orientation de la paume (hampalm*) : convention de src/sign_language_3d_avatar/avatar_animation/sigml_blender.py
   (voir README) ; à vérifier contre JASigning.
 -->
 <sigml>

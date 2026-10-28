@@ -5,13 +5,13 @@ configuration de la main, direction des doigts, orientation de la paume,
 emplacement, contact, mouvements droits / en arc / circulaires, répétition,
 changement de configuration (`hamreplace`), symétrie à deux mains. Le non-manuel
 (visage) n'est pas animé. Ce n'est PAS JASigning : les conventions d'orientation
-et les distances sont celles de ce script (voir sign_language_3d_avatar/avatar_animation/README.md).
+et les distances sont celles de ce script (voir src/sign_language_3d_avatar/avatar_animation/README.md).
 
-Sorties (sign_language_3d_avatar/avatar_animation/data/sigml/) : un .mp4 par signe, `_enchainement.mp4` (tous les
+Sorties (src/sign_language_3d_avatar/avatar_animation/data/sigml/) : un .mp4 par signe, `_enchainement.mp4` (tous les
 signes à la suite) et `_enchainement.glb`.
 
     /Applications/Blender.app/Contents/MacOS/Blender -b --factory-startup \\
-        --python sign_language_3d_avatar/avatar_animation/sigml_blender.py -- sign_language_3d_avatar/dataset_generation/sigml/lexique_brouillon.sigml [--gloses MERCI,TOI]
+        --python src/sign_language_3d_avatar/avatar_animation/sigml_blender.py -- src/sign_language_3d_avatar/dataset_generation/sigml/lexique_brouillon.sigml [--gloses MERCI,TOI]
 """
 from __future__ import annotations
 
@@ -25,8 +25,8 @@ from pathlib import Path
 import bpy
 from mathutils import Matrix, Quaternion, Vector
 
-BASE = Path(__file__).resolve().parent.parent   # sign_language_3d_avatar/
-ROOT = BASE.parent                               # racine du projet
+BASE = Path(__file__).resolve().parent.parent   # src/sign_language_3d_avatar/
+ROOT = BASE.parent                               # src/ (lsf_translator/, eval/)
 OUT = BASE / "avatar_animation" / "data" / "sigml"
 FPS = 25
 

@@ -4,14 +4,14 @@ Pour chaque instance : un squelette (torse, bras, mains à 5 doigts, tête) est
 construit, ses os suivent les points MediaPipe (contraintes « Damped Track »,
 longueurs d'os fixes), puis l'animation est cuite en rotations et exportée :
 
-    sign_language_3d_avatar/avatar_animation/data/retarget/<GLOSE>/<instance>.glb   squelette + maillage simple + animation
-    sign_language_3d_avatar/avatar_animation/data/retarget/<GLOSE>/<instance>.bvh   animation seule (réutilisable dans Unity, etc.)
-    sign_language_3d_avatar/avatar_animation/data/retarget/<GLOSE>/<instance>.mp4   aperçu vidéo de face (.profil.mp4 avec --vues face,profil)
+    src/sign_language_3d_avatar/avatar_animation/data/retarget/<GLOSE>/<instance>.glb   squelette + maillage simple + animation
+    src/sign_language_3d_avatar/avatar_animation/data/retarget/<GLOSE>/<instance>.bvh   animation seule (réutilisable dans Unity, etc.)
+    src/sign_language_3d_avatar/avatar_animation/data/retarget/<GLOSE>/<instance>.mp4   aperçu vidéo de face (.profil.mp4 avec --vues face,profil)
 
 Lancement (Blender sans interface ; les arguments viennent après `--`) :
 
     /Applications/Blender.app/Contents/MacOS/Blender -b --factory-startup \\
-        --python sign_language_3d_avatar/avatar_animation/retarget_blender.py -- --words MAISON,MERCI --par-glose 1
+        --python src/sign_language_3d_avatar/avatar_animation/retarget_blender.py -- --words MAISON,MERCI --par-glose 1
 
 Les sorties dérivent de données CC BY-NC-SA 4.0 : même licence, jamais commitées.
 """
@@ -27,8 +27,8 @@ import bpy
 import numpy as np
 from mathutils import Matrix, Vector
 
-BASE = Path(__file__).resolve().parent.parent   # sign_language_3d_avatar/
-ROOT = BASE.parent                               # racine du projet
+BASE = Path(__file__).resolve().parent.parent   # src/sign_language_3d_avatar/
+ROOT = BASE.parent                               # src/ (lsf_translator/, eval/)
 DATA = BASE / "dataset_generation" / "data" / "lsfb"
 OUT = BASE / "avatar_animation" / "data" / "retarget"
 FPS = 50                      # LSFB : 50 images/s (frames ≈ 49,5 × durée)

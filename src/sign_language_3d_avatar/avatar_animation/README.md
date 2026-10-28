@@ -1,17 +1,17 @@
 # Animation de l'avatar
 
-Scripts Blender qui produisent les animations (sorties dans `sign_language_3d_avatar/avatar_animation/data/`,
-ignoré par git). Les données d'entrée viennent de `sign_language_3d_avatar/dataset_generation/`.
+Scripts Blender qui produisent les animations (sorties dans `src/sign_language_3d_avatar/avatar_animation/data/`,
+ignoré par git). Les données d'entrée viennent de `src/sign_language_3d_avatar/dataset_generation/`.
 
 ## Retargeting des poses LSFB (`retarget_blender.py`)
 
-Il fait jouer les poses MediaPipe téléchargées par `sign_language_3d_avatar/dataset_generation/lsfb_subset.py` à un squelette Blender (41 os, doigts
+Il fait jouer les poses MediaPipe téléchargées par `src/sign_language_3d_avatar/dataset_generation/lsfb_subset.py` à un squelette Blender (41 os, doigts
 compris). Pour chaque exemple, il exporte `.glb`, `.bvh` et un aperçu `.mp4` dans
-`sign_language_3d_avatar/avatar_animation/data/retarget/<GLOSE>/` :
+`src/sign_language_3d_avatar/avatar_animation/data/retarget/<GLOSE>/` :
 
 ```bash
 /Applications/Blender.app/Contents/MacOS/Blender -b --factory-startup \
-    --python sign_language_3d_avatar/avatar_animation/retarget_blender.py -- --words MAISON,MERCI --vues face,profil
+    --python src/sign_language_3d_avatar/avatar_animation/retarget_blender.py -- --words MAISON,MERCI --vues face,profil
 ```
 
 La profondeur des bras et de la tête est reconstruite, car celle de MediaPipe n'est
@@ -28,13 +28,13 @@ cinématique inverse pour les bras et des poses de doigts par configuration.
 
 ```bash
 /Applications/Blender.app/Contents/MacOS/Blender -b --factory-startup \
-    --python sign_language_3d_avatar/avatar_animation/sigml_blender.py -- sign_language_3d_avatar/dataset_generation/sigml/lexique_brouillon.sigml [--gloses MERCI,TOI]
+    --python src/sign_language_3d_avatar/avatar_animation/sigml_blender.py -- src/sign_language_3d_avatar/dataset_generation/sigml/lexique_brouillon.sigml [--gloses MERCI,TOI]
 ```
 
-Sorties dans `sign_language_3d_avatar/avatar_animation/data/sigml/` : un `.mp4` par signe, plus `_enchainement.mp4`
+Sorties dans `src/sign_language_3d_avatar/avatar_animation/data/sigml/` : un `.mp4` par signe, plus `_enchainement.mp4`
 et `_enchainement.glb` (tous les signes à la suite).
 
-- **Lexique** : `sign_language_3d_avatar/dataset_generation/sigml/lexique_brouillon.sigml` contient MOI, TOI, MERCI,
+- **Lexique** : `src/sign_language_3d_avatar/dataset_generation/sigml/lexique_brouillon.sigml` contient MOI, TOI, MERCI,
   MAISON, DONNER-À-TOI et DONNER-À-MOI. Ce sont des **brouillons rédigés par une IA,
   non validés** par un locuteur LSF.
 - **Balises gérées** :

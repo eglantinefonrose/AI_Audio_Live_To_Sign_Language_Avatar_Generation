@@ -1,5 +1,5 @@
 # Gloses à télécharger depuis LSFB-ISOL (une par ligne, # = commentaire).
-# Généré depuis sign_language_3d_avatar/dataset_generation/lsfb_mapping.csv. Voir sign_language_3d_avatar/dataset_generation/README.md.
+# Généré depuis src/sign_language_3d_avatar/dataset_generation/lsfb_mapping.csv. Voir src/sign_language_3d_avatar/dataset_generation/README.md.
 
 # --- Correspondance sûre (354) : exact / directionnel ---
 ABOYER
