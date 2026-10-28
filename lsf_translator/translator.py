@@ -110,7 +110,8 @@ class LSFTranslator:
         try:
             response = await self._client.chat(
                 model=self.config.model,
-                messages=build_messages(text, language),
+                messages=build_messages(text, language,
+                                        targeted=self.config.few_shot_targeted),
                 format=GLOSS_JSON_SCHEMA,
                 options={
                     "temperature": self.config.temperature,

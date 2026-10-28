@@ -144,6 +144,41 @@ FEW_SHOT_EXAMPLES: list[tuple[str, list[str]]] = [
 ]
 
 
+# Few-shot CIBLÉ (option `few_shot_targeted` / `eval/evaluate.py --few-shot-cible`) :
+# exemples AJOUTÉS aux précédents, pris dans le split TRAIN de
+# finetune/data/2184f8f3751e (jamais le dev ni l'éval), sur les phénomènes les
+# moins bien rendus : directionnels (chaque destinataire), passé sans temps
+# explicite (AVANT), ils -> EUX, possessifs, question fermée, « live », pluriel
+# non marqué. Placés en dernier : les plus proches de la phrase à traiter.
+FEW_SHOT_TARGETED: list[tuple[str, list[str]]] = [
+    # Passé implicite + ils -> EUX + directionnel -> NOUS + possessif « leurs ».
+    ("Ils nous ont montré leurs résultats.",
+     ["AVANT", "EUX", "RÉSULTAT", "EUX", "MONTRER-À-NOUS"]),
+    # Directionnel -> MOI + possessif + modal après le verbe + question fermée.
+    ("Tu peux me prêter ton stylo ?",
+     ["TOI", "STYLO", "TOI", "PRÊTER-À-MOI", "POUVOIR", "QUESTION"]),
+    # Directionnel -> LUI (« lui » complément, pas sujet).
+    ("Le médecin lui explique le traitement.",
+     ["MÉDECIN", "TRAITEMENT", "EXPLIQUER-À-LUI"]),
+    # Futur proche -> BIENTÔT (pas ALLER) + directionnel -> VOUS.
+    ("Je vais vous montrer une démo.", ["BIENTÔT", "MOI", "DÉMO", "MONTRER-À-VOUS"]),
+    # Passé implicite + nombre après le nom + pluriel non marqué.
+    ("Nous avons testé trois modèles.", ["AVANT", "NOUS", "MODÈLE", "TROIS", "TESTER"]),
+    # Passé implicite + possessif (deux TOI : sujet et possessif).
+    ("Tu as oublié ton sac.", ["AVANT", "TOI", "SAC", "TOI", "OUBLIER"]),
+    # Passé implicite dans une question fermée.
+    ("Vous avez compris l'exercice ?",
+     ["AVANT", "VOUS", "EXERCICE", "COMPRENDRE", "QUESTION"]),
+    # « live » -> DIRECT ; on -> NOUS ; question fermée.
+    ("On regarde le live ensemble ?",
+     ["NOUS", "DIRECT", "REGARDER", "ENSEMBLE", "QUESTION"]),
+    # ils -> EUX ; temps explicite en tête ; modal après le verbe.
+    ("Ils doivent travailler samedi.", ["SAMEDI", "EUX", "TRAVAILLER", "DEVOIR"]),
+    # Pluriel non marqué + adjectif au masculin singulier après le nom.
+    ("Les nouveaux étudiants arrivent.", ["ÉTUDIANT", "NOUVEAU", "ARRIVER"]),
+]
+
+
 def build_user_prompt(text: str, language: str | None = None) -> str:
     """Construit le message utilisateur, en précisant la langue si connue."""
     lang_hint = ""
@@ -158,16 +193,20 @@ def _assistant_example(glosses: list[str]) -> str:
     return json.dumps({"glosses": glosses}, ensure_ascii=False)
 
 
-def build_messages(text: str, language: str | None = None) -> list[dict]:
+def build_messages(text: str, language: str | None = None,
+                   targeted: bool = False) -> list[dict]:
     """Assemble la liste de messages complète pour l'appel au LLM.
 
     Structure : [système] + [paires user/assistant d'exemples] + [phrase réelle].
     Fournir les exemples comme de vrais tours de dialogue (plutôt que dans le
     prompt système) ancre fortement le format de sortie JSON et le style des
     gloses — c'est la bonne pratique de few-shot avec une API de chat.
+
+    `targeted` ajoute FEW_SHOT_TARGETED après les exemples de base.
     """
     messages: list[dict] = [{"role": "system", "content": SYSTEM_PROMPT}]
-    for source, glosses in FEW_SHOT_EXAMPLES:
+    examples = FEW_SHOT_EXAMPLES + (FEW_SHOT_TARGETED if targeted else [])
+    for source, glosses in examples:
         messages.append({"role": "user", "content": build_user_prompt(source)})
         messages.append({"role": "assistant", "content": _assistant_example(glosses)})
     messages.append({"role": "user", "content": build_user_prompt(text, language)})
@@ -206,6 +245,7 @@ GLOSS_JSON_SCHEMA = {
 __all__ = [
     "SYSTEM_PROMPT",
     "FEW_SHOT_EXAMPLES",
+    "FEW_SHOT_TARGETED",
     "build_user_prompt",
     "build_messages",
     "GLOSS_JSON_SCHEMA",

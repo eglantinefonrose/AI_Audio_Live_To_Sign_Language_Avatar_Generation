@@ -27,6 +27,8 @@ Usage :
     uv run python eval/evaluate.py --quiet               # agrégats seulement
     uv run python eval/evaluate.py --postprocess         # + post-traitement déterministe
                                                          # (lsf_translator/postprocess.py)
+    uv run python eval/evaluate.py --few-shot-cible      # + exemples few-shot ciblés
+                                                         # (prompts.py: FEW_SHOT_TARGETED)
     uv run python eval/evaluate.py --dataset eval/dev.jsonl   # jeu de DEV (mise au point)
 """
 from __future__ import annotations
@@ -52,6 +54,7 @@ from config import CONFIG
 from lsf_translator import conventions, lexicon, postprocess
 from lsf_translator.prompts import (
     FEW_SHOT_EXAMPLES,
+    FEW_SHOT_TARGETED,
     GLOSS_JSON_SCHEMA,
     SYSTEM_PROMPT,
     TRAIN_SYSTEM,
@@ -107,11 +110,24 @@ def _sha(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()[:12]
 
 
-def prompt_hash(mode: str = "prod") -> str:
+def prompt_hash(mode: str = "prod", targeted: bool = False) -> str:
     """Hash du prompt assemblé : change dès que le système ou un exemple change."""
     if mode == "rules-only":
         return _sha(TRAIN_SYSTEM.encode("utf-8"))
-    return _sha((SYSTEM_PROMPT + repr(FEW_SHOT_EXAMPLES)).encode("utf-8"))
+    examples = FEW_SHOT_EXAMPLES + (FEW_SHOT_TARGETED if targeted else [])
+    return _sha((SYSTEM_PROMPT + repr(examples)).encode("utf-8"))
+
+
+def few_shot_hash() -> str:
+    """Version des exemples ciblés (change dès qu'un exemple change)."""
+    return _sha(repr(FEW_SHOT_TARGETED).encode("utf-8"))
+
+
+def messages_for(text: str, language: str, mode: str = "prod",
+                 targeted: bool = False) -> list[dict]:
+    if mode == "rules-only":
+        return build_rules_only_messages(text, language)
+    return build_messages(text, language, targeted=targeted)
 
 
 def postprocess_hash() -> str:
@@ -187,12 +203,12 @@ def format_training(t: dict | None) -> str:
 
 
 def measure_prompt_tokens(client: Client, model: str, rows: list[dict],
-                          mode: str = "prod") -> int | None:
+                          mode: str = "prod", targeted: bool = False) -> int | None:
     """Taille réelle du prompt (num_ctx large) pour détecter une troncature."""
     longest = max((r["text"] for r in rows), key=len)
     try:
         r = client.chat(
-            model=model, messages=PROMPT_BUILDERS[mode](longest, "fr"),
+            model=model, messages=messages_for(longest, "fr", mode, targeted),
             format=GLOSS_JSON_SCHEMA, options={"num_ctx": 8192, "temperature": 0.0},
         )
         return r.get("prompt_eval_count")
@@ -202,9 +218,9 @@ def measure_prompt_tokens(client: Client, model: str, rows: list[dict],
 
 # -- appel LLM -----------------------------------------------------------
 def translate(client: Client, model: str, text: str, language: str,
-              mode: str = "prod") -> list[str]:
+              mode: str = "prod", targeted: bool = False) -> list[str]:
     r = client.chat(
-        model=model, messages=PROMPT_BUILDERS[mode](text, language),
+        model=model, messages=messages_for(text, language, mode, targeted),
         format=GLOSS_JSON_SCHEMA,
         options={"temperature": 0.0, "num_ctx": CONFIG.ollama.num_ctx},
     )
@@ -296,6 +312,9 @@ def main() -> int:
     ap.add_argument("--postprocess", action="store_true",
                     help="Applique le post-traitement déterministe aux gloses du modèle "
                          "(lsf_translator/postprocess.py) ; le record garde la sortie brute.")
+    ap.add_argument("--few-shot-cible", dest="few_shot_cible", action="store_true",
+                    help="Ajoute au prompt de prod les exemples few-shot ciblés "
+                         "(lsf_translator/prompts.py: FEW_SHOT_TARGETED).")
     ap.add_argument("--quiet", action="store_true", help="Agrégats seulement.")
     ap.add_argument("--save", action="store_true",
                     help="Archive le run (JSON + ligne dans RESULTS.md).")
@@ -305,7 +324,14 @@ def main() -> int:
     ap.add_argument("--label", default="(sans label)",
                     help="Description courte du run (ex. 'ajout lexique').")
     args = ap.parse_args()
-    method = "post-traitement" if args.postprocess else "aucune"
+    if args.few_shot_cible and args.prompt != "prod":
+        ap.error("--few-shot-cible complète le prompt de prod : utilise --prompt prod.")
+    # Méthodes actives, dans l'ordre de la chaîne (prompt puis sortie).
+    active = [m for m, on in (("few-shot-cible", args.few_shot_cible),
+                              ("post-traitement", args.postprocess)) if on]
+    method = "+".join(active) or "aucune"
+    hashes = {"few-shot-cible": few_shot_hash, "post-traitement": postprocess_hash}
+    method_hash = "+".join(hashes[m]() for m in active) or None
 
     rows = [json.loads(l) for l in
             Path(args.dataset).read_text(encoding="utf-8").splitlines() if l.strip()]
@@ -328,7 +354,7 @@ def main() -> int:
     for row in rows:
         gold = row["glosses"]
         pred = translate(client, args.model, row["text"], row.get("language", "fr"),
-                         args.prompt)
+                         args.prompt, args.few_shot_cible)
         extra: dict = {}
         if args.postprocess:
             extra["raw"] = pred
@@ -377,7 +403,8 @@ def main() -> int:
 
     if args.save or args.out:
         commit, dirty = git_info()
-        tokens = measure_prompt_tokens(client, args.model, rows, args.prompt)
+        tokens = measure_prompt_tokens(client, args.model, rows, args.prompt,
+                                       args.few_shot_cible)
         ds_sha = _sha(Path(args.dataset).read_bytes())
         # Un essai --out seul ne fige pas le dataset (pas de record archivé).
         snapshot = snapshot_dataset(Path(args.dataset), ds_sha) if args.save \
@@ -392,11 +419,13 @@ def main() -> int:
             "training": training,
             "git_commit": commit, "git_dirty": dirty,
             "prompt_mode": args.prompt,
-            "prompt_hash": prompt_hash(args.prompt),
+            "prompt_hash": prompt_hash(args.prompt, args.few_shot_cible),
             "method": method,
-            "method_hash": postprocess_hash() if args.postprocess else None,
+            "method_hash": method_hash,
             "num_ctx": CONFIG.ollama.num_ctx,
-            "few_shot": len(FEW_SHOT_EXAMPLES) if args.prompt == "prod" else 0,
+            "few_shot": (len(FEW_SHOT_EXAMPLES)
+                         + (len(FEW_SHOT_TARGETED) if args.few_shot_cible else 0))
+                        if args.prompt == "prod" else 0,
             "prompt_tokens": tokens,
             "dataset": _rel(Path(args.dataset)),
             "dataset_sha": ds_sha,

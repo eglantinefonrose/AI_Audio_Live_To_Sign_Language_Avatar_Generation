@@ -27,6 +27,7 @@ from lsf_translator.conventions import (
     IMPERSONAL,
     NEAR_FUTURE_RE,
     NEG_RE,
+    OTHER_TIME_RE,
     TECH_TERMS,
     explicit_times,
     implicit_time,
@@ -260,6 +261,17 @@ def r_temps(ctx: _Ctx, g: list[str]) -> list[str]:
         other = "BIENTÔT" if marker == "AVANT" else "AVANT"
         g = [x for x in g if x not in {marker, other}]
         g.insert(_head(g), marker)
+    elif re.search(r"\bdéjà\b", ctx.low):
+        # « déjà » : adverbe après le verbe, qui dispense de AVANT.
+        g = [x for x in g if x != "AVANT"]
+        if "DÉJÀ" not in g:
+            k = len(g)
+            while k > 0 and g[k - 1] in {*NEGATIONS, *WH, "QUESTION"}:
+                k -= 1
+            g.insert(k, "DÉJÀ")
+    elif not OTHER_TIME_RE.search(ctx.low):
+        # Aucun temps dans la phrase source : AVANT / BIENTÔT inventés.
+        g = [x for x in g if x not in {"AVANT", "BIENTÔT"}]
     m = NEAR_FUTURE_RE.search(ctx.low)
     if m and lemma(m.group(0).split()[-1]) != "aller" and "ALLER" in g:
         g.remove("ALLER")   # « aller » + infinitif = futur, pas le verbe ALLER
