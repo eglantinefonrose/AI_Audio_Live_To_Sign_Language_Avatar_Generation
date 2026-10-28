@@ -146,36 +146,30 @@ FEW_SHOT_EXAMPLES: list[tuple[str, list[str]]] = [
 
 # Few-shot CIBLÉ (option `few_shot_targeted` / `eval/evaluate.py --few-shot-cible`) :
 # exemples AJOUTÉS aux précédents, pris dans le split TRAIN de
-# finetune/data/2184f8f3751e (jamais le dev ni l'éval), sur les phénomènes les
-# moins bien rendus : directionnels (chaque destinataire), passé sans temps
-# explicite (AVANT), ils -> EUX, possessifs, question fermée, « live », pluriel
-# non marqué. Placés en dernier : les plus proches de la phrase à traiter.
+# finetune/data/2184f8f3751e (jamais le dev ni l'éval). Ils visent l'ORDRE des
+# signes, que le post-traitement ne corrige pas (il traite déjà temps,
+# directionnels, négation, pronoms) : adverbe après le verbe (DIRECT, BEAUCOUP,
+# ENSEMBLE), NOM ADJECTIF NOMBRE, possessif après le nom, objet avant le verbe,
+# VOUS dans les questions. Choisis sur le jeu de dev (eval/dev.jsonl).
+# Placés en dernier : les plus proches de la phrase à traiter.
 FEW_SHOT_TARGETED: list[tuple[str, list[str]]] = [
-    # Passé implicite + ils -> EUX + directionnel -> NOUS + possessif « leurs ».
-    ("Ils nous ont montré leurs résultats.",
-     ["AVANT", "EUX", "RÉSULTAT", "EUX", "MONTRER-À-NOUS"]),
-    # Directionnel -> MOI + possessif + modal après le verbe + question fermée.
-    ("Tu peux me prêter ton stylo ?",
-     ["TOI", "STYLO", "TOI", "PRÊTER-À-MOI", "POUVOIR", "QUESTION"]),
-    # Directionnel -> LUI (« lui » complément, pas sujet).
-    ("Le médecin lui explique le traitement.",
-     ["MÉDECIN", "TRAITEMENT", "EXPLIQUER-À-LUI"]),
-    # Futur proche -> BIENTÔT (pas ALLER) + directionnel -> VOUS.
-    ("Je vais vous montrer une démo.", ["BIENTÔT", "MOI", "DÉMO", "MONTRER-À-VOUS"]),
-    # Passé implicite + nombre après le nom + pluriel non marqué.
-    ("Nous avons testé trois modèles.", ["AVANT", "NOUS", "MODÈLE", "TROIS", "TESTER"]),
-    # Passé implicite + possessif (deux TOI : sujet et possessif).
-    ("Tu as oublié ton sac.", ["AVANT", "TOI", "SAC", "TOI", "OUBLIER"]),
-    # Passé implicite dans une question fermée.
-    ("Vous avez compris l'exercice ?",
-     ["AVANT", "VOUS", "EXERCICE", "COMPRENDRE", "QUESTION"]),
-    # « live » -> DIRECT ; on -> NOUS ; question fermée.
-    ("On regarde le live ensemble ?",
-     ["NOUS", "DIRECT", "REGARDER", "ENSEMBLE", "QUESTION"]),
-    # ils -> EUX ; temps explicite en tête ; modal après le verbe.
-    ("Ils doivent travailler samedi.", ["SAMEDI", "EUX", "TRAVAILLER", "DEVOIR"]),
-    # Pluriel non marqué + adjectif au masculin singulier après le nom.
-    ("Les nouveaux étudiants arrivent.", ["ÉTUDIANT", "NOUVEAU", "ARRIVER"]),
+    # « en live » -> DIRECT, après le verbe.
+    ("Nous diffusons la conférence en live.", ["NOUS", "CONFÉRENCE", "DIFFUSER", "DIRECT"]),
+    # NOM ADJECTIF NOMBRE, verbe en fin.
+    ("Il a acheté deux pantalons noirs.", ["AVANT", "LUI", "PANTALON", "NOIR", "DEUX", "ACHETER"]),
+    ("Nous utilisons deux méthodes différentes.", ["NOUS", "MÉTHODE", "DIFFÉRENT", "DEUX", "UTILISER"]),
+    # Possessif après le nom, puis objet avant le verbe.
+    ("Votre code contient une erreur.", ["CODE", "VOUS", "ERREUR", "CONTENIR"]),
+    ("Ma sœur étudie la médecine.", ["SŒUR", "MOI", "MÉDECINE", "ÉTUDIER"]),
+    # Quantité après le nom, avant le verbe.
+    ("Nous avons collecté beaucoup de données.", ["AVANT", "NOUS", "DONNÉE", "BEAUCOUP", "COLLECTER"]),
+    # « en direct » après le verbe.
+    ("Le modèle traduit la parole en direct.", ["MODÈLE", "PAROLE", "TRADUIRE", "DIRECT"]),
+    # VOUS (pas TOI) dans une question ouverte.
+    ("Comment vous faites ce gâteau ?", ["VOUS", "GÂTEAU", "FAIRE", "COMMENT"]),
+    ("Où avez-vous mangé hier ?", ["HIER", "VOUS", "MANGER", "OÙ"]),
+    # Objet topicalisé en tête, adverbe après le verbe.
+    ("Ce projet, nous le présentons ensemble.", ["PROJET", "NOUS", "PRÉSENTER", "ENSEMBLE"]),
 ]
 
 

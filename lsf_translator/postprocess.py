@@ -286,6 +286,8 @@ def r_negation(ctx: _Ctx, g: list[str]) -> list[str]:
                      if re.search(rf"\b{w}\b", ctx.low)), None)
     if specific and "NON" in g and not re.search(r"\bpas\b", ctx.low):
         g.remove("NON")
+    if re.search(r"\b(ne|n')\b.*\bplus\b", ctx.low) and "PLUS" in g:
+        g.remove("PLUS")   # « ne … plus » -> NON seul
     negs = [x for x in g if x in NEGATIONS]
     if not negs:
         negs = [specific or "NON"]
@@ -313,6 +315,8 @@ def r_question(ctx: _Ctx, g: list[str]) -> list[str]:
 
 
 def r_connecteur(ctx: _Ctx, g: list[str]) -> list[str]:
+    if re.search(r"\bdu coup\b", ctx.low) and "COUP" in g:
+        g = [x for x in g if x != "COUP"]   # connecteur de discours supprimé
     if ctx.low.lstrip().startswith(CONNECTOR_END):
         return ["ENFIN"] + [x for x in g if x != "ENFIN"]
     return g
