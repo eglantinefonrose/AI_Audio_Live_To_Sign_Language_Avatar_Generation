@@ -269,18 +269,19 @@ Il suffit d'implémenter `AvatarRendererInterface` et de l'enregistrer auprès d
 pipeline — **aucune modification du STT ni du traducteur** n'est nécessaire :
 
 ```python
-from avatar_adapter.interface import AvatarRendererInterface
-from pipeline.events import GlossEvent
+from src.sign_language_3d_avatar.avatar_adapter.interface import AvatarRendererInterface
+from src.pipeline import GlossEvent
+
 
 class Unity3DAvatar(AvatarRendererInterface):
-    async def start(self):
-        ...  # ouvrir une connexion WebSocket vers le moteur 3D
+  async def start(self):
+    ...  # ouvrir une connexion WebSocket vers le moteur 3D
 
-    async def render(self, event: GlossEvent):
-        await self._socket.send_json({"glosses": event.glosses})
+  async def render(self, event: GlossEvent):
+    await self._socket.send_json({"glosses": event.glosses})
 
-    async def stop(self):
-        await self._socket.close()
+  async def stop(self):
+    await self._socket.close()
 ```
 
 ```python
