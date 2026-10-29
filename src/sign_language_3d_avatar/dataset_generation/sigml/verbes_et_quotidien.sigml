@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Verbes et mots courants en SiGML. ⚠️ BROUILLONS rédigés par une IA, NON VALIDÉS
+  par un locuteur LSF. Conventions : voir lexique_brouillon.sigml et
+  avatar_animation/README.md.
+-->
+<sigml>
+
+  <!-- MANGER : main en bec, bout des doigts vers la bouche, petits mouvements
+       répétés vers la bouche. Confiance : moyenne. -->
+  <hns_sign gloss="MANGER">
+    <hamnosys_manual>
+      <hampinchall/> <hamextfingeri/> <hampalmd/>
+      <hamlips/> <hamclose/>
+      <hammovei/> <hamsmallmod/> <hamrepeatfromstart/>
+    </hamnosys_manual>
+  </hns_sign>
+
+  <!-- BOIRE : main en C comme autour d'un verre, portée à la bouche puis
+       inclinée. Confiance : moyenne. -->
+  <hns_sign gloss="BOIRE">
+    <hamnosys_manual>
+      <hamceeall/> <hamextfingerul/> <hampalml/>
+      <hamchin/> <hamclose/>
+      <hamparbegin/>
+        <hammoveu/> <hamsmallmod/>
+        <hamreplace/> <hamextfingeru/> <hampalml/>
+      <hamparend/>
+    </hamnosys_manual>
+  </hns_sign>
+
+  <!-- VOIR : main en V (index + majeur écartés) partant des yeux vers l'avant.
+       Confiance : moyenne. -->
+  <hns_sign gloss="VOIR">
+    <hamnosys_manual>
+      <hamfinger23spread/> <hamextfingero/> <hampalmd/>
+      <hameyes/> <hamclose/>
+      <hammoveo/>
+    </hamnosys_manual>
+  </hns_sign>
+
+  <!-- REGARDER : même main en V, mouvement plus long vers l'avant (le regard
+       qui se porte sur quelque chose). Confiance : moyenne ; la différence avec
+       VOIR est à confirmer. -->
+  <hns_sign gloss="REGARDER">
+    <hamnosys_manual>
+      <hamfinger23spread/> <hamextfingero/> <hampalmd/>
+      <hameyes/> <hamclose/>
+      <hammoveo/> <hamlargemod/>
+    </hamnosys_manual>
+  </hns_sign>
+
+  <!-- PENSER : index contre le front, côté tempe (la main arrive par le côté),
+       petit mouvement circulaire. Confiance : moyenne. -->
+  <hns_sign gloss="PENSER">
+    <hamnosys_manual>
+      <hamfinger2/> <hamextfingerul/> <hampalmd/>
+      <hamforehead/> <hamtouch/>
+      <hamcircleo/> <hamsmallmod/>
+    </hamnosys_manual>
+  </hns_sign>
+
+  <!-- VENIR : index vers l'avant, ramené vers soi en arc (verbe directionnel :
+       ici vers le signeur). Confiance : faible. -->
+  <hns_sign gloss="VENIR">
+    <hamnosys_manual>
+      <hamfinger2/> <hamextfingero/> <hampalmd/>
+      <hamneutralspace/>
+      <hammovei/> <hamarcu/> <hamlargemod/>
+    </hamnosys_manual>
+  </hns_sign>
+
+  <!-- BIEN : poing pouce levé, petit mouvement vers l'avant. Confiance : moyenne. -->
+  <hns_sign gloss="BIEN">
+    <hamnosys_manual>
+      <hamfist/> <hamthumboutmod/> <hamextfingero/> <hampalml/>
+      <hamneutralspace/>
+      <hammoveo/> <hamsmallmod/>
+    </hamnosys_manual>
+  </hns_sign>
+
+</sigml>

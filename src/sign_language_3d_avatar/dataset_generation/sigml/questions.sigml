@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Mots interrogatifs en SiGML. ⚠️ BROUILLONS rédigés par une IA, NON VALIDÉS par un
+  locuteur LSF. Conventions : voir lexique_brouillon.sigml et
+  avatar_animation/README.md.
+
+  Confiance FAIBLE pour tout ce fichier : les formes ci-dessous sont des hypothèses
+  à faire corriger. En LSF, les questions passent aussi par le visage (sourcils),
+  qui n'est pas animé. Pour la question fermée (QUESTION), il n'y a pas de signe
+  manuel décrit ici.
+-->
+<sigml>
+
+  <!-- QUOI : deux mains plates paumes vers le haut, petit va-et-vient latéral.
+       Confiance : faible. -->
+  <hns_sign gloss="QUOI">
+    <hamnosys_manual>
+      <hamsymmlr/>
+      <hamflathand/> <hamextfingero/> <hampalmu/>
+      <hamneutralspace/>
+      <hammover/> <hamsmallmod/> <hamrepeatreverse/>
+    </hamnosys_manual>
+  </hns_sign>
+
+  <!-- OÙ : index levé, petits cercles. Confiance : faible. -->
+  <hns_sign gloss="OÙ">
+    <hamnosys_manual>
+      <hamfinger2/> <hamextfingeru/> <hampalmu/>
+      <hamneutralspace/>
+      <hamcircleu/> <hamsmallmod/>
+    </hamnosys_manual>
+  </hns_sign>
+
+  <!-- QUI : index levé devant le menton, petit mouvement circulaire.
+       Confiance : faible. -->
+  <hns_sign gloss="QUI">
+    <hamnosys_manual>
+      <hamfinger2/> <hamextfingeru/> <hampalml/>
+      <hamchin/> <hamclose/>
+      <hamcircleo/> <hamsmallmod/>
+    </hamnosys_manual>
+  </hns_sign>
+
+  <!-- POURQUOI : index qui part du front vers l'avant. Confiance : faible. -->
+  <hns_sign gloss="POURQUOI">
+    <hamnosys_manual>
+      <hamfinger2/> <hamextfingerul/> <hampalmd/>
+      <hamforehead/> <hamtouch/>
+      <hammoveo/> <hamarcd/>
+    </hamnosys_manual>
+  </hns_sign>
+
+  <!-- COMMENT : deux mains plates paumes vers le bas qui se retournent paumes vers
+       le haut. Confiance : faible. -->
+  <hns_sign gloss="COMMENT">
+    <hamnosys_manual>
+      <hamsymmlr/>
+      <hamflathand/> <hamextfingero/> <hampalmd/>
+      <hamneutralspace/>
+      <hamreplace/> <hamextfingero/> <hampalmu/>
+    </hamnosys_manual>
+  </hns_sign>
+
+  <!-- COMBIEN : main fermée qui s'ouvre, doigts vers le haut. Confiance : faible. -->
+  <hns_sign gloss="COMBIEN">
+    <hamnosys_manual>
+      <hamfist/> <hamextfingeru/> <hampalmd/>
+      <hamneutralspace/>
+      <hamreplace/> <hamfinger2345/>
+    </hamnosys_manual>
+  </hns_sign>
+
+</sigml>

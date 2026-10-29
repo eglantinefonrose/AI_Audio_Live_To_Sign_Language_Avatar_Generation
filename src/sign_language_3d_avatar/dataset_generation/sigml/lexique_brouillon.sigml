@@ -13,7 +13,7 @@
 -->
 <sigml>
 
-  <!-- MOI : index pointé vers sa propre poitrine. -->
+  <!-- MOI : index pointé vers sa propre poitrine. Confiance : bonne. -->
   <hns_sign gloss="MOI">
     <hamnosys_manual>
       <hamfinger2/> <hamextfingeri/> <hampalml/>
@@ -22,7 +22,8 @@
     </hamnosys_manual>
   </hns_sign>
 
-  <!-- TOI : index pointé vers l'interlocuteur, petit mouvement vers l'avant. -->
+  <!-- TOI : index pointé vers l'interlocuteur, petit mouvement vers l'avant.
+       Confiance : bonne. -->
   <hns_sign gloss="TOI">
     <hamnosys_manual>
       <hamfinger2/> <hamextfingero/> <hampalml/>
@@ -32,7 +33,7 @@
   </hns_sign>
 
   <!-- MERCI : main plate, bout des doigts au menton, s'éloigne vers l'avant
-       et le bas en finissant paume vers le haut. -->
+       et le bas en finissant paume vers le haut. Confiance : moyenne. -->
   <hns_sign gloss="MERCI">
     <hamnosys_manual>
       <hamflathand/> <hamextfingeru/> <hampalmd/>
@@ -45,7 +46,7 @@
   </hns_sign>
 
   <!-- MAISON : deux mains plates en toit (symétrie gauche/droite), puis elles
-       descendent en s'écartant et tracent les murs. -->
+       descendent en s'écartant et tracent les murs. Confiance : moyenne. -->
   <hns_sign gloss="MAISON">
     <hamnosys_manual>
       <hamsymmlr/>
@@ -57,7 +58,8 @@
     </hamnosys_manual>
   </hns_sign>
 
-  <!-- DONNER-À-TOI : main en bec, part de soi vers l'interlocuteur (arc). -->
+  <!-- DONNER-À-TOI : main en bec, part de soi vers l'interlocuteur (arc).
+       Confiance : moyenne. -->
   <hns_sign gloss="DONNER-À-TOI">
     <hamnosys_manual>
       <hampinchall/> <hamextfingero/> <hampalmu/>
@@ -67,7 +69,8 @@
   </hns_sign>
 
   <!-- DONNER-À-MOI : même signe, direction inversée (de l'interlocuteur vers soi).
-       Seuls l'emplacement de départ, la direction des doigts et le mouvement changent. -->
+       Seuls l'emplacement de départ, la direction des doigts et le mouvement changent.
+       Confiance : moyenne. -->
   <hns_sign gloss="DONNER-À-MOI">
     <hamnosys_manual>
       <hampinchall/> <hamextfingeri/> <hampalmu/>

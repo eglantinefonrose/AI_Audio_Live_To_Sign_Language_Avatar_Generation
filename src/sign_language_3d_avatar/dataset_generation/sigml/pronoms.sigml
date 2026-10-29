@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Pronoms (pointages) en SiGML. ⚠️ BROUILLONS rédigés par une IA, NON VALIDÉS par
+  un locuteur LSF. Conventions : voir lexique_brouillon.sigml et
+  avatar_animation/README.md. MOI et TOI sont dans lexique_brouillon.sigml.
+
+  En LSF, LUI/EUX pointent vers l'endroit où la personne a été placée dans
+  l'espace ; ici, par défaut, à droite du signeur.
+-->
+<sigml>
+
+  <!-- LUI : index pointé vers l'avant-droite (3e personne). Confiance : moyenne. -->
+  <hns_sign gloss="LUI">
+    <hamnosys_manual>
+      <hamfinger2/> <hamextfingeror/> <hampalmd/>
+      <hamneutralspace/>
+      <hammoveor/> <hamsmallmod/>
+    </hamnosys_manual>
+  </hns_sign>
+
+  <!-- NOUS : index vers soi, arc devant la poitrine de l'épaule droite vers la
+       gauche. Confiance : moyenne. -->
+  <hns_sign gloss="NOUS">
+    <hamnosys_manual>
+      <hamfinger2/> <hamextfingeri/> <hampalml/>
+      <hamshoulders/> <hamclose/>
+      <hammovel/> <hamarcu/> <hamlargemod/>
+    </hamnosys_manual>
+  </hns_sign>
+
+  <!-- VOUS : index vers l'avant, balayage horizontal vers la droite (plusieurs
+       interlocuteurs). Confiance : moyenne. -->
+  <hns_sign gloss="VOUS">
+    <hamnosys_manual>
+      <hamfinger2/> <hamextfingero/> <hampalmd/>
+      <hamneutralspace/>
+      <hammovel/> <hamsmallmod/>
+      <hammover/> <hamarcu/> <hamlargemod/>
+    </hamnosys_manual>
+  </hns_sign>
+
+  <!-- EUX : comme LUI, avec un balayage vers la droite (plusieurs personnes).
+       Confiance : moyenne. -->
+  <hns_sign gloss="EUX">
+    <hamnosys_manual>
+      <hamfinger2/> <hamextfingeror/> <hampalmd/>
+      <hamneutralspace/>
+      <hammover/> <hamarcu/>
+    </hamnosys_manual>
+  </hns_sign>
+
+</sigml>

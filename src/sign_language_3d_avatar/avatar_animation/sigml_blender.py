@@ -11,7 +11,9 @@ Sorties (src/sign_language_3d_avatar/avatar_animation/data/sigml/) : un .mp4 par
 signes à la suite) et `_enchainement.glb`.
 
     /Applications/Blender.app/Contents/MacOS/Blender -b --factory-startup \\
-        --python src/sign_language_3d_avatar/avatar_animation/sigml_blender.py -- src/sign_language_3d_avatar/dataset_generation/sigml/lexique_brouillon.sigml [--gloses MERCI,TOI]
+        --python src/sign_language_3d_avatar/avatar_animation/sigml_blender.py -- src/sign_language_3d_avatar/dataset_generation/sigml/sigml/ [--gloses MERCI,TOI]   # dossier = tous les .sigml
+
+Avec `--phrase "TOI DONNER-À-MOI MERCI" [--sortie x.mp4]` : une seule vidéo de la phrase.
 """
 from __future__ import annotations
 
@@ -36,7 +38,7 @@ AXES = {"u": Vector((0, 0, 1)), "d": Vector((0, 0, -1)), "l": Vector((1, 0, 0)),
 SIDE = {"R": -1.0, "L": 1.0}   # côté X de chaque main
 
 # Emplacements (point de contact, en m, bassin à l'origine). `x` = décalé côté main.
-SITES = {"forehead": (0, -0.10, 0.72), "nose": (0, -0.115, 0.66), "lips": (0, -0.10, 0.615),
+SITES = {"forehead": (0, -0.10, 0.72), "eyes": (0, -0.10, 0.69), "nose": (0, -0.115, 0.66), "lips": (0, -0.10, 0.615),
          "chin": (0, -0.085, 0.585), "underchin": (0, -0.05, 0.56), "head": (0, 0, 0.78),
          "headtop": (0, 0, 0.78), "cheek": ("x", 0.07, -0.08, 0.64), "ear": ("x", 0.105, 0, 0.67),
          "neck": (0, -0.05, 0.52), "shoulders": ("x", 0.18, -0.04, 0.44),
@@ -86,10 +88,19 @@ def direction(token: str, prefix: str) -> Vector:
 
 
 def palm_vector(token: str, fingers: Vector) -> Vector:
-    """Paume relative aux doigts : doigts verticaux -> u = vers l'avant, d = vers soi."""
+    """Paume relative aux doigts (HamNoSys n'a que u/d/l/r et leurs diagonales).
+
+    Repère de base : doigts vers l'avant. On le tourne avec les doigts :
+    - doigts verticaux (tangage) : u = vers l'avant, d = vers soi ;
+    - doigts vers la gauche du signeur (lacet) : l = vers soi, r = vers l'avant ;
+      doigts vers la droite : l = vers l'avant, r = vers soi.
+    """
     letters = token[len("hampalm"):]
     if abs(fingers.z) > 0.8:
         letters = letters.replace("u", "o").replace("d", "i")
+    elif abs(fingers.x) > 0.8:
+        to_l, to_r = ("i", "o") if fingers.x > 0 else ("o", "i")
+        letters = "".join(to_l if c == "l" else to_r if c == "r" else c for c in letters)
     p = Vector()
     for c in letters:
         p += AXES[c]
@@ -115,14 +126,15 @@ def hand_matrix(fingers: Vector, palm: Vector) -> Matrix:
 def wrist_for(contact: Vector, st: HandState, neutral: bool = False) -> Vector:
     """Poignet tel que la partie de la main la plus proche de l'emplacement y soit.
 
-    Doigts vers l'avant (loin du corps) : c'est la base de la main qui est à
-    l'emplacement ; dans l'espace neutre, le milieu de la main ; sinon le bout des doigts.
+    Doigts vers l'avant (loin du corps) : le poignet est un peu devant l'emplacement
+    (l'avant-bras ne traverse pas le corps) ; dans l'espace neutre, le milieu de la
+    main est à l'emplacement ; sinon le bout des doigts.
     """
     reach = REACH.get(st.shape, 0.16)
     if neutral:
         reach *= 0.5
     elif st.fingers_dir.y < -0.5:
-        reach = 0.02
+        reach = -0.05
     return contact - hand_matrix(st.fingers_dir, st.palm) @ Vector((0, reach, 0))
 
 
@@ -190,6 +202,7 @@ def parse_sign(manual: ET.Element, start: int, rest: dict[str, HandState]) -> tu
             moves[-1]["replace"] = True
         elif t.startswith("hamrepeat") and moves:
             moves[-1]["repeat"] = 2 if "several" not in t else 3
+            moves[-1]["tofro"] = "reverse" in t   # aller-retour au lieu de reprendre au départ
         # hamparbegin/hamparend/hamseqbegin/... : la structure est aplatie.
         i += 1
 
@@ -213,7 +226,7 @@ def parse_sign(manual: ET.Element, start: int, rest: dict[str, HandState]) -> tu
     cur = st
     for mv in moves:
         for rep in range(mv.get("repeat", 1)):
-            if rep:  # répétition depuis le début : retour rapide au départ
+            if rep and not mv.get("tofro"):  # répétition depuis le début : retour rapide au départ
                 frame += 5
                 keys.append(Key(frame, both(origin)))
             origin = cur
@@ -230,7 +243,10 @@ def parse_sign(manual: ET.Element, start: int, rest: dict[str, HandState]) -> tu
                     delta = wrist_for(site(mv["to_site"], "R"), end) - cur.loc
                 end.loc = cur.loc + delta
                 if "arc" in mv:
-                    mid = replace(cur, loc=cur.loc + delta / 2 + mv["arc"] * mv["size"] * 0.3)
+                    bulge = mv["arc"]
+                    if abs(mv["dir"].x) > 0.8 and abs(bulge.z) > 0.8:
+                        bulge = Vector((0, -bulge.z, 0))   # balayage latéral : arc u = bombé vers l'avant
+                    mid = replace(cur, loc=cur.loc + delta / 2 + bulge * mv["size"] * 0.3)
                     keys.append(Key(frame + mv["frames"] // 2, both(mid)))
                 frame += mv["frames"]
                 keys.append(Key(frame, both(end)))
@@ -244,6 +260,10 @@ def parse_sign(manual: ET.Element, start: int, rest: dict[str, HandState]) -> tu
                     p = center + (u * math.cos(a) + v * math.sin(a)) * mv["size"]
                     keys.append(Key(frame + mv["frames"] * k // 8, both(replace(end, loc=p))))
                 frame += mv["frames"]
+            if mv.get("tofro"):  # aller-retour : on revient au point de départ
+                frame += mv["frames"]
+                keys.append(Key(frame, both(replace(end, loc=origin.loc))))
+                end = replace(end, loc=origin.loc)
             cur = end
     frame += 5
     keys.append(Key(frame, both(cur)))
@@ -261,6 +281,31 @@ FINGER_NAMES = ("index", "middle", "ring", "pinky")
 FINGER_LEN = {"index": (0.040, 0.025, 0.020), "middle": (0.045, 0.028, 0.022),
               "ring": (0.042, 0.026, 0.020), "pinky": (0.032, 0.020, 0.018), "thumb": (0.040, 0.032, 0.025)}
 FINGER_X = {"index": 0.03, "middle": 0.01, "ring": -0.01, "pinky": -0.03}
+# Bras au repos (épaule, coude, poignet) ; x multiplié par SIDE.
+ARM_REST = ((0.18, 0, 0.44), (0.19, 0.02, 0.15), (0.19, -0.03, -0.11))
+UPPER_LEN = (Vector(ARM_REST[1]) - Vector(ARM_REST[0])).length
+FORE_LEN = (Vector(ARM_REST[2]) - Vector(ARM_REST[1])).length
+
+
+def arm_point(i: int, h: str) -> Vector:
+    x, y, z = ARM_REST[i]
+    return Vector((SIDE[h] * x, y, z))
+
+
+def elbow_for(h: str, wrist: Vector) -> Vector:
+    """Coude d'un bras à deux segments : dans le plan épaule-poignet, du côté de la
+    direction préférée (vers le bas, un peu en arrière et vers l'extérieur)."""
+    shoulder = arm_point(0, h)
+    d = wrist - shoulder
+    dist = min(max(d.length, 1e-4), UPPER_LEN + FORE_LEN - 1e-4)
+    u = d.normalized()
+    along = (UPPER_LEN ** 2 - FORE_LEN ** 2 + dist ** 2) / (2 * dist)
+    height = math.sqrt(max(UPPER_LEN ** 2 - along ** 2, 0.0))
+    pref = Vector((SIDE[h] * 0.6, 0.35, -1.0))
+    v = pref - pref.dot(u) * u
+    if v.length < 1e-4:
+        v = Vector((SIDE[h], 0, 0)) - Vector((SIDE[h], 0, 0)).dot(u) * u
+    return shoulder + u * along + v.normalized() * height
 
 
 def build_avatar():
@@ -284,7 +329,7 @@ def build_avatar():
     bone("neck", (0, 0, 0.45), (0, 0, 0.56), "spine")
     bone("head", (0, 0, 0.56), (0, 0, 0.78), "neck")
     for h, sx in SIDE.items():
-        sh, el, wr = (sx * 0.18, 0, 0.44), (sx * 0.19, 0.02, 0.15), (sx * 0.19, -0.03, -0.11)
+        sh, el, wr = (tuple(arm_point(i, h)) for i in range(3))
         bone(f"clavicle.{h}", (0, 0, 0.43), sh, "spine")
         bone(f"upper_arm.{h}", sh, el, f"clavicle.{h}")
         bone(f"forearm.{h}", el, wr, f"upper_arm.{h}")
@@ -309,20 +354,20 @@ def build_avatar():
             parent, head = f"thumb.{k + 1}.{h}", tail
     bpy.ops.object.mode_set(mode="POSE")
 
+    # Bras : le bras vise le coude, l'avant-bras le poignet (positions calculées
+    # par elbow_for), la main copie l'orientation de la cible du poignet.
     targets = {}
-    for h, sx in SIDE.items():
+    for h in SIDE:
         t = bpy.data.objects.new(f"wrist.{h}", None)
         t.rotation_mode = "QUATERNION"
-        pole = bpy.data.objects.new(f"pole.{h}", None)
-        pole.location = (sx * 0.45, 0.35, 0.0)
-        for o in (t, pole):
+        elbow = bpy.data.objects.new(f"elbow.{h}", None)
+        for o in (t, elbow):
             bpy.context.scene.collection.objects.link(o)
-        ik = arm.pose.bones[f"forearm.{h}"].constraints.new("IK")
-        ik.target, ik.pole_target, ik.chain_count = t, pole, 2
-        ik.pole_angle = math.radians(90)
+        arm.pose.bones[f"upper_arm.{h}"].constraints.new("DAMPED_TRACK").target = elbow
+        arm.pose.bones[f"forearm.{h}"].constraints.new("DAMPED_TRACK").target = t
         cr = arm.pose.bones[f"hand.{h}"].constraints.new("COPY_ROTATION")
         cr.target = t
-        targets[h] = t
+        targets[h] = (t, elbow)
     for pb in arm.pose.bones:
         pb.rotation_mode = "QUATERNION"
     bpy.ops.object.mode_set(mode="OBJECT")
@@ -337,7 +382,7 @@ def add_body(arm) -> None:
     dark = bpy.data.materials.new("dark")
     dark.diffuse_color = (0.08, 0.08, 0.1, 1)
 
-    # Attacher les maillages en position de repos (sinon l'IK décale tout).
+    # Attacher les maillages en position de repos (sinon les contraintes décalent tout).
     arm.data.pose_position = "REST"
     bpy.context.view_layer.update()
 
@@ -419,8 +464,10 @@ def apply_keys(arm, targets, keys: list[Key]) -> None:
     prev = {h: None for h in SIDE}
     for key in keys:
         for h, st in key.hands.items():
-            t = targets[h]
+            t, elbow = targets[h]
             t.location = st.loc
+            elbow.location = elbow_for(h, st.loc)
+            elbow.keyframe_insert("location", frame=key.frame)
             q = hand_matrix(st.fingers_dir, st.palm).to_quaternion()
             if prev[h] is not None:
                 q.make_compatible(prev[h])
@@ -503,16 +550,40 @@ def animate(signs: list[tuple[str, ET.Element]], path: Path, export_glb: bool = 
     bpy.ops.render.render(animation=True)
 
 
+def load_signs(paths: list[Path]) -> list[tuple[str, ET.Element]]:
+    """Signes de plusieurs fichiers SiGML (un dossier = tous ses .sigml, triés)."""
+    files = [f for p in paths for f in (sorted(p.glob("*.sigml")) if p.is_dir() else [p])]
+    signs: dict[str, ET.Element] = {}
+    for f in files:
+        for s in ET.parse(f).getroot().iter("hns_sign"):
+            if s.get("gloss") in signs:
+                print(f"[sigml] {s.get('gloss')} redéfini dans {f.name} (la dernière définition gagne)")
+            signs[s.get("gloss")] = s.find("hamnosys_manual")
+    return list(signs.items())
+
+
 def main() -> None:
     argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
     ap = argparse.ArgumentParser(prog="sigml_blender.py")
-    ap.add_argument("sigml", type=Path)
+    ap.add_argument("sigml", type=Path, nargs="+", help="fichiers .sigml ou dossiers qui en contiennent")
     ap.add_argument("--gloses", help="sous-ensemble, séparé par des virgules (défaut : toutes)")
     ap.add_argument("--sans-enchainement", action="store_true")
+    ap.add_argument("--phrase", help="gloses séparées par des espaces, dans l'ordre (répétitions permises) : "
+                                     "une seule vidéo, écrite dans --sortie")
+    ap.add_argument("--sortie", type=Path, help="vidéo .mp4 de --phrase (défaut data/sigml/phrase.mp4)")
     args = ap.parse_args(argv)
 
-    root = ET.parse(args.sigml).getroot()
-    signs = [(s.get("gloss"), s.find("hamnosys_manual")) for s in root.iter("hns_sign")]
+    signs = load_signs(args.sigml)
+    if args.phrase:
+        lexicon = dict(signs)
+        words = args.phrase.split()
+        missing = [w for w in words if w not in lexicon]
+        if missing:
+            sys.exit(f"[sigml] gloses absentes du lexique : {' '.join(missing)}")
+        out = (args.sortie or OUT / "phrase.mp4").resolve()
+        animate([(w, lexicon[w]) for w in words], out)
+        print(f"[sigml] phrase -> {out}")
+        return
     if args.gloses:
         wanted = args.gloses.split(",")
         signs = [s for s in signs if s[0] in wanted]

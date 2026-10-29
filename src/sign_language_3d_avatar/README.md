@@ -15,6 +15,27 @@ Les poses LSFB téléchargées et les vidéos (`*.mp4`) sont ignorées par git ;
 exports `.glb`/`.bvh` du retargeting (`avatar_animation/data/retarget/`) sont
 commités. Ce sont des dérivés de LSFB, donc sous CC BY-NC-SA 4.0 eux aussi.
 
+## Tester une phrase
+
+```bash
+uv run python src/sign_language_3d_avatar/tester_phrase_sigml.py
+```
+
+Tapez une phrase en gloses (`TOI DONNER-À-MOI MERCI`) : l'avatar la signe et la
+vidéo s'ouvre. Seules les gloses des lexiques SiGML (tous les `.sigml` de
+`dataset_generation/sigml/`) sont disponibles, soit 50 gloses (liste dans
+`dataset_generation/README.md`). Les
+autres sont ignorées avec un avertissement. Le rendu prend quelques secondes et les vidéos sont écrites dans
+`avatar_animation/data/sigml/phrases/`.
+
+Pour une phrase sans mode interactif :
+
+```bash
+uv run python src/sign_language_3d_avatar/tester_phrase_sigml.py --phrase "MOI MAISON"
+```
+
+Si Blender n'est pas dans `/Applications`, passez `--blender` ou la variable `BLENDER`.
+
 > ⚠️ Aucun des signes produits ici n'a été validé par un locuteur LSF. Les gloses du
 > projet ne le sont pas non plus (cf. `CONVENTIONS.md`).
 
@@ -182,13 +203,24 @@ Notations examinées :
 
 ### Le prototype
 
-- **Lexique** : `dataset_generation/sigml/lexique_brouillon.sigml` décrit 6 signes :
-  MOI, TOI, MERCI, MAISON, DONNER-À-TOI, DONNER-À-MOI. Ce sont des **brouillons
-  rédigés par une IA**, non validés.
+- **Lexiques** : 7 fichiers dans `dataset_generation/sigml/`, 50 signes en tout. Ce
+  sont des **brouillons rédigés par une IA**, non validés, avec un niveau de
+  confiance noté pour chaque signe.
+
+| Fichier | Gloses |
+|---|---|
+| `lexique_brouillon.sigml` | MOI, TOI, MERCI, MAISON, DONNER-À-TOI, DONNER-À-MOI |
+| `pronoms.sigml` | LUI, NOUS, VOUS, EUX |
+| `temps_et_negation.sigml` | AVANT, BIENTÔT, HIER, DEMAIN, NON |
+| `verbes_et_quotidien.sigml` | MANGER, BOIRE, VOIR, REGARDER, PENSER, VENIR, BIEN |
+| `nombres.sigml` | DEUX, TROIS, QUATRE, CINQ |
+| `questions.sigml` | QUOI, OÙ, QUI, POURQUOI, COMMENT, COMBIEN |
+| `verbes_et_objets.sigml` | MAINTENANT, MATIN, SOIR, AIMER, VOULOIR, POUVOIR, PARLER, PARTIR, COMPRENDRE, APPRENDRE, TRAVAILLER, FINIR, AIDER-À-TOI, AIDER-À-MOI, VOITURE, BEAUCOUP, ACHETER, CAFÉ |
+
 - **Interprète** : `avatar_animation/sigml_blender.py`, un interprète maison qui
   n'utilise aucun fichier de JASigning. Il lit un sous-ensemble des balises HamNoSys,
   construit un avatar simple et l'anime :
-  - cinématique inverse pour les bras ;
+  - un calcul de coude pour les bras ;
   - une pose de doigts par configuration ;
   - affichage de la glose à l'écran ;
   - sorties `.mp4` par signe, plus un enchaînement en `.mp4` et `.glb`.
@@ -201,12 +233,26 @@ Notations examinées :
      loin du corps, c'est la base de la main qui va à l'emplacement ;
   4. les mains de MAISON ne se rejoignaient pas : symétrie et `hamtouch` en espace
      neutre placent les mains au centre ;
-  5. les murs de MAISON descendaient trop bas : mouvement réduit.
+  5. les murs de MAISON descendaient trop bas : mouvement réduit ;
+  6. avec les signes près du visage (VOIR, BOIRE, PENSER), le coude se levait
+     encore et l'avant-bras traversait la tête. La cinématique inverse de Blender a
+     été remplacée par un calcul direct du coude (coude vers le bas, longueurs du
+     bras conservées). Le poignet est placé un peu devant l'emplacement quand les
+     doigts pointent vers l'avant. PENSER arrive maintenant par le côté de la tête.
+  7. lot de 50 signes : vérification contre la DTD officielle. `hampalmi` et
+     `hamarco` n'existent pas en HamNoSys, car la paume et les arcs n'ont que
+     u/d/l/r, relatifs à la direction des doigts ou du mouvement. L'interprète
+     applique maintenant cette lecture relative pour les doigts pointés sur le
+     côté et pour les balayages latéraux. POURQUOI, PARLER, BOIRE, PENSER et SOIR
+     ont été réorientés pour que le coude ne monte pas au-dessus de l'épaule.
+
+Un **pilote de validation** de ces 50 signes est prêt (page de relecture et CSV) :
+voir `dataset_generation/README.md`.
 
 ```bash
 /Applications/Blender.app/Contents/MacOS/Blender -b --factory-startup \
     --python src/sign_language_3d_avatar/avatar_animation/sigml_blender.py -- \
-    src/sign_language_3d_avatar/dataset_generation/sigml/lexique_brouillon.sigml
+    src/sign_language_3d_avatar/dataset_generation/sigml
 ```
 
 **Limites**

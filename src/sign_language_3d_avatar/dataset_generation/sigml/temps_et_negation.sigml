@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Marqueurs de temps et négation en SiGML. ⚠️ BROUILLONS rédigés par une IA, NON
+  VALIDÉS par un locuteur LSF. Conventions : voir lexique_brouillon.sigml et
+  avatar_animation/README.md.
+
+  Repère du temps en LSF : le passé derrière le signeur, le futur devant lui.
+  AVANT et BIENTÔT sont les marqueurs de CONVENTIONS.md (passé / futur sans date).
+-->
+<sigml>
+
+  <!-- AVANT (passé) : main plate près de l'oreille, paume vers l'arrière, qui part
+       vers l'arrière par-dessus l'épaule. Confiance : moyenne. -->
+  <hns_sign gloss="AVANT">
+    <hamnosys_manual>
+      <hamflathand/> <hamextfingeru/> <hampalmd/>
+      <hamear/>
+      <hammovei/> <hamarcu/> <hamlargemod/>
+    </hamnosys_manual>
+  </hns_sign>
+
+  <!-- BIENTÔT (futur proche) : main plate près de la joue, petit mouvement vers
+       l'avant. Confiance : faible. -->
+  <hns_sign gloss="BIENTÔT">
+    <hamnosys_manual>
+      <hamflathand/> <hamextfingeru/> <hampalml/>
+      <hamcheek/> <hamclose/>
+      <hammoveo/> <hamsmallmod/>
+    </hamnosys_manual>
+  </hns_sign>
+
+  <!-- HIER : poing pouce sorti, pouce contre la joue, vers l'arrière.
+       Confiance : faible (forme de main approximative). -->
+  <hns_sign gloss="HIER">
+    <hamnosys_manual>
+      <hamfist/> <hamthumboutmod/> <hamextfingeru/> <hampalml/>
+      <hamcheek/> <hamtouch/>
+      <hammovei/> <hamsmallmod/>
+    </hamnosys_manual>
+  </hns_sign>
+
+  <!-- DEMAIN : même configuration que HIER, vers l'avant en arc.
+       Confiance : faible. -->
+  <hns_sign gloss="DEMAIN">
+    <hamnosys_manual>
+      <hamfist/> <hamthumboutmod/> <hamextfingeru/> <hampalml/>
+      <hamcheek/> <hamtouch/>
+      <hammoveo/> <hamarcu/>
+    </hamnosys_manual>
+  </hns_sign>
+
+  <!-- NON : index levé, paume vers l'avant, va-et-vient gauche/droite.
+       Confiance : bonne pour la forme manuelle ; en LSF la négation passe aussi
+       par le hochement de tête (non animé ici). -->
+  <hns_sign gloss="NON">
+    <hamnosys_manual>
+      <hamfinger2/> <hamextfingeru/> <hampalmu/>
+      <hamneutralspace/>
+      <hammover/> <hamsmallmod/> <hamrepeatreverse/>
+    </hamnosys_manual>
+  </hns_sign>
+
+</sigml>

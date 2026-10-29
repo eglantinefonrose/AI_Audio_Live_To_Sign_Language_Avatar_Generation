@@ -4,8 +4,8 @@ Données de signes servant à animer l'avatar (l'animation elle-même est dans
 `src/sign_language_3d_avatar/avatar_animation/`) :
 
 - **sous-ensemble LSFB** (`lsfb_subset.py`) : vraies captures de mouvement, en LSFB ;
-- **lexique SiGML** (`sigml/lexique_brouillon.sigml`) : descriptions de signes en
-  notation HamNoSys, brouillons à valider.
+- **lexiques SiGML** (`sigml/*.sigml`) : descriptions de 50 signes en notation
+  HamNoSys, brouillons à valider (outil de validation : `sigml_validation.py`).
 
 ## Sous-ensemble LSFB
 
@@ -110,10 +110,47 @@ quelques vidéos (`--videos --max-par-glose 3`) avant de figer un signe.
 celles à valider sont commentées. Pour régénérer la table après une mise à jour de
 `lexicon.txt` ou de `eval/dataset.jsonl`, relancer `map`.
 
-## Lexique SiGML (`sigml/lexique_brouillon.sigml`)
+## Lexiques SiGML (`sigml/`)
 
 Descriptions de signes en SiGML (notation HamNoSys en XML, balises de la DTD
-officielle `sigmlhns.dtd` de l'UEA) : MOI, TOI, MERCI, MAISON, DONNER-À-TOI,
-DONNER-À-MOI. Ce sont des **brouillons rédigés par une IA, non validés** par un
-locuteur LSF. Ils sont joués par `src/sign_language_3d_avatar/avatar_animation/sigml_blender.py` (conventions
+officielle `sigmlhns.dtd` de l'UEA). Ce sont des **brouillons rédigés par une IA,
+non validés** par un locuteur LSF ; chaque signe porte un commentaire avec sa
+description en français et un niveau de confiance (bonne / moyenne / faible).
+
+| Fichier | Gloses |
+|---|---|
+| `lexique_brouillon.sigml` | MOI, TOI, MERCI, MAISON, DONNER-À-TOI, DONNER-À-MOI |
+| `pronoms.sigml` | LUI, NOUS, VOUS, EUX |
+| `temps_et_negation.sigml` | AVANT, BIENTÔT, HIER, DEMAIN, NON |
+| `verbes_et_quotidien.sigml` | MANGER, BOIRE, VOIR, REGARDER, PENSER, VENIR, BIEN |
+| `nombres.sigml` | DEUX, TROIS, QUATRE, CINQ |
+| `questions.sigml` | QUOI, OÙ, QUI, POURQUOI, COMMENT, COMBIEN |
+| `verbes_et_objets.sigml` | MAINTENANT, MATIN, SOIR, AIMER, VOULOIR, POUVOIR, PARLER, PARTIR, COMPRENDRE, APPRENDRE, TRAVAILLER, FINIR, AIDER-À-TOI, AIDER-À-MOI, VOITURE, BEAUCOUP, ACHETER, CAFÉ |
+
+Pour ajouter un signe, il suffit de créer ou compléter un `.sigml` dans ce dossier :
+tous les fichiers sont chargés. Si une glose est définie deux fois, la dernière
+définition (par ordre alphabétique des fichiers) gagne.
+QUESTION (marqueur de question fermée) n'a pas de signe manuel : en LSF, la
+question se marque surtout par le visage, que l'animation ne gère pas. Ils sont joués par `src/sign_language_3d_avatar/avatar_animation/sigml_blender.py` (conventions
+
+### Validation par un locuteur LSF (pilote de 50 signes)
+
+```bash
+uv run python src/sign_language_3d_avatar/dataset_generation/sigml_validation.py --ouvrir
+```
+
+Ce script lit le commentaire de chaque signe (description et niveau de confiance)
+et produit deux fichiers :
+- `sigml/validation_pilote.csv` : une ligne par signe, avec les colonnes `verdict`,
+  `correction` et `commentaire` à remplir. Les verdicts déjà saisis sont conservés
+  quand on relance le script ;
+- `avatar_animation/data/sigml/validation.html` : une page locale qui montre chaque
+  vidéo à côté de sa description, avec le formulaire de verdict et un bouton
+  « Exporter le CSV ».
+
+Les vidéos doivent avoir été rendues avant, avec `sigml_blender.py`.
+
+Niveaux de confiance actuels : 2 bonne, 1 bonne pour la forme manuelle, 23 moyenne,
+24 faible. Le but du pilote est de mesurer le taux réel d'erreur et le temps de
+relecture avant de viser ~500 signes.
 et balises gérées décrites dans `src/sign_language_3d_avatar/avatar_animation/README.md`).

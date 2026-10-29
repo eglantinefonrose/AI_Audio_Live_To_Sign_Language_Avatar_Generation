@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Verbes, objets et marqueurs du quotidien en SiGML (2e lot). ⚠️ BROUILLONS rédigés
+  par une IA, NON VALIDÉS par un locuteur LSF. Conventions : voir
+  lexique_brouillon.sigml et avatar_animation/README.md.
+
+  Limite de l'animation : elle ne gère pas les signes où la main non dominante sert
+  d'appui (ACHETER, AIDER, CAFÉ, TRAVAILLER en LSF). Ceux-là sont des
+  APPROXIMATIONS à une main ou symétriques, signalées comme telles.
+-->
+<sigml>
+
+  <!-- ===== Temps ===== -->
+
+  <!-- MAINTENANT : deux mains plates paumes vers le haut, petit mouvement vers le
+       bas. Confiance : moyenne. -->
+  <hns_sign gloss="MAINTENANT">
+    <hamnosys_manual>
+      <hamsymmlr/>
+      <hamflathand/> <hamextfingero/> <hampalmu/>
+      <hamneutralspace/>
+      <hammoved/> <hamsmallmod/>
+    </hamnosys_manual>
+  </hns_sign>
+
+  <!-- MATIN : main plate qui monte devant le corps (le soleil se lève).
+       Confiance : faible. -->
+  <hns_sign gloss="MATIN">
+    <hamnosys_manual>
+      <hamflathand/> <hamextfingeru/> <hampalmd/>
+      <hamchest/>
+      <hammoveu/> <hamlargemod/>
+    </hamnosys_manual>
+  </hns_sign>
+
+  <!-- SOIR : main plate qui descend devant le corps (le soleil se couche).
+       Confiance : faible. -->
+  <hns_sign gloss="SOIR">
+    <hamnosys_manual>
+      <hamflathand/> <hamextfingero/> <hampalmd/>
+      <hamshoulders/>
+      <hammoved/> <hamlargemod/>
+    </hamnosys_manual>
+  </hns_sign>
+
+  <!-- ===== Verbes ===== -->
+
+  <!-- AIMER : main plate sur la poitrine (côté cœur), petit cercle.
+       Confiance : faible. -->
+  <hns_sign gloss="AIMER">
+    <hamnosys_manual>
+      <hamflathand/> <hamextfingerl/> <hampalml/>
+      <hamchest/> <hamtouch/>
+      <hamcircleo/> <hamsmallmod/>
+    </hamnosys_manual>
+  </hns_sign>
+
+  <!-- VOULOIR : main en C paume vers le haut, ramenée vers soi en se fermant.
+       Confiance : faible. -->
+  <hns_sign gloss="VOULOIR">
+    <hamnosys_manual>
+      <hamceeall/> <hamextfingero/> <hampalmu/>
+      <hamneutralspace/>
+      <hamparbegin/>
+        <hammovei/>
+        <hamreplace/> <hamfist/>
+      <hamparend/>
+    </hamnosys_manual>
+  </hns_sign>
+
+  <!-- POUVOIR : deux poings qui descendent ensemble, fermement.
+       Confiance : faible. -->
+  <hns_sign gloss="POUVOIR">
+    <hamnosys_manual>
+      <hamsymmlr/>
+      <hamfist/> <hamextfingero/> <hampalmd/>
+      <hamneutralspace/>
+      <hammoved/> <hamtense/>
+    </hamnosys_manual>
+  </hns_sign>
+
+  <!-- PARLER : index devant la bouche, petits cercles vers l'avant.
+       Confiance : moyenne. -->
+  <hns_sign gloss="PARLER">
+    <hamnosys_manual>
+      <hamfinger2/> <hamextfingeru/> <hampalml/>
+      <hamlips/> <hamclose/>
+      <hamcircleo/> <hamsmallmod/> <hamrepeatcontinue/>
+    </hamnosys_manual>
+  </hns_sign>
+
+  <!-- PARTIR : main plate qui s'éloigne vite vers l'avant-droite.
+       Confiance : faible. -->
+  <hns_sign gloss="PARTIR">
+    <hamnosys_manual>
+      <hamflathand/> <hamextfingerl/> <hampalmd/>
+      <hamchest/> <hamclose/>
+      <hammoveor/> <hamlargemod/> <hamfast/>
+    </hamnosys_manual>
+  </hns_sign>
+
+  <!-- COMPRENDRE : main ouverte près du front qui se referme. Confiance : faible. -->
+  <hns_sign gloss="COMPRENDRE">
+    <hamnosys_manual>
+      <hamfinger2345/> <hamthumboutmod/> <hamextfingeru/> <hampalml/>
+      <hamforehead/> <hamclose/>
+      <hamreplace/> <hampinchall/>
+    </hamnosys_manual>
+  </hns_sign>
+
+  <!-- APPRENDRE : main en bec qui part devant la poitrine et va au front (en LSF,
+       elle part de la paume de l'autre main, non animée). Confiance : moyenne. -->
+  <hns_sign gloss="APPRENDRE">
+    <hamnosys_manual>
+      <hampinchall/> <hamextfingeri/> <hampalmd/>
+      <hamneutralspace/>
+      <hammoveu/> <hamforehead/>
+    </hamnosys_manual>
+  </hns_sign>
+
+  <!-- TRAVAILLER : APPROXIMATION symétrique. Deux poings qui se rapprochent et se
+       touchent deux fois (en LSF, un poignet frappe l'autre). Confiance : faible. -->
+  <hns_sign gloss="TRAVAILLER">
+    <hamnosys_manual>
+      <hamsymmlr/>
+      <hamfist/> <hamextfingero/> <hampalmd/>
+      <hamneutralspace/>
+      <hammovel/> <hamsmallmod/> <hamrepeatreverse/>
+    </hamnosys_manual>
+  </hns_sign>
+
+  <!-- FINIR : deux mains plates paumes vers le bas qui s'écartent vers le bas.
+       Confiance : faible. -->
+  <hns_sign gloss="FINIR">
+    <hamnosys_manual>
+      <hamsymmlr/>
+      <hamflathand/> <hamextfingero/> <hampalmd/>
+      <hamneutralspace/>
+      <hammovedr/> <hamfast/>
+    </hamnosys_manual>
+  </hns_sign>
+
+  <!-- AIDER-À-TOI : APPROXIMATION à une main. Main plate paume vers le haut, poussée
+       vers l'interlocuteur (en LSF, elle pousse le poing de l'autre main).
+       Confiance : faible. -->
+  <hns_sign gloss="AIDER-À-TOI">
+    <hamnosys_manual>
+      <hamflathand/> <hamextfingero/> <hampalmu/>
+      <hamchest/> <hamclose/>
+      <hammoveo/> <hamarcu/> <hamlargemod/>
+    </hamnosys_manual>
+  </hns_sign>
+
+  <!-- AIDER-À-MOI : même signe, de l'interlocuteur vers soi. Confiance : faible. -->
+  <hns_sign gloss="AIDER-À-MOI">
+    <hamnosys_manual>
+      <hamflathand/> <hamextfingeri/> <hampalmu/>
+      <hamneutralspace/>
+      <hammovei/> <hamarcu/> <hamlargemod/>
+    </hamnosys_manual>
+  </hns_sign>
+
+  <!-- ===== Objets et quantité ===== -->
+
+  <!-- VOITURE : deux poings qui tiennent un volant et le tournent.
+       Confiance : moyenne. -->
+  <hns_sign gloss="VOITURE">
+    <hamnosys_manual>
+      <hamsymmpar/>
+      <hamfist/> <hamextfingeru/> <hampalmd/>
+      <hamneutralspace/>
+      <hamcircleo/> <hamsmallmod/>
+    </hamnosys_manual>
+  </hns_sign>
+
+  <!-- BEAUCOUP : deux mains ouvertes qui s'écartent vers l'extérieur.
+       Confiance : faible. -->
+  <hns_sign gloss="BEAUCOUP">
+    <hamnosys_manual>
+      <hamsymmlr/>
+      <hamfinger2345/> <hamthumboutmod/> <hamextfingeru/> <hampalmd/>
+      <hamneutralspace/> <hamtouch/>
+      <hammover/> <hamlargemod/>
+    </hamnosys_manual>
+  </hns_sign>
+
+  <!-- ACHETER : APPROXIMATION à une main. Main plate paume vers le haut qui part
+       vers l'avant, comme pour tendre de l'argent (en LSF, elle part de la paume de
+       l'autre main). Confiance : faible. -->
+  <hns_sign gloss="ACHETER">
+    <hamnosys_manual>
+      <hamflathand/> <hamextfingero/> <hampalmu/>
+      <hamchest/> <hamclose/>
+      <hammoveo/> <hamlargemod/>
+    </hamnosys_manual>
+  </hns_sign>
+
+  <!-- CAFÉ : APPROXIMATION à une main. Poing qui tourne comme un moulin à café (en
+       LSF, au-dessus de l'autre poing). Confiance : faible. -->
+  <hns_sign gloss="CAFÉ">
+    <hamnosys_manual>
+      <hamfist/> <hamextfingero/> <hampalmd/>
+      <hamneutralspace/>
+      <hamcircleu/> <hamsmallmod/> <hamrepeatcontinue/>
+    </hamnosys_manual>
+  </hns_sign>
+
+</sigml>
