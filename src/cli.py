@@ -21,7 +21,7 @@ import logging
 import sys
 
 from config import CONFIG, replace
-from src.pipeline import GlossEvent, TranscriptEvent
+from pipeline.events import GlossEvent, TranscriptEvent
 
 log = logging.getLogger("cli")
 
@@ -41,6 +41,11 @@ def build_config(args: argparse.Namespace):
         cfg = cfg.with_overrides(ollama=replace(cfg.ollama, model=args.model))
     if args.postprocess:
         cfg = cfg.with_overrides(ollama=replace(cfg.ollama, postprocess=True))
+    if args.few_shot_cible:
+        cfg = cfg.with_overrides(ollama=replace(cfg.ollama, few_shot_targeted=True))
+    if args.few_shot_dynamique:
+        cfg = cfg.with_overrides(
+            ollama=replace(cfg.ollama, few_shot_dynamic=args.few_shot_dynamique))
     if args.ollama_host:
         cfg = cfg.with_overrides(
             ollama=replace(cfg.ollama, host=args.ollama_host)
@@ -82,12 +87,12 @@ async def print_gloss(transcript: TranscriptEvent, gloss: GlossEvent) -> None:
 
 async def run(cfg, media: str | None = None, realtime: bool = False) -> int:
     # Imports tardifs : permet `--list-devices` sans torch/moshi/ollama.
-    from src.sign_language_3d_avatar.avatar_adapter.interface import ConsoleAvatarRenderer
-    from src.lsf_translator import OllamaUnavailableError
-    from src.pipeline import Pipeline
-    from src.stt_engine.audio_capture import AudioDeviceError
-    from src.stt_engine import STTUnavailableError
-    from src.stt_engine import AudioFileError, FileAudioSource
+    from avatar_adapter.interface import ConsoleAvatarRenderer
+    from lsf_translator.translator import OllamaUnavailableError
+    from pipeline.orchestrator import Pipeline
+    from stt_engine.audio_capture import AudioDeviceError
+    from stt_engine.engine import STTUnavailableError
+    from stt_engine.file_source import AudioFileError, FileAudioSource
 
     # Source audio : fichier vidéo/audio si fourni, sinon micro.
     audio_source = (
@@ -139,10 +144,10 @@ def run_stt_only(cfg, media: str | None = None, realtime: bool = False) -> int:
     N'interroge PAS Ollama : montre la découpe (VAD) qui alimente le traducteur.
     Illustre l'usage autonome du composant `Transcriber` (générateur).
     """
-    from src.stt_engine.audio_capture import AudioCapture, AudioDeviceError
-    from src.stt_engine import STTUnavailableError
-    from src.stt_engine import AudioFileError, FileAudioSource
-    from src.stt_engine import Transcriber
+    from stt_engine.audio_capture import AudioCapture, AudioDeviceError
+    from stt_engine.engine import STTUnavailableError
+    from stt_engine.file_source import AudioFileError, FileAudioSource
+    from stt_engine.transcriber import Transcriber
 
     source = (
         FileAudioSource(media, cfg.audio, realtime=realtime)
@@ -195,6 +200,11 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     p.add_argument("--model", help="Modèle Ollama (défaut: config).")
     p.add_argument("--postprocess", action="store_true",
                    help="Post-traitement déterministe des gloses (lsf_translator/postprocess.py).")
+    p.add_argument("--few-shot-cible", dest="few_shot_cible", action="store_true",
+                   help="Ajoute les exemples few-shot ciblés au prompt (prompts.py: FEW_SHOT_TARGETED).")
+    p.add_argument("--few-shot-dynamique", dest="few_shot_dynamique", type=int, default=0,
+                   metavar="K", help="Ajoute les K exemples les plus proches de chaque phrase "
+                                     "(lsf_translator/retrieval.py).")
     p.add_argument("--ollama-host", help="URL de l'instance Ollama.")
     p.add_argument("--hf-repo", help="Dépôt HF du modèle STT Kyutai.")
     p.add_argument("--stt-device", choices=["auto", "cpu", "cuda", "mps"],
@@ -229,7 +239,7 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.list_devices:
         setup_logging(logging.INFO)
-        from src.stt_engine.audio_capture import AudioDeviceError, list_input_devices
+        from stt_engine.audio_capture import AudioDeviceError, list_input_devices
         try:
             devices = list_input_devices()
         except AudioDeviceError as exc:

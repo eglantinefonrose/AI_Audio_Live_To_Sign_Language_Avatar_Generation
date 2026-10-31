@@ -72,6 +72,12 @@ class OllamaConfig:
     # Post-traitement déterministe des gloses (lsf_translator/postprocess.py),
     # mesuré dans eval/RESULTS.md (eval/evaluate.py --postprocess).
     postprocess: bool = False
+    # Exemples few-shot ciblés ajoutés au prompt (prompts.py: FEW_SHOT_TARGETED),
+    # mesurés dans eval/RESULTS.md (eval/evaluate.py --few-shot-cible).
+    few_shot_targeted: bool = False
+    # Few-shot dynamique : nb d'exemples choisis phrase par phrase dans la banque
+    # (lsf_translator/retrieval.py) ; 0 = désactivé (eval/evaluate.py --few-shot-dynamique).
+    few_shot_dynamic: int = 0
 
 
 @dataclass(frozen=True)

@@ -73,11 +73,28 @@ htmlcov/
 *.mp4
 
 ### Fine-tuning : poids régénérables et volumineux (jamais sur GitHub)
-src/finetune/fused/
-src/finetune/adapters/
-src/finetune/fused-*/
-src/finetune/adapters-*/
+finetune/fused/
+finetune/adapters/
+finetune/fused-*/
+finetune/adapters-*/
 
 ### Logs d'entraînement
-src/finetune/logs/
+finetune/logs/
+finetune/data/2184f8f3751e/train.jsonl
+avatar
+src/finetune/adapters
+src/finetune/adapters-3b-v3
+*.safetensors
+*.npy
 src/finetune/data/2184f8f3751e/train.jsonl
+src/finetune/fused/merges.txt
+src/finetune/fused/tokenizer.json
+src/finetune/fused/vocab.json
+src/finetune/fused-3b-v3/merges.txt
+src/finetune/fused-3b-v3/tokenizer.json
+src/finetune/fused-3b-v3/vocab.json
+src/finetune/fused-gemma9b/tokenizer.json
+src/finetune/fused-gemma9b-gguf/lsf-gemma9b-v1-Q4_K_M.gguf
+src/finetune/fused-gemma9b-gguf/lsf-gemma9b-v1-bf16.gguf
+src/finetune/logs
+src/finetune
