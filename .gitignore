@@ -98,3 +98,5 @@ src/finetune/fused-gemma9b-gguf/lsf-gemma9b-v1-Q4_K_M.gguf
 src/finetune/fused-gemma9b-gguf/lsf-gemma9b-v1-bf16.gguf
 src/finetune/logs
 src/finetune
+src/eval
+src/lsf_translator
