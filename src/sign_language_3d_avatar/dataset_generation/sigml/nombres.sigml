@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Nombres en SiGML. ⚠️ BROUILLONS rédigés par une IA, NON VALIDÉS par un locuteur
+  LSF. Conventions : voir lexique_brouillon.sigml et avatar_animation/README.md.
+
+  En LSF, 3 se fait avec pouce + index + majeur (pas index + majeur + annulaire).
+  Les nombres sont montrés paume vers le signeur, sur un petit mouvement.
+-->
+<sigml>
+
+  <!-- DEUX : index et majeur levés, écartés. Confiance : moyenne. -->
+  <hns_sign gloss="DEUX">
+    <hamnosys_manual>
+      <hamfinger23spread/> <hamextfingeru/> <hampalmd/>
+      <hamneutralspace/>
+      <hammoveo/> <hamsmallmod/>
+    </hamnosys_manual>
+  </hns_sign>
+
+  <!-- TROIS : pouce, index et majeur levés. Confiance : moyenne. -->
+  <hns_sign gloss="TROIS">
+    <hamnosys_manual>
+      <hamfinger23spread/> <hamthumboutmod/> <hamextfingeru/> <hampalmd/>
+      <hamneutralspace/>
+      <hammoveo/> <hamsmallmod/>
+    </hamnosys_manual>
+  </hns_sign>
+
+  <!-- QUATRE : quatre doigts levés, pouce replié. Confiance : moyenne. -->
+  <hns_sign gloss="QUATRE">
+    <hamnosys_manual>
+      <hamfinger2345/> <hamextfingeru/> <hampalmd/>
+      <hamneutralspace/>
+      <hammoveo/> <hamsmallmod/>
+    </hamnosys_manual>
+  </hns_sign>
+
+  <!-- CINQ : main ouverte, cinq doigts. Confiance : moyenne. -->
+  <hns_sign gloss="CINQ">
+    <hamnosys_manual>
+      <hamfinger2345/> <hamthumboutmod/> <hamextfingeru/> <hampalmd/>
+      <hamneutralspace/>
+      <hammoveo/> <hamsmallmod/>
+    </hamnosys_manual>
+  </hns_sign>
+
+</sigml>

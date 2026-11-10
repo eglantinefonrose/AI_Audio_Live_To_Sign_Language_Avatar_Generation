@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LSF Live : point d’étape</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400..700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700&display=swap">
+<style>
+  * { margin: 0; box-sizing: border-box; }
+  html, body { height: 100%; background: #0F1720; overflow: hidden; }
+  #stage { position: absolute; left: 50%; top: 50%; width: 1920px; height: 1080px; transform-origin: 0 0; }
+  section { position: absolute; inset: 0; width: 1920px; height: 1080px; overflow: hidden; }
+  section:not(.active) { visibility: hidden; }
+  ul, ol { padding-left: 1.2em; }
+  li + li { margin-top: 8px; }
+  .notes { display: none; }
+  #nav { position: fixed; right: 16px; bottom: 12px; font: 14px 'Public Sans', Arial, sans-serif; color: #9AA8B5; background: rgba(15,23,32,.75); padding: 4px 10px; border-radius: 6px; transition: opacity .6s; }
+  @media print {
+    @page { size: 1920px 1080px; margin: 0; }
+    html, body { overflow: visible; background: none; }
+    #stage { position: static; transform: none !important; height: auto; }
+    section { position: relative !important; visibility: visible !important; page-break-after: always; }
+    #nav { display: none; }
+  }
+</style>
+</head>
+<body>
+<div id="stage">
+<section id="cover" data-transition="fade" style="background:#1B2A3A;color:#F6F4EF;font-family:'Public Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;justify-content:center;gap:40px">
+<p style="font-size:24px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#E8875A">Point d’étape · 30 octobre 2026</p>
+<h1 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:120px;font-weight:700;line-height:1.05;color:#F6F4EF">LSF Live</h1>
+<p style="font-size:44px;line-height:1.3;color:#C9D3DC;width:1300px">D’où on part, ce qu’on a construit, ce qu’on a compris en route, et où on va maintenant.</p>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#9AA8B5">Parole → gloses LSF → avatar 3D</p>
+<aside class="notes">Présentation pour faire le point sur le projet : l’objectif initial, le travail fait, la remise en question après la discussion avec Gemini, et la direction actuelle.</aside>
+</section>
+<section id="objectif" data-transition="fade" style="background:#F6F4EF;color:#1B2A3A;font-family:'Public Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:56px">
+<div style="display:flex;flex-direction:column;gap:16px">
+<p style="font-size:24px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#B4471A">L’objectif de départ</p>
+<h2 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:72px;font-weight:700;line-height:1.1;color:#1B2A3A">Rendre la parole accessible en LSF, en direct</h2>
+</div>
+<div style="display:flex;flex-direction:row;align-items:center;gap:24px">
+<div style="flex:1;display:flex;flex-direction:column;gap:12px;background:#FFFDF9;border:1px solid #DDD6C8;border-radius:16px;padding:36px">
+<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#2F6690" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none" aria-hidden="true"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>
+<h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:32px;font-weight:700">Parole</h3>
+<p style="font-size:24px;line-height:1.4;color:#4A5563">Micro, ou une vidéo</p>
+</div>
+<svg width="56" height="28" viewBox="0 0 56 28" style="flex:none" aria-hidden="true"><polygon points="0,8.4 33.599999999999994,8.4 33.599999999999994,0 56,14.0 33.599999999999994,28 33.599999999999994,19.599999999999998 0,19.599999999999998" fill="#B4471A"/></svg>
+<div style="flex:1;display:flex;flex-direction:column;gap:12px;background:#FFFDF9;border:1px solid #DDD6C8;border-radius:16px;padding:36px">
+<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#2F6690" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none" aria-hidden="true"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+<h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:32px;font-weight:700">Transcription</h3>
+<p style="font-size:24px;line-height:1.4;color:#4A5563">Kyutai STT, phrase par phrase</p>
+</div>
+<svg width="56" height="28" viewBox="0 0 56 28" style="flex:none" aria-hidden="true"><polygon points="0,8.4 33.599999999999994,8.4 33.599999999999994,0 56,14.0 33.599999999999994,28 33.599999999999994,19.599999999999998 0,19.599999999999998" fill="#B4471A"/></svg>
+<div style="flex:1;display:flex;flex-direction:column;gap:12px;background:#FFFDF9;border:1px solid #DDD6C8;border-radius:16px;padding:36px">
+<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#2F6690" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+<h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:32px;font-weight:700">Traduction</h3>
+<p style="font-size:24px;line-height:1.4;color:#4A5563">Français → gloses LSF, LLM local</p>
+</div>
+<svg width="56" height="28" viewBox="0 0 56 28" style="flex:none" aria-hidden="true"><polygon points="0,8.4 33.599999999999994,8.4 33.599999999999994,0 56,14.0 33.599999999999994,28 33.599999999999994,19.599999999999998 0,19.599999999999998" fill="#B4471A"/></svg>
+<div style="flex:1;display:flex;flex-direction:column;gap:12px;background:#FFFDF9;border:1px solid #DDD6C8;border-radius:16px;padding:36px">
+<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#2F6690" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+<h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:32px;font-weight:700">Avatar 3D</h3>
+<p style="font-size:24px;line-height:1.4;color:#4A5563">Signe les gloses à l’écran</p>
+</div>
+</div>
+<div style="display:flex;flex-direction:row;align-items:center;gap:32px;background:#E9E4DA;border-radius:16px;padding:32px 40px">
+<p style="font-size:32px;color:#4A5563">Exemple</p>
+<p style="font-size:32px">« Je viendrai demain »</p>
+<svg width="48" height="24" viewBox="0 0 48 24" style="flex:none" aria-hidden="true"><polygon points="0,7.199999999999999 28.799999999999997,7.199999999999999 28.799999999999997,0 48,12.0 28.799999999999997,24 28.799999999999997,16.799999999999997 0,16.799999999999997" fill="#1B2A3A"/></svg>
+<p style="font-family:'Space Grotesk', Arial, sans-serif;font-size:32px;font-weight:700;letter-spacing:2px">DEMAIN MOI VENIR</p>
+</div>
+<div style="position:absolute;left:128px;bottom:64px;width:1664px;display:flex;flex-direction:row;justify-content:space-between">
+<p style="font-size:24px;color:#5F646C">LSF Live · point d’étape</p>
+<p style="font-size:24px;color:#5F646C">2</p>
+</div>
+</section>
+<section id="traduction" data-transition="fade" style="background:#F6F4EF;color:#1B2A3A;font-family:'Public Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:56px">
+<div style="display:flex;flex-direction:column;gap:16px">
+<p style="font-size:24px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#B4471A">Ce qu’on a construit · 1</p>
+<h2 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:72px;font-weight:700;line-height:1.1;color:#1B2A3A">La traduction français → gloses fonctionne</h2>
+</div>
+<div style="display:flex;flex-direction:row;gap:32px">
+<div style="flex:1;display:flex;flex-direction:column;gap:8px;background:#FFFDF9;border:1px solid #DDD6C8;border-radius:16px;padding:40px">
+<p style="font-family:'Space Grotesk', Arial, sans-serif;font-size:120px;font-weight:700;line-height:1;color:#B4471A">65 %</p>
+<p style="font-size:24px;line-height:1.4;color:#4A5563">de phrases traduites exactement, contre 31 % au départ</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:8px;background:#FFFDF9;border:1px solid #DDD6C8;border-radius:16px;padding:40px">
+<p style="font-family:'Space Grotesk', Arial, sans-serif;font-size:120px;font-weight:700;line-height:1;color:#1B2A3A">0,95</p>
+<p style="font-size:24px;line-height:1.4;color:#4A5563">de F1 : presque tous les bons signes sont là</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:8px;background:#FFFDF9;border:1px solid #DDD6C8;border-radius:16px;padding:40px">
+<p style="font-family:'Space Grotesk', Arial, sans-serif;font-size:120px;font-weight:700;line-height:1;color:#1B2A3A">~500</p>
+<p style="font-size:24px;line-height:1.4;color:#4A5563">gloses dans le lexique, avec des conventions écrites</p>
+</div>
+</div>
+<p style="font-size:32px;line-height:1.4;color:#4A5563;width:1500px">Gemma 9B fine-tuné, puis un post-traitement qui corrige les erreurs grossières. Évalué sur 74 phrases de test, tout tourne en local sur le Mac.</p>
+<div style="position:absolute;left:128px;bottom:64px;width:1664px;display:flex;flex-direction:row;justify-content:space-between">
+<p style="font-size:24px;color:#5F646C">LSF Live · point d’étape</p>
+<p style="font-size:24px;color:#5F646C">3</p>
+</div>
+<aside class="notes">Chiffres du dernier run d’évaluation (27 octobre) : lsf-gemma9b v1 avec prompt de production et post-traitement. Le point de départ à 31 % est gemma2:9b avec le premier prompt amélioré.</aside>
+</section>
+<section id="avatar-pistes" data-transition="fade" style="background:#F6F4EF;color:#1B2A3A;font-family:'Public Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:56px">
+<div style="display:flex;flex-direction:column;gap:16px">
+<p style="font-size:24px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#B4471A">Ce qu’on a construit · 2</p>
+<h2 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:72px;font-weight:700;line-height:1.1;color:#1B2A3A">Pour l’avatar, trois pistes essayées</h2>
+</div>
+<div style="display:flex;flex-direction:row;gap:32px">
+<div style="flex:1;display:flex;flex-direction:column;gap:20px;background:#FFFDF9;border:1px solid #DDD6C8;border-radius:16px;padding:40px">
+<h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:32px;font-weight:700">Poses LSFB (Namur)</h3>
+<p style="font-size:24px;line-height:1.4;color:#4A5563">8 775 fichiers de mouvement téléchargés, transférés sur un squelette Blender.</p>
+<p style="font-size:24px;font-weight:600;line-height:1.4;color:#B4471A">Non conforme : langue belge, profondeur peu fiable.</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:20px;background:#FFFDF9;border:1px solid #DDD6C8;border-radius:16px;padding:40px">
+<h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:32px;font-weight:700">Autres jeux de données</h3>
+<p style="font-size:24px;line-height:1.4;color:#4A5563">Recherche de signes isolés en LSF : LSF-ANIMAL, dictionnaire Elix…</p>
+<p style="font-size:24px;font-weight:600;line-height:1.4;color:#B4471A">Rien de libre et directement exploitable.</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:20px;background:#FFFDF9;border:1px solid #DDD6C8;border-radius:16px;padding:40px">
+<h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:32px;font-weight:700">SiGML écrit par IA</h3>
+<p style="font-size:24px;line-height:1.4;color:#4A5563">Claude décrit chaque signe en notation HamNoSys ; un interpréteur maison l’anime dans Blender.</p>
+<p style="font-size:24px;font-weight:600;line-height:1.4;color:#2F6690">Fonctionne, vidéos et phrases, mais raide.</p>
+</div>
+</div>
+<div style="position:absolute;left:128px;bottom:64px;width:1664px;display:flex;flex-direction:row;justify-content:space-between">
+<p style="font-size:24px;color:#5F646C">LSF Live · point d’étape</p>
+<p style="font-size:24px;color:#5F646C">4</p>
+</div>
+</section>
+<section id="sigml" data-transition="fade" style="background:#F6F4EF;color:#1B2A3A;font-family:'Public Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:56px">
+<div style="display:flex;flex-direction:column;gap:16px">
+<p style="font-size:24px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#B4471A">Ce qu’on a construit · 3</p>
+<h2 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:72px;font-weight:700;line-height:1.1;color:#1B2A3A">Un pilote de 50 signes, prêt à être relu</h2>
+</div>
+<div style="display:flex;flex-direction:row;gap:64px;align-items:center">
+<div style="display:flex;flex-direction:column;gap:8px;width:360px">
+<p style="font-family:'Space Grotesk', Arial, sans-serif;font-size:120px;font-weight:700;line-height:1;color:#B4471A">50</p>
+<p style="font-size:32px;line-height:1.3;color:#4A5563">signes en SiGML, chacun rendu en vidéo</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:20px">
+<p style="font-size:32px;font-weight:600">Confiance de l’IA dans ses propres descriptions</p>
+<div style="display:flex;flex-direction:row;height:56px;border-radius:12px;overflow:hidden">
+<div style="flex:3;background:#2F6690"></div>
+<div style="flex:23;background:#7FA6C4"></div>
+<div style="flex:24;background:#D8CFC1"></div>
+</div>
+<div style="display:flex;flex-direction:row;justify-content:space-between">
+<p style="font-size:24px;color:#4A5563"><b>3</b> bonne</p>
+<p style="font-size:24px;color:#4A5563"><b>23</b> moyenne</p>
+<p style="font-size:24px;color:#4A5563"><b>24</b> faible</p>
+</div>
+</div>
+</div>
+<div style="display:flex;flex-direction:row;gap:32px">
+<div style="flex:1;display:flex;flex-direction:row;gap:20px;align-items:center;background:#FFFDF9;border:1px solid #DDD6C8;border-radius:16px;padding:32px">
+<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#B4471A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+<p style="font-size:32px;line-height:1.3"><b>0</b> validé par un signeur</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:row;gap:20px;align-items:center;background:#FFFDF9;border:1px solid #DDD6C8;border-radius:16px;padding:32px">
+<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#2F6690" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+<p style="font-size:32px;line-height:1.3">Outil de relecture prêt : page web + CSV</p>
+</div>
+</div>
+<div style="position:absolute;left:128px;bottom:64px;width:1664px;display:flex;flex-direction:row;justify-content:space-between">
+<p style="font-size:24px;color:#5F646C">LSF Live · point d’étape</p>
+<p style="font-size:24px;color:#5F646C">5</p>
+</div>
+<aside class="notes">Les 3 « bonne » comprennent 1 signe dont seule la forme de la main est jugée sûre. Outil : sigml_validation.py génère validation.html et validation_pilote.csv.</aside>
+</section>
+<section id="declic" data-transition="fade" style="background:#B4471A;color:#FBF3EC;font-family:'Public Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;justify-content:center;gap:40px">
+<p style="font-size:24px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#FBF3EC">Le déclic, en discutant avec Gemini</p>
+<h1 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:96px;font-weight:700;line-height:1.1;color:#FBF3EC;width:1500px">Pourquoi un avatar plutôt que des sous-titres ?</h1>
+<p style="font-size:44px;line-height:1.3;color:#FBF3EC;width:1400px">Une question de fond : pour qui, et pour quels contenus ?</p>
+<aside class="notes">C’est la question qui a tout remis en perspective : la technique ne sert à rien si le public visé ne veut pas de l’avatar pour cet usage.</aside>
+</section>
+<section id="revelations" data-transition="fade" style="background:#E9E4DA;color:#1B2A3A;font-family:'Public Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:48px">
+<div style="display:flex;flex-direction:column;gap:16px">
+<p style="font-size:24px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#B4471A">Ce que ça a révélé</p>
+<h2 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:72px;font-weight:700;line-height:1.1;color:#1B2A3A">L’idée tient, mais pas pour tous les usages</h2>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:28px">
+<div style="display:flex;flex-direction:row;gap:24px;background:#FFFDF9;border-radius:16px;padding:32px">
+<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#2F6690" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none" aria-hidden="true"><path d="M7 10v12"/><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z"/></svg>
+<div style="flex:1;display:flex;flex-direction:column;gap:8px">
+<h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:32px;font-weight:700">La LSF compte vraiment</h3>
+<p style="font-size:24px;line-height:1.4;color:#4A5563">Pour beaucoup de Sourds, le français écrit est une langue seconde : les sous-titres ne suffisent pas.</p>
+</div>
+</div>
+<div style="display:flex;flex-direction:row;gap:24px;background:#FFFDF9;border-radius:16px;padding:32px">
+<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#B4471A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+<div style="flex:1;display:flex;flex-direction:column;gap:8px">
+<h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:32px;font-weight:700">L’avatar a ses limites</h3>
+<p style="font-size:24px;line-height:1.4;color:#4A5563">Accepté pour des messages courts et prévisibles, beaucoup moins pour de la parole libre.</p>
+</div>
+</div>
+<div style="display:flex;flex-direction:row;gap:24px;background:#FFFDF9;border-radius:16px;padding:32px">
+<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#B4471A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none" aria-hidden="true"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>
+<div style="flex:1;display:flex;flex-direction:column;gap:8px">
+<h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:32px;font-weight:700">Signes isolés ≠ LSF</h3>
+<p style="font-size:24px;line-height:1.4;color:#4A5563">Enchaîner des signes sans espace ni visage donne du « français signé ».</p>
+</div>
+</div>
+<div style="display:flex;flex-direction:row;gap:24px;background:#FFFDF9;border-radius:16px;padding:32px">
+<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#B4471A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+<div style="flex:1;display:flex;flex-direction:column;gap:8px">
+<h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:32px;font-weight:700">L’interpréteur maison : un gouffre</h3>
+<p style="font-size:24px;line-height:1.4;color:#4A5563">Beaucoup de travail pour un geste raide, alors que CWASA lit déjà le SiGML.</p>
+</div>
+</div>
+</div>
+<div style="position:absolute;left:128px;bottom:64px;width:1664px;display:flex;flex-direction:row;justify-content:space-between">
+<p style="font-size:24px;color:#5F646C">LSF Live · point d’étape</p>
+<p style="font-size:24px;color:#5F646C">7</p>
+</div>
+<aside class="notes">La limite « messages courts et prévisibles » rejoint la position de la Fédération mondiale des Sourds (WFD) sur les avatars signants. Gemini se trompait sur un point : CWASA vient de l’Université d’East Anglia, pas de Hambourg.</aside>
+</section>
+<section id="bilan" data-transition="fade" style="background:#F6F4EF;color:#1B2A3A;font-family:'Public Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:56px">
+<div style="display:flex;flex-direction:column;gap:16px">
+<p style="font-size:24px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#B4471A">Le tri</p>
+<h2 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:72px;font-weight:700;line-height:1.1;color:#1B2A3A">Ce qu’on garde, ce qu’on met en pause</h2>
+</div>
+<div style="display:flex;flex-direction:row;gap:32px">
+<div style="flex:1;display:flex;flex-direction:column;gap:24px;background:#FFFDF9;border:1px solid #DDD6C8;border-top:8px solid #2F6690;border-radius:16px;padding:40px">
+<div style="display:flex;flex-direction:row;gap:16px;align-items:center">
+<svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#2F6690" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+<h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:44px;font-weight:700">On garde</h3>
+</div>
+<ul style="font-size:32px;line-height:1.4;color:#1B2A3A">
+<li>Transcription et traduction en gloses</li>
+<li>La chaîne gloses → vidéo et le testeur de phrases</li>
+<li>Les 50 signes et l’outil de relecture, pour tester auprès de Sourds</li>
+</ul>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:24px;background:#FFFDF9;border:1px solid #DDD6C8;border-top:8px solid #B4471A;border-radius:16px;padding:40px">
+<div style="display:flex;flex-direction:row;gap:16px;align-items:center">
+<svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#B4471A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+<h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:44px;font-weight:700">En pause</h3>
+</div>
+<ul style="font-size:32px;line-height:1.4;color:#1B2A3A">
+<li>Aller jusqu’à 500 signes en SiGML</li>
+<li>Améliorer l’interpréteur Blender maison</li>
+<li>Les poses LSFB, qui ne sont pas de la LSF</li>
+</ul>
+</div>
+</div>
+<div style="position:absolute;left:128px;bottom:64px;width:1664px;display:flex;flex-direction:row;justify-content:space-between">
+<p style="font-size:24px;color:#5F646C">LSF Live · point d’étape</p>
+<p style="font-size:24px;color:#5F646C">8</p>
+</div>
+</section>
+<section id="direction" data-transition="fade" style="background:#F6F4EF;color:#1B2A3A;font-family:'Public Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:56px">
+<div style="display:flex;flex-direction:column;gap:16px">
+<p style="font-size:24px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#B4471A">La nouvelle direction</p>
+<h2 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:72px;font-weight:700;line-height:1.1;color:#1B2A3A">Animer l’avatar avec de vrais signes filmés</h2>
+</div>
+<div style="display:flex;flex-direction:row;align-items:center;gap:24px">
+<div style="flex:1;display:flex;flex-direction:column;gap:12px;background:#FFFDF9;border:1px solid #DDD6C8;border-radius:16px;padding:36px">
+<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#2F6690" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none" aria-hidden="true"><polygon points="6 3 20 12 6 21 6 3"/></svg>
+<h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:32px;font-weight:700">Vidéos</h3>
+<p style="font-size:24px;line-height:1.4;color:#4A5563">Signes filmés par des Sourds du quartier</p>
+</div>
+<svg width="56" height="28" viewBox="0 0 56 28" style="flex:none" aria-hidden="true"><polygon points="0,8.4 33.599999999999994,8.4 33.599999999999994,0 56,14.0 33.599999999999994,28 33.599999999999994,19.599999999999998 0,19.599999999999998" fill="#B4471A"/></svg>
+<div style="flex:1;display:flex;flex-direction:column;gap:12px;background:#FFFDF9;border:1px solid #DDD6C8;border-radius:16px;padding:36px">
+<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#2F6690" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+<h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:32px;font-weight:700">Extraction</h3>
+<p style="font-size:24px;line-height:1.4;color:#4A5563">MediaPipe : corps, mains, visage</p>
+</div>
+<svg width="56" height="28" viewBox="0 0 56 28" style="flex:none" aria-hidden="true"><polygon points="0,8.4 33.599999999999994,8.4 33.599999999999994,0 56,14.0 33.599999999999994,28 33.599999999999994,19.599999999999998 0,19.599999999999998" fill="#B4471A"/></svg>
+<div style="flex:1;display:flex;flex-direction:column;gap:12px;background:#FFFDF9;border:1px solid #DDD6C8;border-radius:16px;padding:36px">
+<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#2F6690" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9 7 7M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></svg>
+<h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:32px;font-weight:700">Nettoyage</h3>
+<p style="font-size:24px;line-height:1.4;color:#4A5563">Lissage, profondeur, doigts</p>
+</div>
+<svg width="56" height="28" viewBox="0 0 56 28" style="flex:none" aria-hidden="true"><polygon points="0,8.4 33.599999999999994,8.4 33.599999999999994,0 56,14.0 33.599999999999994,28 33.599999999999994,19.599999999999998 0,19.599999999999998" fill="#B4471A"/></svg>
+<div style="flex:1;display:flex;flex-direction:column;gap:12px;background:#FFFDF9;border:1px solid #DDD6C8;border-radius:16px;padding:36px">
+<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#2F6690" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+<h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:32px;font-weight:700">Avatar</h3>
+<p style="font-size:24px;line-height:1.4;color:#4A5563">Blender, puis Unity ou Unreal</p>
+</div>
+</div>
+<p style="font-size:32px;line-height:1.4;color:#4A5563;width:1500px">Un geste humain plutôt que calculé, avec le visage. Si les mains déçoivent : HaMeR ou WiLoR, SGNify, et 2 à 3 téléphones pour une vraie 3D.</p>
+<div style="position:absolute;left:128px;bottom:64px;width:1664px;display:flex;flex-direction:row;justify-content:space-between">
+<p style="font-size:24px;color:#5F646C">LSF Live · point d’étape</p>
+<p style="font-size:24px;color:#5F646C">9</p>
+</div>
+<aside class="notes">MediaPipe tourne en local sur le Mac (licence Apache 2.0), environ 5 à 10 secondes par vidéo de signe. HaMeR, WiLoR et SGNify sont plus précis mais demandent plutôt une carte graphique NVIDIA.</aside>
+</section>
+<section id="test" data-transition="fade" style="background:#F6F4EF;color:#1B2A3A;font-family:'Public Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:56px">
+<div style="display:flex;flex-direction:column;gap:16px">
+<p style="font-size:24px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#B4471A">Prochaine étape</p>
+<h2 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:72px;font-weight:700;line-height:1.1;color:#1B2A3A">Un test sur 10 vidéos Elix</h2>
+</div>
+<div style="display:flex;flex-direction:row;gap:48px">
+<ol style="flex:1;font-size:32px;line-height:1.5;color:#1B2A3A">
+<li>Choisir 10 signes variés : main près du visage, deux mains, contact</li>
+<li>Extraire avec MediaPipe, en local : 1 à 2 minutes en tout</li>
+<li>Lisser, corriger la profondeur, animer l’avatar</li>
+<li>Comparer côte à côte : original, squelette, avatar</li>
+</ol>
+<div style="width:600px;display:flex;flex-direction:column;gap:20px;background:#1B2A3A;border-radius:16px;padding:40px">
+<h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:32px;font-weight:700;color:#F6F4EF">Ce qu’on saura</h3>
+<p style="font-size:24px;line-height:1.4;color:#C9D3DC">Bras et rythme : probablement bons.</p>
+<p style="font-size:24px;line-height:1.4;color:#C9D3DC">Formes de main et sourcils : à voir.</p>
+<p style="font-size:24px;line-height:1.4;color:#C9D3DC">Contacts et profondeur : approximatifs.</p>
+<p style="font-size:24px;font-weight:700;line-height:1.4;color:#E8875A">Une caméra suffit-elle ?</p>
+</div>
+</div>
+<div style="position:absolute;left:128px;bottom:64px;width:1664px;display:flex;flex-direction:row;justify-content:space-between">
+<p style="font-size:24px;color:#5F646C">Test interne : la réutilisation des vidéos Elix reste à faire autoriser par Signes de Sens</p>
+<p style="font-size:24px;color:#5F646C">10</p>
+</div>
+</section>
+<section id="questions" data-transition="fade" style="background:#1B2A3A;color:#F6F4EF;font-family:'Public Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:48px">
+<div style="display:flex;flex-direction:column;gap:16px">
+<p style="font-size:24px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#E8875A">Les questions ouvertes</p>
+<h2 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:72px;font-weight:700;line-height:1.1;color:#F6F4EF">Ce qu’il reste à trancher</h2>
+</div>
+<div style="display:flex;flex-direction:column">
+<div style="display:flex;flex-direction:row;gap:40px;align-items:center;border-top:1px solid #3B4D60;padding:24px 0">
+<p style="font-family:'Space Grotesk', Arial, sans-serif;font-size:32px;font-weight:700;color:#E8875A;width:240px">Usage</p>
+<p style="flex:1;font-size:32px;line-height:1.3;color:#F6F4EF">Parole libre en direct, ou un domaine restreint (annonces, phrases types) ?</p>
+</div>
+<div style="display:flex;flex-direction:row;gap:40px;align-items:center;border-top:1px solid #3B4D60;padding:24px 0">
+<p style="font-family:'Space Grotesk', Arial, sans-serif;font-size:32px;font-weight:700;color:#E8875A;width:240px">Public</p>
+<p style="flex:1;font-size:32px;line-height:1.3;color:#F6F4EF">Qu’en pensent les Sourds du quartier ? Les associer dès maintenant.</p>
+</div>
+<div style="display:flex;flex-direction:row;gap:40px;align-items:center;border-top:1px solid #3B4D60;padding:24px 0">
+<p style="font-family:'Space Grotesk', Arial, sans-serif;font-size:32px;font-weight:700;color:#E8875A;width:240px">Captation</p>
+<p style="flex:1;font-size:32px;line-height:1.3;color:#F6F4EF">Une caméra suffit-elle, ou faut-il 2 à 3 téléphones ?</p>
+</div>
+<div style="display:flex;flex-direction:row;gap:40px;align-items:center;border-top:1px solid #3B4D60;border-bottom:1px solid #3B4D60;padding:24px 0">
+<p style="font-family:'Space Grotesk', Arial, sans-serif;font-size:32px;font-weight:700;color:#E8875A;width:240px">Cadre</p>
+<p style="flex:1;font-size:32px;line-height:1.3;color:#F6F4EF">Consentement (RGPD), licences des vidéos et des modèles 3D.</p>
+</div>
+</div>
+<div style="position:absolute;left:128px;bottom:64px;width:1664px;display:flex;flex-direction:row;justify-content:space-between">
+<p style="font-size:24px;color:#9AA8B5">LSF Live · point d’étape</p>
+<p style="font-size:24px;color:#9AA8B5">11</p>
+</div>
+<aside class="notes">Licences des modèles : SMPL-X, MANO et FLAME (utilisés par HaMeR, WiLoR, SGNify) sont gratuits seulement pour la recherche non commerciale. MediaPipe est sous Apache 2.0.</aside>
+</section>
+</div>
+<div id="nav"></div>
+<script>
+  const slides = [...document.querySelectorAll("#stage > section")];
+  const stage = document.getElementById("stage"), nav = document.getElementById("nav");
+  let i = Math.min(Math.max(parseInt(location.hash.slice(1)) - 1 || 0, 0), slides.length - 1);
+  function fit() {
+    const s = Math.min(innerWidth / 1920, innerHeight / 1080);
+    stage.style.transform = `scale(${s}) translate(-50%, -50%)`;
+  }
+  function show(n) {
+    i = Math.min(Math.max(n, 0), slides.length - 1);
+    slides.forEach((el, k) => el.classList.toggle("active", k === i));
+    nav.textContent = `${i + 1} / ${slides.length} · ← → pour naviguer`;
+    history.replaceState(null, "", "#" + (i + 1));
+    nav.style.opacity = 1; clearTimeout(window.navTimer);
+    window.navTimer = setTimeout(() => nav.style.opacity = 0, 2500);
+  }
+  addEventListener("resize", fit);
+  addEventListener("keydown", e => {
+    if (["ArrowRight", "PageDown", " "].includes(e.key)) show(i + 1);
+    if (["ArrowLeft", "PageUp"].includes(e.key)) show(i - 1);
+    if (e.key === "Home") show(0);
+    if (e.key === "End") show(slides.length - 1);
+  });
+  addEventListener("click", e => show(e.clientX > innerWidth / 2 ? i + 1 : i - 1));
+  fit(); show(i);
+</script>
+</body>
+</html>
