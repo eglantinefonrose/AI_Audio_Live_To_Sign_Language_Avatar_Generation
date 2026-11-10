@@ -1,0 +1,1518 @@
+{
+  "label": "éval74-fr — fine-tune gemma9b v1 (ckpt 500, Q4_K_M) — règles seules",
+  "timestamp": "2026-10-27T15:21:02",
+  "time": "15:21:02",
+  "model": "lsf-gemma9b:v1",
+  "model_digest": "c62e876f2e056146a4d",
+  "training": {
+    "started_at": "2026-10-27T12:08:21+0100",
+    "ended_at": "2026-10-27T14:06:35+0100",
+    "duration_s": 7094,
+    "approximate": false,
+    "base_model": "mlx-community/gemma-2-9b-it-4bit",
+    "hyperparams": {
+      "iters": 500,
+      "num_layers": 4,
+      "learning_rate": 0.0001,
+      "batch_size": 1,
+      "mask_prompt": true,
+      "grad_checkpoint": true,
+      "val_batches": 10
+    },
+    "final_val_loss": 0.193,
+    "data_dir": "finetune/data/eaa7c0947e75",
+    "train_sha": "eaa7c0947e75",
+    "train_snapshot": "finetune/data/eaa7c0947e75",
+    "dataset_manifest": {
+      "created": "2026-10-27T11:32:09",
+      "teacher": "claude-opus-5-5 (rédaction manuelle, conventions v1, 100 % français)",
+      "prompt_hash": "b9f4c4860f4a",
+      "synthetic": true,
+      "human_validated": false,
+      "generated": 453,
+      "accepted": 453,
+      "train": 408,
+      "valid": 45,
+      "drops": {},
+      "per_category": 25,
+      "seed": 0,
+      "eval_excluded": 74,
+      "source": "pairs",
+      "conventions_sha": "becbdc52032f",
+      "variant": "gemma-no-system",
+      "variant_note": "system fusionné en tête du 1er message user (Gemma 2 n'a pas de rôle system)",
+      "derived_from": "2184f8f3751e"
+    },
+    "git_commit": "f404e2f",
+    "git_dirty": true,
+    "log": "finetune/logs/train_20261027-120821.log",
+    "digest_match": true
+  },
+  "git_commit": "f404e2f",
+  "git_dirty": true,
+  "prompt_mode": "rules-only",
+  "prompt_hash": "a87c572c3504",
+  "num_ctx": 4096,
+  "few_shot": 0,
+  "prompt_tokens": 1525,
+  "dataset": "eval/dataset.jsonl",
+  "dataset_sha": "aa78d1a41ef9",
+  "dataset_snapshot": "eval/datasets/aa78d1a41ef9/dataset.jsonl",
+  "dataset_n": 74,
+  "metrics": {
+    "exact": 0.14864864864864866,
+    "exact_count": 11,
+    "n": 74,
+    "f1": 0.7693,
+    "order": 0.6685,
+    "leaks": 1
+  },
+  "by_phenomenon": {
+    "temps-passe": 0.644,
+    "possession": 0.653,
+    "suppression-mot-outil": 0.575,
+    "verbe-final": 0.843,
+    "lexique-direct": 0.917,
+    "connecteur": 0.903,
+    "directionnel": 0.605,
+    "negation": 0.853,
+    "pronom": 0.938,
+    "question-ouverte": 0.779,
+    "temps": 0.791,
+    "adjectif-apres-nom": 0.828,
+    "pluriel-non-marque": 0.788,
+    "question-ouinon": 0.743,
+    "verbatim-technique": 0.853,
+    "verbatim-nom-propre": 0.743,
+    "copule": 0.746,
+    "temps-futur": 0.741,
+    "adverbe": 0.735,
+    "modal": 0.706,
+    "lieu": 0.796,
+    "nombre": 0.739,
+    "topicalisation": 0.75
+  },
+  "per_sentence": [
+    {
+      "text": "Le directeur a parlé de ses projets.",
+      "gold": [
+        "AVANT",
+        "DIRECTEUR",
+        "PROJET",
+        "LUI",
+        "PARLER"
+      ],
+      "pred": [
+        "DIRECTEUR",
+        "PARLER",
+        "PROJETS",
+        "PROJETS"
+      ],
+      "f1": 0.444,
+      "order": 0.4,
+      "exact": false,
+      "leak": []
+    },
+    {
+      "text": "Nous regardons le match en direct.",
+      "gold": [
+        "NOUS",
+        "MATCH",
+        "REGARDER",
+        "DIRECT"
+      ],
+      "pred": [
+        "NOUS",
+        "REGARDER",
+        "MATCH",
+        "DIRECT"
+      ],
+      "f1": 1.0,
+      "order": 0.75,
+      "exact": false,
+      "leak": []
+    },
+    {
+      "text": "Le concert est diffusé en live.",
+      "gold": [
+        "CONCERT",
+        "DIFFUSER",
+        "DIRECT"
+      ],
+      "pred": [
+        "CONCERT",
+        "DIFFUSER",
+        "DIRECT"
+      ],
+      "f1": 1.0,
+      "order": 1.0,
+      "exact": true,
+      "leak": []
+    },
+    {
+      "text": "En conclusion, je vous remercie.",
+      "gold": [
+        "ENFIN",
+        "MOI",
+        "REMERCIER-À-VOUS"
+      ],
+      "pred": [
+        "ENFIN",
+        "MOI",
+        "REMERCIER-À-VOUS"
+      ],
+      "f1": 1.0,
+      "order": 1.0,
+      "exact": true,
+      "leak": []
+    },
+    {
+      "text": "Elle n'aime pas du tout le café.",
+      "gold": [
+        "LUI",
+        "CAFÉ",
+        "AIMER",
+        "NON"
+      ],
+      "pred": [
+        "LUI",
+        "CAFÉ",
+        "AIMER",
+        "NON"
+      ],
+      "f1": 1.0,
+      "order": 1.0,
+      "exact": true,
+      "leak": []
+    },
+    {
+      "text": "Pourquoi tu ne viens pas demain ?",
+      "gold": [
+        "DEMAIN",
+        "TOI",
+        "VENIR",
+        "NON",
+        "POURQUOI"
+      ],
+      "pred": [
+        "TOI",
+        "VENIR",
+        "DEMAIN",
+        "POURQUOI"
+      ],
+      "f1": 0.889,
+      "order": 0.6,
+      "exact": false,
+      "leak": []
+    },
+    {
+      "text": "Ce matin, mon frère a acheté une voiture rouge.",
+      "gold": [
+        "MATIN",
+        "FRÈRE",
+        "MOI",
+        "VOITURE",
+        "ROUGE",
+        "ACHETER"
+      ],
+      "pred": [
+        "MATIN",
+        "FRÈRE",
+        "A",
+        "VOITURE",
+        "ROUGE"
+      ],
+      "f1": 0.727,
+      "order": 0.667,
+      "exact": false,
+      "leak": []
+    },
+    {
+      "text": "Les étudiants étrangers adorent Paris.",
+      "gold": [
+        "ÉTUDIANT",
+        "ÉTRANGER",
+        "PARIS",
+        "AIMER",
+        "BEAUCOUP"
+      ],
+      "pred": [
+        "ÉTUDIANT",
+        "ÉTRANGER",
+        "ADORE",
+        "PARIS"
+      ],
+      "f1": 0.667,
+      "order": 0.6,
+      "exact": false,
+      "leak": []
+    },
+    {
+      "text": "Je ne comprends pas cette phrase.",
+      "gold": [
+        "MOI",
+        "PHRASE",
+        "COMPRENDRE",
+        "NON"
+      ],
+      "pred": [
+        "MOI",
+        "PHRASE",
+        "COMPRENDRE",
+        "NON"
+      ],
+      "f1": 1.0,
+      "order": 1.0,
+      "exact": true,
+      "leak": []
+    },
+    {
+      "text": "Hier, j'ai mangé une pomme.",
+      "gold": [
+        "HIER",
+        "MOI",
+        "POMME",
+        "MANGER"
+      ],
+      "pred": [
+        "HIER",
+        "MOI",
+        "MANGER",
+        "POMME"
+      ],
+      "f1": 1.0,
+      "order": 0.75,
+      "exact": false,
+      "leak": []
+    },
+    {
+      "text": "Quand est-ce que tu pars en vacances ?",
+      "gold": [
+        "TOI",
+        "VACANCES",
+        "PARTIR",
+        "QUAND"
+      ],
+      "pred": [
+        "VACANCES",
+        "PARIR",
+        "TOI",
+        "QUAND"
+      ],
+      "f1": 0.75,
+      "order": 0.5,
+      "exact": false,
+      "leak": []
+    },
+    {
+      "text": "Tu veux un café ?",
+      "gold": [
+        "TOI",
+        "CAFÉ",
+        "VOULOIR",
+        "QUESTION"
+      ],
+      "pred": [
+        "TOI",
+        "VOITURE",
+        "CAFÉ",
+        "VOITURE",
+        "VOITURE"
+      ],
+      "f1": 0.444,
+      "order": 0.5,
+      "exact": false,
+      "leak": []
+    },
+    {
+      "text": "Le fine tuning utilise des modèles pré-entraînés.",
+      "gold": [
+        "FINE-TUNING",
+        "MODÈLE",
+        "PRÉ-ENTRAÎNÉ",
+        "UTILISER"
+      ],
+      "pred": [
+        "FINE-TUNING",
+        "UTILISER",
+        "MODÈLE",
+        "PRÉ-ENTRAÎNÉ"
+      ],
+      "f1": 1.0,
+      "order": 0.75,
+      "exact": false,
+      "leak": []
+    },
+    {
+      "text": "Camembert est un modèle français.",
+      "gold": [
+        "CAMEMBERT",
+        "MODÈLE",
+        "FRANÇAIS"
+      ],
+      "pred": [
+        "CAMEMBERT",
+        "MODÈLE",
+        "FRANÇAIS"
+      ],
+      "f1": 1.0,
+      "order": 1.0,
+      "exact": true,
+      "leak": []
+    },
+    {
+      "text": "Pour conclure, je montre les résultats.",
+      "gold": [
+        "ENFIN",
+        "MOI",
+        "RÉSULTAT",
+        "MONTRER"
+      ],
+      "pred": [
+        "ENFIN",
+        "MOI",
+        "MONTRER",
+        "RÉSULTAT"
+      ],
+      "f1": 1.0,
+      "order": 0.75,
+      "exact": false,
+      "leak": []
+    },
+    {
+      "text": "Demain matin, les élèves visiteront le musée.",
+      "gold": [
+        "DEMAIN",
+        "MATIN",
+        "ÉLÈVE",
+        "MUSÉE",
+        "VISITER"
+      ],
+      "pred": [
+        "DEMAIN",
+        "MATIN",
+        "ÉLÈVE",
+        "MUSÉE",
+        "VISITER"
+      ],
+      "f1": 1.0,
+      "order": 1.0,
+      "exact": true,
+      "leak": []
+    },
+    {
+      "text": "Je t'explique la méthode.",
+      "gold": [
+        "MOI",
+        "MÉTHODE",
+        "EXPLIQUER-À-TOI"
+      ],
+      "pred": [
+        "MOI",
+        "TOI",
+        "EXPLAINER",
+        "MÉTHODE"
+      ],
+      "f1": 0.571,
+      "order": 0.667,
+      "exact": false,
+      "leak": []
+    },
+    {
+      "text": "Elle me prête son vélo.",
+      "gold": [
+        "LUI",
+        "VÉLO",
+        "LUI",
+        "PRÊTER-À-MOI"
+      ],
+      "pred": [
+        "LUI",
+        "PRÊTER",
+        "VÉLO",
+        "MOI"
+      ],
+      "f1": 0.5,
+      "order": 0.5,
+      "exact": false,
+      "leak": []
+    },
+    {
+      "text": "Nous vous envoyons le rapport demain.",
+      "gold": [
+        "DEMAIN",
+        "NOUS",
+        "RAPPORT",
+        "ENVOYER-À-VOUS"
+      ],
+      "pred": [
+        "NOUS",
+        "VOUS",
+        "ENVOYER",
+        "RAPPORT",
+        "DEMAIN"
+      ],
+      "f1": 0.667,
+      "order": 0.5,
+      "exact": false,
+      "leak": []
+    },
+    {
+      "text": "Tu lui as dit la vérité ?",
+      "gold": [
+        "AVANT",
+        "TOI",
+        "VÉRITÉ",
+        "DIRE-À-LUI",
+        "QUESTION"
+      ],
+      "pred": [
+        "TOI",
+        "LUI",
+        "DIRE",
+        "VÉRITÉ",
+        "QUESTION"
+      ],
+      "f1": 0.6,
+      "order": 0.6,
+      "exact": false,
+      "leak": []
+    },
+    {
+      "text": "Je vais vous présenter mon projet.",
+      "gold": [
+        "BIENTÔT",
+        "MOI",
+        "PROJET",
+        "MOI",
+        "PRÉSENTER-À-VOUS"
+      ],
+      "pred": [
+        "MOI",
+        "PROJECT",
+        "PRÉSENTER-À-VOUS"
+      ],
+      "f1": 0.5,
+      "order": 0.4,
+      "exact": false,
+      "leak": []
+    },
+    {
+      "text": "Ils nous demandent de l'aide.",
+      "gold": [
+        "EUX",
+        "AIDE",
+        "DEMANDER-À-NOUS"
+      ],
+      "pred": [
+        "LUI",
+        "NOUS",
+        "DEMANDER",
+        "AIDER"
+      ],
+      "f1": 0.0,
+      "order": 0.0,
+      "exact": false,
+      "leak": []
+    },
+    {
+      "text": "Qui a gagné le match ?",
+      "gold": [
+        "AVANT",
+        "MATCH",
+        "GAGNER",
+        "QUI"
+      ],
+      "pred": [
+        "AVANT",
+        "MATCH",
+        "GAGNER",
+        "QUI",
+        "OÙ"
+      ],
+      "f1": 0.889,
+      "order": 1.0,
+      "exact": false,
+      "leak": []
+    },
+    {
+      "text": "Comment fonctionne ce modèle ?",
+      "gold": [
+        "MODÈLE",
+        "FONCTIONNER",
+        "COMMENT"
+      ],
+      "pred": [
+        "MODÈLE",
+        "FONCTIONNER",
+        "COMMENT"
+      ],
+      "f1": 1.0,
+      "order": 1.0,
+      "exact": true,
+      "leak": []
+    },
+    {
+      "text": "Combien d'invités viennent ce soir ?",
+      "gold": [
+        "SOIR",
+        "INVITÉ",
+        "VENIR",
+        "COMBIEN"
+      ],
+      "pred": [
+        "SOIR",
+        "INVITÉS",
+        "VENIR",
+        "COMBIEN"
+      ],
+      "f1": 0.75,
+      "order": 0.75,
+      "exact": false,
+      "leak": []
+    },
+    {
+      "text": "Que mangez-vous à midi ?",
+      "gold": [
+        "MIDI",
+        "VOUS",
+        "MANGER",
+        "QUOI"
+      ],
+      "pred": [
+        "MIDI",
+        "VOUS",
+        "MANGER"
+      ],
+      "f1": 0.857,
+      "order": 0.75,
+      "exact": false,
+      "leak": []
+    },
+    {
+      "text": "Où as-tu garé la voiture ?",
+      "gold": [
+        "AVANT",
+        "TOI",
+        "VOITURE",
+        "GARER",
+        "OÙ"
+      ],
+      "pred": [
+        "VOITURE",
+        "GARÉ",
+        "VOUS",
+        "OÙ"
+      ],
+      "f1": 0.444,
+      "order": 0.4,
+      "exact": false,
+      "leak": []
+    },
+    {
+      "text": "Pourquoi ce dataset est trop petit ?",
+      "gold": [
+        "DATASET",
+        "PETIT",
+        "TROP",
+        "POURQUOI"
+      ],
+      "pred": [
+        "DATASET",
+        "PETIT",
+        "POURQUOI"
+      ],
+      "f1": 0.857,
+      "order": 0.75,
+      "exact": false,
+      "leak": []
+    },
+    {
+      "text": "Vous avez déjà essayé le random forest ?",
+      "gold": [
+        "VOUS",
+        "RANDOM-FOREST",
+        "ESSAYER",
+        "DÉJÀ",
+        "QUESTION"
+      ],
+      "pred": [
+        "AVANT",
+        "VOUS",
+        "RANDOM-FOREST",
+        "ESSAYER"
+      ],
+      "f1": 0.667,
+      "order": 0.6,
+      "exact": false,
+      "leak": []
+    },
+    {
+      "text": "Il pleut encore ?",
+      "gold": [
+        "PLEUVOIR",
+        "ENCORE",
+        "QUESTION"
+      ],
+      "pred": [
+        "LUI",
+        "PLEU",
+        "ENCORE",
+        "QUESTION"
+      ],
+      "f1": 0.571,
+      "order": 0.667,
+      "exact": false,
+      "leak": []
+    },
+    {
+      "text": "Ta sœur peut venir samedi ?",
+      "gold": [
+        "SAMEDI",
+        "SŒUR",
+        "TOI",
+        "VENIR",
+        "POUVOIR",
+        "QUESTION"
+      ],
+      "pred": [
+        "SŒUR",
+        "TOI",
+        "VENIR",
+        "SAMEDI",
+        "QUESTION"
+      ],
+      "f1": 0.909,
+      "order": 0.667,
+      "exact": false,
+      "leak": []
+    },
+    {
+      "text": "Je ne mange jamais de viande le soir.",
+      "gold": [
+        "SOIR",
+        "MOI",
+        "VIANDE",
+        "MANGER",
+        "JAMAIS"
+      ],
+      "pred": [
+        "MOI",
+        "MANGER",
+        "VIANDE",
+        "SOIR",
+        "JAUNE"
+      ],
+      "f1": 0.8,
+      "order": 0.4,
+      "exact": false,
+      "leak": []
+    },
+    {
+      "text": "Il ne dit rien.",
+      "gold": [
+        "LUI",
+        "DIRE",
+        "RIEN"
+      ],
+      "pred": [
+        "LUI",
+        "DITURE",
+        "NON"
+      ],
+      "f1": 0.333,
+      "order": 0.333,
+      "exact": false,
+      "leak": []
+    },
+    {
+      "text": "Nous ne voyons personne.",
+      "gold": [
+        "NOUS",
+        "VOIR",
+        "PERSONNE"
+      ],
+      "pred": [
+        "NOUS",
+        "VOIR",
+        "PERSONNE"
+      ],
+      "f1": 1.0,
+      "order": 1.0,
+      "exact": true,
+      "leak": []
+    },
+    {
+      "text": "Mes parents ne peuvent pas venir.",
+      "gold": [
+        "PARENT",
+        "MOI",
+        "VENIR",
+        "POUVOIR",
+        "NON"
+      ],
+      "pred": [
+        "PARENTS",
+        "MOI",
+        "VENIR",
+        "POUVOIR",
+        "NON"
+      ],
+      "f1": 0.8,
+      "order": 0.8,
+      "exact": false,
+      "leak": []
+    },
+    {
+      "text": "J'ai perdu mon téléphone.",
+      "gold": [
+        "AVANT",
+        "MOI",
+        "TÉLÉPHONE",
+        "MOI",
+        "PERDRE"
+      ],
+      "pred": [
+        "MOI",
+        "PHONÉ",
+        "PERDRE"
+      ],
+      "f1": 0.5,
+      "order": 0.4,
+      "exact": false,
+      "leak": []
+    },
+    {
+      "text": "Nous avons entraîné le modèle sur un GPU.",
+      "gold": [
+        "AVANT",
+        "NOUS",
+        "MODÈLE",
+        "GPU",
+        "ENTRAÎNER"
+      ],
+      "pred": [
+        "NOUS",
+        "AVEC",
+        "ENTRAÎNER",
+        "MODÈLE",
+        "GPU"
+      ],
+      "f1": 0.8,
+      "order": 0.6,
+      "exact": false,
+      "leak": [
+        "AVEC"
+      ]
+    },
+    {
+      "text": "Ils sont arrivés en retard.",
+      "gold": [
+        "AVANT",
+        "EUX",
+        "ARRIVER",
+        "RETARD"
+      ],
+      "pred": [
+        "AVANT",
+        "EUX",
+        "LUI",
+        "ARRIVER"
+      ],
+      "f1": 0.75,
+      "order": 0.75,
+      "exact": false,
+      "leak": []
+    },
+    {
+      "text": "Lundi dernier, j'ai rencontré ton professeur.",
+      "gold": [
+        "LUNDI-DERNIER",
+        "MOI",
+        "PROFESSEUR",
+        "TOI",
+        "RENCONTRER"
+      ],
+      "pred": [
+        "LUNDI",
+        "AVANT",
+        "PROFESSEUR",
+        "PROUVER",
+        "MOI",
+        "RENCONTRE",
+        "PROFESSEUR",
+        "TOI"
+      ],
+      "f1": 0.462,
+      "order": 0.6,
+      "exact": false,
+      "leak": []
+    },
+    {
+      "text": "Aujourd'hui, nous testons la nouvelle version.",
+      "gold": [
+        "AUJOURD'HUI",
+        "NOUS",
+        "VERSION",
+        "NOUVEAU",
+        "TESTER"
+      ],
+      "pred": [
+        "AVANT",
+        "NOUS",
+        "VERSION",
+        "TESTER"
+      ],
+      "f1": 0.667,
+      "order": 0.6,
+      "exact": false,
+      "leak": []
+    },
+    {
+      "text": "Dans trois semaines, nous partons au Japon.",
+      "gold": [
+        "SEMAINE",
+        "TROIS",
+        "JAPON",
+        "NOUS",
+        "PARTIR"
+      ],
+      "pred": [
+        "AVANT",
+        "NOUS",
+        "JAPON",
+        "PARTIR"
+      ],
+      "f1": 0.667,
+      "order": 0.4,
+      "exact": false,
+      "leak": []
+    },
+    {
+      "text": "Maintenant, le système tourne en direct.",
+      "gold": [
+        "MAINTENANT",
+        "SYSTÈME",
+        "TOURNER",
+        "DIRECT"
+      ],
+      "pred": [
+        "MAINTENANT",
+        "SYSTÈME",
+        "TOURNE",
+        "DIRECT"
+      ],
+      "f1": 0.75,
+      "order": 0.75,
+      "exact": false,
+      "leak": []
+    },
+    {
+      "text": "Nous allons publier le dataset.",
+      "gold": [
+        "BIENTÔT",
+        "NOUS",
+        "DATASET",
+        "PUBLIER"
+      ],
+      "pred": [
+        "NOUS",
+        "ALLER",
+        "PUBLIER",
+        "DATASET"
+      ],
+      "f1": 0.75,
+      "order": 0.5,
+      "exact": false,
+      "leak": []
+    },
+    {
+      "text": "Tu finiras ce travail.",
+      "gold": [
+        "BIENTÔT",
+        "TOI",
+        "TRAVAIL",
+        "FINIR"
+      ],
+      "pred": [
+        "TOI",
+        "FINIR",
+        "TRAVAIL"
+      ],
+      "f1": 0.857,
+      "order": 0.5,
+      "exact": false,
+      "leak": []
+    },
+    {
+      "text": "Le train partira en retard.",
+      "gold": [
+        "BIENTÔT",
+        "TRAIN",
+        "PARTIR",
+        "RETARD"
+      ],
+      "pred": [
+        "TRAIN",
+        "PARTIR",
+        "RETARD"
+      ],
+      "f1": 0.857,
+      "order": 0.75,
+      "exact": false,
+      "leak": []
+    },
+    {
+      "text": "À la bibliothèque, je lis des romans.",
+      "gold": [
+        "BIBLIOTHÈQUE",
+        "MOI",
+        "ROMAN",
+        "LIRE"
+      ],
+      "pred": [
+        "BIBLIOTHÈQUE",
+        "MOI",
+        "LIRE",
+        "ROMANS"
+      ],
+      "f1": 0.75,
+      "order": 0.75,
+      "exact": false,
+      "leak": []
+    },
+    {
+      "text": "Dans la salle, les étudiants attendent le professeur.",
+      "gold": [
+        "SALLE",
+        "ÉTUDIANT",
+        "PROFESSEUR",
+        "ATTENDRE"
+      ],
+      "pred": [
+        "SALLE",
+        "ÉTUDIANT",
+        "PROFESSEUR",
+        "ATTENDRE"
+      ],
+      "f1": 1.0,
+      "order": 1.0,
+      "exact": true,
+      "leak": []
+    },
+    {
+      "text": "Mon oncle habite à Marseille.",
+      "gold": [
+        "MARSEILLE",
+        "ONCLE",
+        "MOI",
+        "HABITER"
+      ],
+      "pred": [
+        "MON",
+        "ONCLE",
+        "HABITER",
+        "MARSEILLE"
+      ],
+      "f1": 0.75,
+      "order": 0.5,
+      "exact": false,
+      "leak": []
+    },
+    {
+      "text": "Nous allons au cinéma ce soir.",
+      "gold": [
+        "SOIR",
+        "CINÉMA",
+        "NOUS",
+        "ALLER"
+      ],
+      "pred": [
+        "NOUS",
+        "CINÉMA",
+        "SOIR"
+      ],
+      "f1": 0.857,
+      "order": 0.25,
+      "exact": false,
+      "leak": []
+    },
+    {
+      "text": "Votre présentation est très claire.",
+      "gold": [
+        "PRÉSENTATION",
+        "VOUS",
+        "CLAIR",
+        "TRÈS"
+      ],
+      "pred": [
+        "VOITURE",
+        "PRÉSENTATION",
+        "CLAIR"
+      ],
+      "f1": 0.571,
+      "order": 0.5,
+      "exact": false,
+      "leak": []
+    },
+    {
+      "text": "Leurs enfants jouent au jardin.",
+      "gold": [
+        "JARDIN",
+        "ENFANT",
+        "EUX",
+        "JOUER"
+      ],
+      "pred": [
+        "LUI",
+        "ENFANT",
+        "JOUER",
+        "JARDIN"
+      ],
+      "f1": 0.75,
+      "order": 0.5,
+      "exact": false,
+      "leak": []
+    },
+    {
+      "text": "Notre modèle dépasse le baseline.",
+      "gold": [
+        "MODÈLE",
+        "NOUS",
+        "BASELINE",
+        "DÉPASSER"
+      ],
+      "pred": [
+        "NOUS",
+        "MODÈLE",
+        "DÉPASSER",
+        "BASELINE"
+      ],
+      "f1": 1.0,
+      "order": 0.5,
+      "exact": false,
+      "leak": []
+    },
+    {
+      "text": "J'ai acheté trois livres anciens.",
+      "gold": [
+        "AVANT",
+        "MOI",
+        "LIVRE",
+        "ANCIEN",
+        "TROIS",
+        "ACHETER"
+      ],
+      "pred": [
+        "MOI",
+        "ACHETER-À-LIVRE",
+        "LIVRE",
+        "TROIS",
+        "ANCIEN"
+      ],
+      "f1": 0.727,
+      "order": 0.5,
+      "exact": false,
+      "leak": []
+    },
+    {
+      "text": "Les grandes villes sont polluées.",
+      "gold": [
+        "VILLE",
+        "GRAND",
+        "POLLUÉ"
+      ],
+      "pred": [
+        "VITES",
+        "VILLE",
+        "POLLUÉ"
+      ],
+      "f1": 0.667,
+      "order": 0.667,
+      "exact": false,
+      "leak": []
+    },
+    {
+      "text": "Cinq ingénieurs travaillent sur le projet.",
+      "gold": [
+        "INGÉNIEUR",
+        "CINQ",
+        "PROJET",
+        "TRAVAILLER"
+      ],
+      "pred": [
+        "AVANT",
+        "INGÉNIER",
+        "PROJET",
+        "TRAVAILLER"
+      ],
+      "f1": 0.5,
+      "order": 0.5,
+      "exact": false,
+      "leak": []
+    },
+    {
+      "text": "Elle a deux chiens noirs.",
+      "gold": [
+        "LUI",
+        "CHIEN",
+        "NOIR",
+        "DEUX"
+      ],
+      "pred": [
+        "LUI",
+        "CHIEN",
+        "DEUX",
+        "NOIR"
+      ],
+      "f1": 1.0,
+      "order": 0.75,
+      "exact": false,
+      "leak": []
+    },
+    {
+      "text": "Vous devez remplir ce formulaire.",
+      "gold": [
+        "VOUS",
+        "FORMULAIRE",
+        "REMPLIR",
+        "DEVOIR"
+      ],
+      "pred": [
+        "VOUS",
+        "DEVOIR",
+        "POUVOIR",
+        "POUVOIR",
+        "REMPIR",
+        "FORMULAIRE"
+      ],
+      "f1": 0.6,
+      "order": 0.5,
+      "exact": false,
+      "leak": []
+    },
+    {
+      "text": "Je peux t'aider ?",
+      "gold": [
+        "MOI",
+        "AIDER-À-TOI",
+        "POUVOIR",
+        "QUESTION"
+      ],
+      "pred": [
+        "MOI",
+        "AIDER-À-TOI",
+        "POUVOIR",
+        "QUESTION"
+      ],
+      "f1": 1.0,
+      "order": 1.0,
+      "exact": true,
+      "leak": []
+    },
+    {
+      "text": "Ils veulent apprendre la LSF.",
+      "gold": [
+        "EUX",
+        "LSF",
+        "APPRENDRE",
+        "VOULOIR"
+      ],
+      "pred": [
+        "LUI",
+        "LSF",
+        "LUI",
+        "VOITURE",
+        "LSF"
+      ],
+      "f1": 0.222,
+      "order": 0.25,
+      "exact": false,
+      "leak": []
+    },
+    {
+      "text": "Pour terminer, nous comparons les deux modèles.",
+      "gold": [
+        "ENFIN",
+        "NOUS",
+        "MODÈLE",
+        "DEUX",
+        "COMPARER"
+      ],
+      "pred": [
+        "TERMINER",
+        "NOUS",
+        "COMPARER",
+        "MODÈLE",
+        "DEUX"
+      ],
+      "f1": 0.8,
+      "order": 0.6,
+      "exact": false,
+      "leak": []
+    },
+    {
+      "text": "Donc, le modèle fonctionne bien.",
+      "gold": [
+        "MODÈLE",
+        "FONCTIONNER",
+        "BIEN"
+      ],
+      "pred": [
+        "DONC",
+        "MODÈLE",
+        "FONCTIONNER",
+        "BIEN"
+      ],
+      "f1": 0.857,
+      "order": 1.0,
+      "exact": false,
+      "leak": []
+    },
+    {
+      "text": "Du coup, nous changeons de méthode.",
+      "gold": [
+        "NOUS",
+        "MÉTHODE",
+        "CHANGER"
+      ],
+      "pred": [
+        "COUP",
+        "NOUS",
+        "CHANGER",
+        "MÉTHODE"
+      ],
+      "f1": 0.857,
+      "order": 0.667,
+      "exact": false,
+      "leak": []
+    },
+    {
+      "text": "Le match est retransmis en direct ce soir.",
+      "gold": [
+        "SOIR",
+        "MATCH",
+        "RETRANSMETTRE",
+        "DIRECT"
+      ],
+      "pred": [
+        "SOIR",
+        "MATCH",
+        "RETRANSMISSION",
+        "DIRECT"
+      ],
+      "f1": 0.75,
+      "order": 0.75,
+      "exact": false,
+      "leak": []
+    },
+    {
+      "text": "Je commente la course en live.",
+      "gold": [
+        "MOI",
+        "COURSE",
+        "COMMENTER",
+        "DIRECT"
+      ],
+      "pred": [
+        "MOI",
+        "COMMENTER",
+        "COURSE",
+        "DIRECT"
+      ],
+      "f1": 1.0,
+      "order": 0.75,
+      "exact": false,
+      "leak": []
+    },
+    {
+      "text": "Tu regardes le live ?",
+      "gold": [
+        "TOI",
+        "DIRECT",
+        "REGARDER",
+        "QUESTION"
+      ],
+      "pred": [
+        "TOI",
+        "REGARDER",
+        "DIRECT",
+        "QUESTION"
+      ],
+      "f1": 1.0,
+      "order": 0.75,
+      "exact": false,
+      "leak": []
+    },
+    {
+      "text": "Le deep learning demande beaucoup de données.",
+      "gold": [
+        "DEEP-LEARNING",
+        "DONNÉE",
+        "BEAUCOUP",
+        "DEMANDER"
+      ],
+      "pred": [
+        "DEEP-LEARNING",
+        "DONNER",
+        "DONNÉE",
+        "BEAUCOUP"
+      ],
+      "f1": 0.75,
+      "order": 0.75,
+      "exact": false,
+      "leak": []
+    },
+    {
+      "text": "Nous comparons Camembert et Flaubert.",
+      "gold": [
+        "NOUS",
+        "CAMEMBERT",
+        "FLAUBERT",
+        "COMPARER"
+      ],
+      "pred": [
+        "NOUS",
+        "CAMEMBERT",
+        "FLAUBERT",
+        "COMPARER"
+      ],
+      "f1": 1.0,
+      "order": 1.0,
+      "exact": true,
+      "leak": []
+    },
+    {
+      "text": "Le machine learning détecte les fraudes.",
+      "gold": [
+        "MACHINE-LEARNING",
+        "FRAUDE",
+        "DÉTECTER"
+      ],
+      "pred": [
+        "MACHINE-LEARNING",
+        "DÉTECTER",
+        "FRAUDE"
+      ],
+      "f1": 1.0,
+      "order": 0.667,
+      "exact": false,
+      "leak": []
+    },
+    {
+      "text": "Ce film, je l'ai déjà vu.",
+      "gold": [
+        "FILM",
+        "MOI",
+        "VOIR",
+        "DÉJÀ"
+      ],
+      "pred": [
+        "FILM",
+        "MOI",
+        "VOIR",
+        "AVANT"
+      ],
+      "f1": 0.75,
+      "order": 0.75,
+      "exact": false,
+      "leak": []
+    },
+    {
+      "text": "Le chocolat, elle déteste ça.",
+      "gold": [
+        "CHOCOLAT",
+        "LUI",
+        "AIMER",
+        "NON"
+      ],
+      "pred": [
+        "CHOCOLAT",
+        "LUI",
+        "CHATER",
+        "NON"
+      ],
+      "f1": 0.75,
+      "order": 0.75,
+      "exact": false,
+      "leak": []
+    },
+    {
+      "text": "Tu parles français ?",
+      "gold": [
+        "TOI",
+        "FRANÇAIS",
+        "PARLER",
+        "QUESTION"
+      ],
+      "pred": [
+        "TOI",
+        "PARLER",
+        "FRANCAIS",
+        "QUESTION"
+      ],
+      "f1": 0.75,
+      "order": 0.75,
+      "exact": false,
+      "leak": []
+    },
+    {
+      "text": "Elle ne boit pas de thé.",
+      "gold": [
+        "LUI",
+        "THÉ",
+        "BOIRE",
+        "NON"
+      ],
+      "pred": [
+        "LUI",
+        "BOIRE",
+        "THÉ",
+        "NON"
+      ],
+      "f1": 1.0,
+      "order": 0.75,
+      "exact": false,
+      "leak": []
+    },
+    {
+      "text": "Demain, nous entraînerons un nouveau modèle.",
+      "gold": [
+        "DEMAIN",
+        "NOUS",
+        "MODÈLE",
+        "NOUVEAU",
+        "ENTRAÎNER"
+      ],
+      "pred": [
+        "DEMAIN",
+        "NOUS",
+        "ENTRAÎNER",
+        "MODÈLE",
+        "NOUVEAU"
+      ],
+      "f1": 1.0,
+      "order": 0.8,
+      "exact": false,
+      "leak": []
+    },
+    {
+      "text": "Qui est ton professeur ?",
+      "gold": [
+        "PROFESSEUR",
+        "TOI",
+        "QUI"
+      ],
+      "pred": [
+        "PROFESSOR",
+        "TOI",
+        "QUI",
+        "ÊTRE"
+      ],
+      "f1": 0.571,
+      "order": 0.667,
+      "exact": false,
+      "leak": []
+    }
+  ]
+}
