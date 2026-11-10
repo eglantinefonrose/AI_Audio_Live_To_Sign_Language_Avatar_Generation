@@ -1,51 +1,63 @@
-glose,fichier,description,confiance,video,verdict,correction,commentaire
-MOI,lexique_brouillon.sigml,index pointé vers sa propre poitrine,bonne,MOI.mp4,,,
-TOI,lexique_brouillon.sigml,"index pointé vers l'interlocuteur, petit mouvement vers l'avant",bonne,TOI.mp4,,,
-MERCI,lexique_brouillon.sigml,"main plate, bout des doigts au menton, s'éloigne vers l'avant et le bas en finissant paume vers le haut",moyenne,MERCI.mp4,,,
-MAISON,lexique_brouillon.sigml,"deux mains plates en toit (symétrie gauche/droite), puis elles descendent en s'écartant et tracent les murs",moyenne,MAISON.mp4,,,
-DONNER-À-TOI,lexique_brouillon.sigml,"main en bec, part de soi vers l'interlocuteur (arc)",moyenne,DONNER-À-TOI.mp4,,,
-DONNER-À-MOI,lexique_brouillon.sigml,"même signe, direction inversée (de l'interlocuteur vers soi). Seuls l'emplacement de départ, la direction des doigts et le mouvement changent",moyenne,DONNER-À-MOI.mp4,,,
-DEUX,nombres.sigml,"index et majeur levés, écartés",moyenne,DEUX.mp4,,,
-TROIS,nombres.sigml,"pouce, index et majeur levés",moyenne,TROIS.mp4,,,
-QUATRE,nombres.sigml,"quatre doigts levés, pouce replié",moyenne,QUATRE.mp4,,,
-CINQ,nombres.sigml,"main ouverte, cinq doigts",moyenne,CINQ.mp4,,,
-LUI,pronoms.sigml,index pointé vers l'avant-droite (3e personne),moyenne,LUI.mp4,,,
-NOUS,pronoms.sigml,"index vers soi, arc devant la poitrine de l'épaule droite vers la gauche",moyenne,NOUS.mp4,,,
-VOUS,pronoms.sigml,"index vers l'avant, balayage horizontal vers la droite (plusieurs interlocuteurs)",moyenne,VOUS.mp4,,,
-EUX,pronoms.sigml,"comme LUI, avec un balayage vers la droite (plusieurs personnes)",moyenne,EUX.mp4,,,
-QUOI,questions.sigml,"deux mains plates paumes vers le haut, petit va-et-vient latéral",faible,QUOI.mp4,,,
-OÙ,questions.sigml,"index levé, petits cercles",faible,OÙ.mp4,,,
-QUI,questions.sigml,"index levé devant le menton, petit mouvement circulaire",faible,QUI.mp4,,,
-POURQUOI,questions.sigml,index qui part du front vers l'avant,faible,POURQUOI.mp4,,,
-COMMENT,questions.sigml,deux mains plates paumes vers le bas qui se retournent paumes vers le haut,faible,COMMENT.mp4,,,
-COMBIEN,questions.sigml,"main fermée qui s'ouvre, doigts vers le haut",faible,COMBIEN.mp4,,,
-AVANT,temps_et_negation.sigml,"main plate près de l'oreille, paume vers l'arrière, qui part vers l'arrière par-dessus l'épaule",moyenne,AVANT.mp4,,,
-BIENTÔT,temps_et_negation.sigml,"main plate près de la joue, petit mouvement vers l'avant",faible,BIENTÔT.mp4,,,
-HIER,temps_et_negation.sigml,"poing pouce sorti, pouce contre la joue, vers l'arrière",faible (forme de main approximative),HIER.mp4,,,
-DEMAIN,temps_et_negation.sigml,"même configuration que HIER, vers l'avant en arc",faible,DEMAIN.mp4,,,
-NON,temps_et_negation.sigml,"index levé, paume vers l'avant, va-et-vient gauche/droite",bonne pour la forme manuelle,NON.mp4,,,
-MAINTENANT,verbes_et_objets.sigml,"deux mains plates paumes vers le haut, petit mouvement vers le bas",moyenne,MAINTENANT.mp4,,,
-MATIN,verbes_et_objets.sigml,main plate qui monte devant le corps (le soleil se lève),faible,MATIN.mp4,,,
-SOIR,verbes_et_objets.sigml,main plate qui descend devant le corps (le soleil se couche),faible,SOIR.mp4,,,
-AIMER,verbes_et_objets.sigml,"main plate sur la poitrine (côté cœur), petit cercle",faible,AIMER.mp4,,,
-VOULOIR,verbes_et_objets.sigml,"main en C paume vers le haut, ramenée vers soi en se fermant",faible,VOULOIR.mp4,,,
-POUVOIR,verbes_et_objets.sigml,"deux poings qui descendent ensemble, fermement",faible,POUVOIR.mp4,,,
-PARLER,verbes_et_objets.sigml,"index devant la bouche, petits cercles vers l'avant",moyenne,PARLER.mp4,,,
-PARTIR,verbes_et_objets.sigml,main plate qui s'éloigne vite vers l'avant-droite,faible,PARTIR.mp4,,,
-COMPRENDRE,verbes_et_objets.sigml,main ouverte près du front qui se referme,faible,COMPRENDRE.mp4,,,
-APPRENDRE,verbes_et_objets.sigml,"main en bec qui part devant la poitrine et va au front (en LSF, elle part de la paume de l'autre main, non animée)",moyenne,APPRENDRE.mp4,,,
-TRAVAILLER,verbes_et_objets.sigml,"APPROXIMATION symétrique. Deux poings qui se rapprochent et se touchent deux fois (en LSF, un poignet frappe l'autre)",faible,TRAVAILLER.mp4,,,
-FINIR,verbes_et_objets.sigml,deux mains plates paumes vers le bas qui s'écartent vers le bas,faible,FINIR.mp4,,,
-AIDER-À-TOI,verbes_et_objets.sigml,"APPROXIMATION à une main. Main plate paume vers le haut, poussée vers l'interlocuteur (en LSF, elle pousse le poing de l'autre main)",faible,AIDER-À-TOI.mp4,,,
-AIDER-À-MOI,verbes_et_objets.sigml,"même signe, de l'interlocuteur vers soi",faible,AIDER-À-MOI.mp4,,,
-VOITURE,verbes_et_objets.sigml,deux poings qui tiennent un volant et le tournent,moyenne,VOITURE.mp4,,,
-BEAUCOUP,verbes_et_objets.sigml,deux mains ouvertes qui s'écartent vers l'extérieur,faible,BEAUCOUP.mp4,,,
-ACHETER,verbes_et_objets.sigml,"APPROXIMATION à une main. Main plate paume vers le haut qui part vers l'avant, comme pour tendre de l'argent (en LSF, elle part de la paume de l'autre main)",faible,ACHETER.mp4,,,
-CAFÉ,verbes_et_objets.sigml,"APPROXIMATION à une main. Poing qui tourne comme un moulin à café (en LSF, au-dessus de l'autre poing)",faible,CAFÉ.mp4,,,
-MANGER,verbes_et_quotidien.sigml,"main en bec, bout des doigts vers la bouche, petits mouvements répétés vers la bouche",moyenne,MANGER.mp4,,,
-BOIRE,verbes_et_quotidien.sigml,"main en C comme autour d'un verre, portée à la bouche puis inclinée",moyenne,BOIRE.mp4,,,
-VOIR,verbes_et_quotidien.sigml,main en V (index + majeur écartés) partant des yeux vers l'avant,moyenne,VOIR.mp4,,,
-REGARDER,verbes_et_quotidien.sigml,"même main en V, mouvement plus long vers l'avant (le regard qui se porte sur quelque chose)",moyenne,REGARDER.mp4,,,
-PENSER,verbes_et_quotidien.sigml,"index contre le front, côté tempe (la main arrive par le côté), petit mouvement circulaire",moyenne,PENSER.mp4,,,
-VENIR,verbes_et_quotidien.sigml,"index vers l'avant, ramené vers soi en arc (verbe directionnel : ici vers le signeur)",faible,VENIR.mp4,,,
-BIEN,verbes_et_quotidien.sigml,"poing pouce levé, petit mouvement vers l'avant",moyenne,BIEN.mp4,,,
+﻿glose,fichier,description,confiance,video,verdict,correction,commentaire
+"MOI","lexique_brouillon.sigml","index pointé vers sa propre poitrine","bonne","MOI.mp4","ok","",""
+"TOI","lexique_brouillon.sigml","index pointé vers l'interlocuteur, petit mouvement vers l'avant","bonne","TOI.mp4","ok","",""
+"MERCI","lexique_brouillon.sigml","main plate, bout des doigts au menton, s'éloigne vers l'avant et le bas en finissant paume vers le haut","moyenne","MERCI.mp4","ok","",""
+"MAISON","lexique_brouillon.sigml","deux mains plates en toit (symétrie gauche/droite), puis elles descendent en s'écartant et tracent les murs","moyenne","MAISON.mp4","à corriger","taper deux fois ses mains plates en toit (symétrie gauche/droite) puis les descendre",""
+"DONNER-À-TOI","lexique_brouillon.sigml","main en bec, part de soi vers l'interlocuteur (arc)","moyenne","DONNER-À-TOI.mp4","ok","",""
+"DONNER-À-MOI","lexique_brouillon.sigml","même signe, direction inversée (de l'interlocuteur vers soi). Seuls l'emplacement de départ, la direction des doigts et le mouvement changent","moyenne","DONNER-À-MOI.mp4","ok","",""
+"DEUX","nombres.sigml","index et majeur levés, écartés","moyenne","DEUX.mp4","à corriger","pouce et index levés",""
+"TROIS","nombres.sigml","pouce, index et majeur levés","moyenne","TROIS.mp4","ok","",""
+"QUATRE","nombres.sigml","quatre doigts levés, pouce replié","moyenne","QUATRE.mp4","ok","",""
+"CINQ","nombres.sigml","main ouverte, cinq doigts","moyenne","CINQ.mp4","ok","",""
+"LUI","pronoms.sigml","index pointé vers l'avant-droite (3e personne)","moyenne","LUI.mp4","ok","",""
+"NOUS","pronoms.sigml","index vers soi, arc devant la poitrine de l'épaule droite vers la gauche","moyenne","NOUS.mp4","à corriger","index vers le bas, en faisant un cercle à l'horizontal",""
+"VOUS","pronoms.sigml","index vers l'avant, balayage horizontal vers la droite (plusieurs interlocuteurs)","moyenne","VOUS.mp4","ok","",""
+"EUX","pronoms.sigml","comme LUI, avec un balayage vers la droite (plusieurs personnes)","moyenne","EUX.mp4","à corriger","index vers le bas, en faisant un cercle à l'horizontal, à la droite de la personne",""
+"QUOI","questions.sigml","deux mains plates paumes vers le haut, petit va-et-vient latéral","faible","QUOI.mp4","ok","",""
+"OÙ","questions.sigml","index levé, petits cercles","faible","OÙ.mp4","à corriger","les doigts tendus et serrés entre eux, en resserrant puis écartant les mains vers l'intérieur puis extérieur",""
+"QUI","questions.sigml","index levé devant le menton, petit mouvement circulaire","faible","QUI.mp4","à corriger","petit doigt tendu et poing fermé, bouger de gauche à droite",""
+"POURQUOI","questions.sigml","index qui part du front vers l'avant","faible","POURQUOI.mp4","à corriger","index tendu, taper sur le front puis l'écarter plusieurs fois de suite",""
+"COMMENT","questions.sigml","deux mains plates paumes vers le bas qui se retournent paumes vers le haut","faible","COMMENT.mp4","à corriger","deux paumes plates, former deux arcs de cercle avec le bout des doigts vers l'avant",""
+"COMBIEN","questions.sigml","main fermée qui s'ouvre, doigts vers le haut","faible","COMBIEN.mp4","à corriger","placer les deux poings vers le haut devant soi, puis déplier les doigts vite un à un",""
+"AVANT","temps_et_negation.sigml","main plate près de l'oreille, paume vers l'arrière, qui part vers l'arrière par-dessus l'épaule","moyenne","AVANT.mp4","à corriger","main plate avec les paumes vers soi, main droite au dessus de l'épaule en allant en avant puis en arrière deux fois",""
+"BIENTÔT","temps_et_negation.sigml","main plate près de la joue, petit mouvement vers l'avant","faible","BIENTÔT.mp4","à corriger","index sorti qui pointe vers la gauche devant soi, puis fais le signe de l'argent en avançant la main",""
+"HIER","temps_et_negation.sigml","poing pouce sorti, pouce contre la joue, vers l'arrière","faible (forme de main approximative)","HIER.mp4","à corriger","poing droit pouce sorti, devant soi, qu'on envoie derrière l'épaule droite ensuite",""
+"DEMAIN","temps_et_negation.sigml","même configuration que HIER, vers l'avant en arc","faible","DEMAIN.mp4","à corriger","poing droit pouce sorti, devant soi, qu'on envoie vers l'avant ensuite",""
+"NON","temps_et_negation.sigml","index levé, paume vers l'avant, va-et-vient gauche/droite","bonne pour la forme manuelle","NON.mp4","ok","",""
+"MAINTENANT","verbes_et_objets.sigml","deux mains plates paumes vers le haut, petit mouvement vers le bas","moyenne","MAINTENANT.mp4","à corriger","deux mains plates paumes vers le haut, petit mouvement vers le bas répétés 3 fois",""
+"MATIN","verbes_et_objets.sigml","main plate qui monte devant le corps (le soleil se lève)","faible","MATIN.mp4","à corriger","main plate gauche, main plate droite qui monte devant le corps en formant une croix (le soleil se lève)",""
+"SOIR","verbes_et_objets.sigml","main plate qui descend devant le corps (le soleil se couche)","faible","SOIR.mp4","à corriger","main plate droite qui descend devant le corps pour recouvrir la main gauche plate à l'horizontal, paume vers soi (le soleil se couche)",""
+"AIMER","verbes_et_objets.sigml","main plate sur la poitrine (côté cœur), petit cercle","faible","AIMER.mp4","à corriger","main plate sur la poitrine (côté cœur), envoyer la main vers l'avant",""
+"VOULOIR","verbes_et_objets.sigml","main en C paume vers le haut, ramenée vers soi en se fermant","faible","VOULOIR.mp4","à corriger","deux mains en C vers le haut, descendues légèrement ensuite",""
+"POUVOIR","verbes_et_objets.sigml","deux poings qui descendent ensemble, fermement","faible","POUVOIR.mp4","à corriger","deux poings légèrement écartés qui descendent ensemble et se resserrent, fermement",""
+"PARLER","verbes_et_objets.sigml","index devant la bouche, petits cercles vers l'avant","moyenne","PARLER.mp4","à corriger","index devant la bouche pointant vers la gauche (à l'horizontal), petits cercles vers l'avant",""
+"PARTIR","verbes_et_objets.sigml","main plate qui s'éloigne vite vers l'avant-droite","faible","PARTIR.mp4","à corriger","index et pouce tendus de la main droite devant soi, on colle l'index et le pouce en faisant partir la main vers la droite",""
+"COMPRENDRE","verbes_et_objets.sigml","main ouverte près du front qui se referme","faible","COMPRENDRE.mp4","à corriger","Configuration : une seule main est utilisée. L'index et le majeur sont tendus et légèrement écartés, tandis que les autres doigts sont repliés.
+
+
+
+Emplacement : la main se situe près du front, sur le côté de la tête.
+
+
+
+Mouvement : les doigts s'approchent du front, puis la main effectue un petit mouvement vers le haut et l'extérieur.
+
+
+
+Orientation : la paume est orientée légèrement vers l'intérieur, puis la main pivote pendant le mouvement.",""
+"APPRENDRE","verbes_et_objets.sigml","main en bec qui part devant la poitrine et va au front (en LSF, elle part de la paume de l'autre main, non animée)","moyenne","APPRENDRE.mp4","à corriger","main gauche à plat, paume vers le ciel à hauteur du ventre, la main droite à plat part de la hauteur de la tête et descend vers la main droite pour la toucher. Répéter le geste deux fois de suite",""
+"TRAVAILLER","verbes_et_objets.sigml","APPROXIMATION symétrique. Deux poings qui se rapprochent et se touchent deux fois (en LSF, un poignet frappe l'autre)","faible","TRAVAILLER.mp4","à corriger","Poing gauche fermé en haut en descendant, rejoint le poing droit qui monte pour se toucher, deux fois de suite",""
+"FINIR","verbes_et_objets.sigml","deux mains plates paumes vers le bas qui s'écartent vers le bas","faible","FINIR.mp4","à corriger","deux mains plates paumes vers le haut qui se tournent vers le bas ensuite",""
+"AIDER-À-TOI","verbes_et_objets.sigml","APPROXIMATION à une main. Main plate paume vers le haut, poussée vers l'interlocuteur (en LSF, elle pousse le poing de l'autre main)","faible","AIDER-À-TOI.mp4","à corriger","main gauche à plat, paume vers le haut, avec le poing droit pouce sorti posé sur la main gauche, en levant les deux mains vers le haut",""
+"AIDER-À-MOI","verbes_et_objets.sigml","même signe, de l'interlocuteur vers soi","faible","AIDER-À-MOI.mp4","à corriger","main gauche à plat, paume vers le haut, avec le poing droit pouce sorti posé sur la main gauche, en levant les deux mains vers le haut",""
+"VOITURE","verbes_et_objets.sigml","deux poings qui tiennent un volant et le tournent","moyenne","VOITURE.mp4","à corriger","deux poings le long du corps, avec index et pouce sortis formant un C, en levant de manière inversée haut-bas les deux mains plusieurs fois",""
+"BEAUCOUP","verbes_et_objets.sigml","deux mains ouvertes qui s'écartent vers l'extérieur","faible","BEAUCOUP.mp4","à corriger","deux mains ouvertes qui s'écartent vers l'extérieur en serrant puis desserrant les doigts",""
+"ACHETER","verbes_et_objets.sigml","APPROXIMATION à une main. Main plate paume vers le haut qui part vers l'avant, comme pour tendre de l'argent (en LSF, elle part de la paume de l'autre main)","faible","ACHETER.mp4","à corriger","main gauche à plat, haut niveau du ventre, main droite à plat à hauteur de torse qui descend sur la main droite",""
+"CAFÉ","verbes_et_objets.sigml","APPROXIMATION à une main. Poing qui tourne comme un moulin à café (en LSF, au-dessus de l'autre poing)","faible","CAFÉ.mp4","à corriger","main droit avec pouce et index sortis, formant des ronds sur le poing gauche",""
+"MANGER","verbes_et_quotidien.sigml","main en bec, bout des doigts vers la bouche, petits mouvements répétés vers la bouche","moyenne","MANGER.mp4","à corriger","dans l'animation, la main transperse la bouche",""
+"BOIRE","verbes_et_quotidien.sigml","main en C comme autour d'un verre, portée à la bouche puis inclinée","moyenne","BOIRE.mp4","à corriger","poing fermé avec pouce tendu vers le haut devant soi, portée à la bouche puis inclinée",""
+"VOIR","verbes_et_quotidien.sigml","main en V (index + majeur écartés) partant des yeux vers l'avant","moyenne","VOIR.mp4","ok","",""
+"REGARDER","verbes_et_quotidien.sigml","même main en V, mouvement plus long vers l'avant (le regard qui se porte sur quelque chose)","moyenne","REGARDER.mp4","ok","",""
+"PENSER","verbes_et_quotidien.sigml","index contre le front, côté tempe (la main arrive par le côté), petit mouvement circulaire","moyenne","PENSER.mp4","à corriger","main droite à hauteur de la tête collée à la tête, main gauche plus éloignée, les deux mains forment ensuite des arcs de cercle",""
+"VENIR","verbes_et_quotidien.sigml","index vers l'avant, ramené vers soi en arc (verbe directionnel : ici vers le signeur)","faible","VENIR.mp4","à corriger","index à sa droite, ramené vers son coeur en faisant un arc de cercle",""
+"BIEN","verbes_et_quotidien.sigml","poing pouce levé, petit mouvement vers l'avant","moyenne","BIEN.mp4","ok","",""
