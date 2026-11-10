@@ -110,6 +110,38 @@ quelques vidéos (`--videos --max-par-glose 3`) avant de figer un signe.
 celles à valider sont commentées. Pour régénérer la table après une mise à jour de
 `lexicon.txt` ou de `eval/dataset.jsonl`, relancer `map`.
 
+## Étiqueter LSFB → LSF (`lsf_comparaison.py`)
+
+`lsfb_mapping.csv` rapproche des **mots**, pas des **gestes** : « exact » veut dire
+même étiquette française, pas forcément même signe en LSF de France. La page
+d'étiquetage sert à le noter, signe par signe.
+
+1. Télécharger une vidéo par glose (≈ 80 Mo, une seule fois) :
+   ```bash
+   uv run python src/sign_language_3d_avatar/dataset_generation/lsfb_subset.py download --words-file src/sign_language_3d_avatar/dataset_generation/lsfb_words.txt --videos --landmarks pose --max-par-glose 1
+   ```
+2. Générer et ouvrir la page :
+   ```bash
+   uv run python src/sign_language_3d_avatar/dataset_generation/lsf_comparaison.py --ouvrir
+   ```
+   Les clips LSFB sont en MPEG-4 Part 2, que les navigateurs ne lisent pas : le script en
+   fait des copies H.264 (ffmpeg) dans `data/lsfb/videos_h264/`, sans toucher aux originaux.
+3. Pour chaque signe, regarder le clip et répondre au clavier :
+   <kbd>1</kbd> identique · <kbd>2</kbd> variante · <kbd>3</kbd> différent ·
+   <kbd>4</kbd> je ne sais pas. La page passe seule au suivant ; <kbd>←</kbd>/<kbd>→</kbd>
+   pour naviguer, <kbd>Espace</kbd> pour rejouer, <kbd>L</kbd> pour le ralenti,
+   <kbd>N</kbd> pour une note, <kbd>0</kbd> pour effacer une réponse.
+   - Ordre : gloses les plus fréquentes dans les datasets d'abord.
+   - Les formes d'un même verbe (`AIDER`, `AIDER-À-MOI`, `AIDER-À-TOI`) ne font qu'une
+     carte : le verdict vaut pour toutes.
+4. Les réponses sont gardées dans le navigateur. **Exporter le CSV** (le bouton devient
+   rouge toutes les 25 réponses) puis remplacer le fichier du projet :
+   ```bash
+   mv ~/Downloads/lsfb_lsf_comparaison.csv src/sign_language_3d_avatar/dataset_generation/lsfb_lsf_comparaison.csv
+   ```
+   Relancer le script reprend les verdicts du CSV (le plus récent l'emporte). Seuls les
+   signes **identiques** sont à utiliser tels quels pour l'avatar.
+
 ## Lexiques SiGML (`sigml/`)
 
 Descriptions de signes en SiGML (notation HamNoSys en XML, balises de la DTD
