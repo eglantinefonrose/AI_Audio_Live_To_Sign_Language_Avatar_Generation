@@ -1,0 +1,74 @@
+{"text": "Le directeur a parlé de ses projets.", "language": "fr", "glosses": ["AVANT", "DIRECTEUR", "PROJET", "LUI", "PARLER"], "phenomena": ["temps-passe", "possession", "suppression-mot-outil", "verbe-final"]}
+{"text": "Nous regardons le match en direct.", "language": "fr", "glosses": ["NOUS", "MATCH", "REGARDER", "DIRECT"], "phenomena": ["lexique-direct", "verbe-final"]}
+{"text": "Le concert est diffusé en live.", "language": "fr", "glosses": ["CONCERT", "DIFFUSER", "DIRECT"], "phenomena": ["lexique-direct"]}
+{"text": "En conclusion, je vous remercie.", "language": "fr", "glosses": ["ENFIN", "MOI", "REMERCIER-À-VOUS"], "phenomena": ["connecteur", "directionnel"]}
+{"text": "Elle n'aime pas du tout le café.", "language": "fr", "glosses": ["LUI", "CAFÉ", "AIMER", "NON"], "phenomena": ["negation", "pronom"]}
+{"text": "Pourquoi tu ne viens pas demain ?", "language": "fr", "glosses": ["DEMAIN", "TOI", "VENIR", "NON", "POURQUOI"], "phenomena": ["question-ouverte", "negation"]}
+{"text": "Ce matin, mon frère a acheté une voiture rouge.", "language": "fr", "glosses": ["MATIN", "FRÈRE", "MOI", "VOITURE", "ROUGE", "ACHETER"], "phenomena": ["temps", "possession", "adjectif-apres-nom", "verbe-final"]}
+{"text": "Les étudiants étrangers adorent Paris.", "language": "fr", "glosses": ["ÉTUDIANT", "ÉTRANGER", "PARIS", "AIMER", "BEAUCOUP"], "phenomena": ["pluriel-non-marque", "adjectif-apres-nom"]}
+{"text": "Je ne comprends pas cette phrase.", "language": "fr", "glosses": ["MOI", "PHRASE", "COMPRENDRE", "NON"], "phenomena": ["negation"]}
+{"text": "Hier, j'ai mangé une pomme.", "language": "fr", "glosses": ["HIER", "MOI", "POMME", "MANGER"], "phenomena": ["temps", "verbe-final"]}
+{"text": "Quand est-ce que tu pars en vacances ?", "language": "fr", "glosses": ["TOI", "VACANCES", "PARTIR", "QUAND"], "phenomena": ["question-ouverte"]}
+{"text": "Tu veux un café ?", "language": "fr", "glosses": ["TOI", "CAFÉ", "VOULOIR", "QUESTION"], "phenomena": ["question-ouinon"]}
+{"text": "Le fine tuning utilise des modèles pré-entraînés.", "language": "fr", "glosses": ["FINE-TUNING", "MODÈLE", "PRÉ-ENTRAÎNÉ", "UTILISER"], "phenomena": ["verbatim-technique", "adjectif-apres-nom", "verbe-final"]}
+{"text": "Camembert est un modèle français.", "language": "fr", "glosses": ["CAMEMBERT", "MODÈLE", "FRANÇAIS"], "phenomena": ["verbatim-nom-propre", "adjectif-apres-nom", "copule"]}
+{"text": "Pour conclure, je montre les résultats.", "language": "fr", "glosses": ["ENFIN", "MOI", "RÉSULTAT", "MONTRER"], "phenomena": ["connecteur", "verbe-final"]}
+{"text": "Demain matin, les élèves visiteront le musée.", "language": "fr", "glosses": ["DEMAIN", "MATIN", "ÉLÈVE", "MUSÉE", "VISITER"], "phenomena": ["temps", "pluriel-non-marque", "verbe-final"]}
+{"text": "Je t'explique la méthode.", "language": "fr", "glosses": ["MOI", "MÉTHODE", "EXPLIQUER-À-TOI"], "phenomena": ["directionnel", "verbe-final"]}
+{"text": "Elle me prête son vélo.", "language": "fr", "glosses": ["LUI", "VÉLO", "LUI", "PRÊTER-À-MOI"], "phenomena": ["directionnel", "possession"]}
+{"text": "Nous vous envoyons le rapport demain.", "language": "fr", "glosses": ["DEMAIN", "NOUS", "RAPPORT", "ENVOYER-À-VOUS"], "phenomena": ["directionnel", "temps"]}
+{"text": "Tu lui as dit la vérité ?", "language": "fr", "glosses": ["AVANT", "TOI", "VÉRITÉ", "DIRE-À-LUI", "QUESTION"], "phenomena": ["directionnel", "temps-passe", "question-ouinon"]}
+{"text": "Je vais vous présenter mon projet.", "language": "fr", "glosses": ["BIENTÔT", "MOI", "PROJET", "MOI", "PRÉSENTER-À-VOUS"], "phenomena": ["directionnel", "temps-futur", "possession"]}
+{"text": "Ils nous demandent de l'aide.", "language": "fr", "glosses": ["EUX", "AIDE", "DEMANDER-À-NOUS"], "phenomena": ["directionnel", "suppression-mot-outil"]}
+{"text": "Qui a gagné le match ?", "language": "fr", "glosses": ["AVANT", "MATCH", "GAGNER", "QUI"], "phenomena": ["question-ouverte", "temps-passe"]}
+{"text": "Comment fonctionne ce modèle ?", "language": "fr", "glosses": ["MODÈLE", "FONCTIONNER", "COMMENT"], "phenomena": ["question-ouverte"]}
+{"text": "Combien d'invités viennent ce soir ?", "language": "fr", "glosses": ["SOIR", "INVITÉ", "VENIR", "COMBIEN"], "phenomena": ["question-ouverte", "temps", "pluriel-non-marque"]}
+{"text": "Que mangez-vous à midi ?", "language": "fr", "glosses": ["MIDI", "VOUS", "MANGER", "QUOI"], "phenomena": ["question-ouverte", "temps"]}
+{"text": "Où as-tu garé la voiture ?", "language": "fr", "glosses": ["AVANT", "TOI", "VOITURE", "GARER", "OÙ"], "phenomena": ["question-ouverte", "temps-passe"]}
+{"text": "Pourquoi ce dataset est trop petit ?", "language": "fr", "glosses": ["DATASET", "PETIT", "TROP", "POURQUOI"], "phenomena": ["question-ouverte", "verbatim-technique", "adverbe"]}
+{"text": "Vous avez déjà essayé le random forest ?", "language": "fr", "glosses": ["VOUS", "RANDOM-FOREST", "ESSAYER", "DÉJÀ", "QUESTION"], "phenomena": ["question-ouinon", "verbatim-technique", "adverbe"]}
+{"text": "Il pleut encore ?", "language": "fr", "glosses": ["PLEUVOIR", "ENCORE", "QUESTION"], "phenomena": ["question-ouinon", "adverbe"]}
+{"text": "Ta sœur peut venir samedi ?", "language": "fr", "glosses": ["SAMEDI", "SŒUR", "TOI", "VENIR", "POUVOIR", "QUESTION"], "phenomena": ["question-ouinon", "modal", "possession", "temps"]}
+{"text": "Je ne mange jamais de viande le soir.", "language": "fr", "glosses": ["SOIR", "MOI", "VIANDE", "MANGER", "JAMAIS"], "phenomena": ["negation", "temps"]}
+{"text": "Il ne dit rien.", "language": "fr", "glosses": ["LUI", "DIRE", "RIEN"], "phenomena": ["negation"]}
+{"text": "Nous ne voyons personne.", "language": "fr", "glosses": ["NOUS", "VOIR", "PERSONNE"], "phenomena": ["negation"]}
+{"text": "Mes parents ne peuvent pas venir.", "language": "fr", "glosses": ["PARENT", "MOI", "VENIR", "POUVOIR", "NON"], "phenomena": ["negation", "modal", "possession", "pluriel-non-marque"]}
+{"text": "J'ai perdu mon téléphone.", "language": "fr", "glosses": ["AVANT", "MOI", "TÉLÉPHONE", "MOI", "PERDRE"], "phenomena": ["temps-passe", "possession"]}
+{"text": "Nous avons entraîné le modèle sur un GPU.", "language": "fr", "glosses": ["AVANT", "NOUS", "MODÈLE", "GPU", "ENTRAÎNER"], "phenomena": ["temps-passe", "verbatim-technique"]}
+{"text": "Ils sont arrivés en retard.", "language": "fr", "glosses": ["AVANT", "EUX", "ARRIVER", "RETARD"], "phenomena": ["temps-passe", "adverbe"]}
+{"text": "Lundi dernier, j'ai rencontré ton professeur.", "language": "fr", "glosses": ["LUNDI-DERNIER", "MOI", "PROFESSEUR", "TOI", "RENCONTRER"], "phenomena": ["temps", "possession"]}
+{"text": "Aujourd'hui, nous testons la nouvelle version.", "language": "fr", "glosses": ["AUJOURD'HUI", "NOUS", "VERSION", "NOUVEAU", "TESTER"], "phenomena": ["temps", "adjectif-apres-nom"]}
+{"text": "Dans trois semaines, nous partons au Japon.", "language": "fr", "glosses": ["SEMAINE", "TROIS", "JAPON", "NOUS", "PARTIR"], "phenomena": ["temps", "lieu", "nombre"]}
+{"text": "Maintenant, le système tourne en direct.", "language": "fr", "glosses": ["MAINTENANT", "SYSTÈME", "TOURNER", "DIRECT"], "phenomena": ["temps", "lexique-direct"]}
+{"text": "Nous allons publier le dataset.", "language": "fr", "glosses": ["BIENTÔT", "NOUS", "DATASET", "PUBLIER"], "phenomena": ["temps-futur", "verbatim-technique"]}
+{"text": "Tu finiras ce travail.", "language": "fr", "glosses": ["BIENTÔT", "TOI", "TRAVAIL", "FINIR"], "phenomena": ["temps-futur"]}
+{"text": "Le train partira en retard.", "language": "fr", "glosses": ["BIENTÔT", "TRAIN", "PARTIR", "RETARD"], "phenomena": ["temps-futur", "adverbe"]}
+{"text": "À la bibliothèque, je lis des romans.", "language": "fr", "glosses": ["BIBLIOTHÈQUE", "MOI", "ROMAN", "LIRE"], "phenomena": ["lieu", "pluriel-non-marque"]}
+{"text": "Dans la salle, les étudiants attendent le professeur.", "language": "fr", "glosses": ["SALLE", "ÉTUDIANT", "PROFESSEUR", "ATTENDRE"], "phenomena": ["lieu", "pluriel-non-marque"]}
+{"text": "Mon oncle habite à Marseille.", "language": "fr", "glosses": ["MARSEILLE", "ONCLE", "MOI", "HABITER"], "phenomena": ["lieu", "possession", "verbatim-nom-propre"]}
+{"text": "Nous allons au cinéma ce soir.", "language": "fr", "glosses": ["SOIR", "CINÉMA", "NOUS", "ALLER"], "phenomena": ["lieu", "temps"]}
+{"text": "Votre présentation est très claire.", "language": "fr", "glosses": ["PRÉSENTATION", "VOUS", "CLAIR", "TRÈS"], "phenomena": ["possession", "copule", "adverbe"]}
+{"text": "Leurs enfants jouent au jardin.", "language": "fr", "glosses": ["JARDIN", "ENFANT", "EUX", "JOUER"], "phenomena": ["possession", "lieu", "pluriel-non-marque"]}
+{"text": "Notre modèle dépasse le baseline.", "language": "fr", "glosses": ["MODÈLE", "NOUS", "BASELINE", "DÉPASSER"], "phenomena": ["possession", "verbatim-technique"]}
+{"text": "J'ai acheté trois livres anciens.", "language": "fr", "glosses": ["AVANT", "MOI", "LIVRE", "ANCIEN", "TROIS", "ACHETER"], "phenomena": ["temps-passe", "nombre", "adjectif-apres-nom"]}
+{"text": "Les grandes villes sont polluées.", "language": "fr", "glosses": ["VILLE", "GRAND", "POLLUÉ"], "phenomena": ["adjectif-apres-nom", "pluriel-non-marque", "copule"]}
+{"text": "Cinq ingénieurs travaillent sur le projet.", "language": "fr", "glosses": ["INGÉNIEUR", "CINQ", "PROJET", "TRAVAILLER"], "phenomena": ["nombre", "pluriel-non-marque"]}
+{"text": "Elle a deux chiens noirs.", "language": "fr", "glosses": ["LUI", "CHIEN", "NOIR", "DEUX"], "phenomena": ["nombre", "adjectif-apres-nom", "pronom"]}
+{"text": "Vous devez remplir ce formulaire.", "language": "fr", "glosses": ["VOUS", "FORMULAIRE", "REMPLIR", "DEVOIR"], "phenomena": ["modal"]}
+{"text": "Je peux t'aider ?", "language": "fr", "glosses": ["MOI", "AIDER-À-TOI", "POUVOIR", "QUESTION"], "phenomena": ["modal", "directionnel", "question-ouinon"]}
+{"text": "Ils veulent apprendre la LSF.", "language": "fr", "glosses": ["EUX", "LSF", "APPRENDRE", "VOULOIR"], "phenomena": ["modal", "verbatim-nom-propre"]}
+{"text": "Pour terminer, nous comparons les deux modèles.", "language": "fr", "glosses": ["ENFIN", "NOUS", "MODÈLE", "DEUX", "COMPARER"], "phenomena": ["connecteur", "nombre"]}
+{"text": "Donc, le modèle fonctionne bien.", "language": "fr", "glosses": ["MODÈLE", "FONCTIONNER", "BIEN"], "phenomena": ["connecteur", "adverbe"]}
+{"text": "Du coup, nous changeons de méthode.", "language": "fr", "glosses": ["NOUS", "MÉTHODE", "CHANGER"], "phenomena": ["connecteur", "suppression-mot-outil"]}
+{"text": "Le match est retransmis en direct ce soir.", "language": "fr", "glosses": ["SOIR", "MATCH", "RETRANSMETTRE", "DIRECT"], "phenomena": ["lexique-direct", "temps"]}
+{"text": "Je commente la course en live.", "language": "fr", "glosses": ["MOI", "COURSE", "COMMENTER", "DIRECT"], "phenomena": ["lexique-direct"]}
+{"text": "Tu regardes le live ?", "language": "fr", "glosses": ["TOI", "DIRECT", "REGARDER", "QUESTION"], "phenomena": ["lexique-direct", "question-ouinon"]}
+{"text": "Le deep learning demande beaucoup de données.", "language": "fr", "glosses": ["DEEP-LEARNING", "DONNÉE", "BEAUCOUP", "DEMANDER"], "phenomena": ["verbatim-technique"]}
+{"text": "Nous comparons Camembert et Flaubert.", "language": "fr", "glosses": ["NOUS", "CAMEMBERT", "FLAUBERT", "COMPARER"], "phenomena": ["verbatim-nom-propre", "suppression-mot-outil"]}
+{"text": "Le machine learning détecte les fraudes.", "language": "fr", "glosses": ["MACHINE-LEARNING", "FRAUDE", "DÉTECTER"], "phenomena": ["verbatim-technique", "pluriel-non-marque"]}
+{"text": "Ce film, je l'ai déjà vu.", "language": "fr", "glosses": ["FILM", "MOI", "VOIR", "DÉJÀ"], "phenomena": ["topicalisation", "adverbe"]}
+{"text": "Le chocolat, elle déteste ça.", "language": "fr", "glosses": ["CHOCOLAT", "LUI", "AIMER", "NON"], "phenomena": ["topicalisation", "pronom"]}
+{"text": "Tu parles français ?", "language": "fr", "glosses": ["TOI", "FRANÇAIS", "PARLER", "QUESTION"], "phenomena": ["question-ouinon"]}
+{"text": "Elle ne boit pas de thé.", "language": "fr", "glosses": ["LUI", "THÉ", "BOIRE", "NON"], "phenomena": ["negation", "pronom"]}
+{"text": "Demain, nous entraînerons un nouveau modèle.", "language": "fr", "glosses": ["DEMAIN", "NOUS", "MODÈLE", "NOUVEAU", "ENTRAÎNER"], "phenomena": ["temps", "adjectif-apres-nom"]}
+{"text": "Qui est ton professeur ?", "language": "fr", "glosses": ["PROFESSEUR", "TOI", "QUI"], "phenomena": ["question-ouverte", "possession"]}

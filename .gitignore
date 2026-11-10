@@ -82,3 +82,6 @@ finetune/adapters-*/
 finetune/logs/
 finetune/data/2184f8f3751e/train.jsonl
 avatar
+src/sign_language_3d_avatar
+src/finetune
+src/eval/datasets
