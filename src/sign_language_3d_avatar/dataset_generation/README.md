@@ -110,6 +110,14 @@ quelques vidéos (`--videos --max-par-glose 3`) avant de figer un signe.
 celles à valider sont commentées. Pour régénérer la table après une mise à jour de
 `lexicon.txt` ou de `eval/dataset.jsonl`, relancer `map`.
 
+## Choisir le meilleur exemple de chaque signe (`select_examples.py`)
+
+Sans relecture : parmi les ~10 exemples téléchargés par signe, le script garde celui qui
+a le meilleur score (0,5 × taux d'images où les deux mains sont détectées, mesuré sur les
+poses **brutes** ; 0,3 × faible tremblement ; 0,2 × durée proche de la médiane du signe).
+Résultat : `selection.csv` (versionné, identifiants et scores seulement). Suite de la
+chaîne : [avatar_animation/README.md](../avatar_animation/README.md#dictionnaire-de-signes-lsfb).
+
 ## Étiqueter LSFB → LSF (`lsf_comparaison.py`)
 
 `lsfb_mapping.csv` rapproche des **mots**, pas des **gestes** : « exact » veut dire

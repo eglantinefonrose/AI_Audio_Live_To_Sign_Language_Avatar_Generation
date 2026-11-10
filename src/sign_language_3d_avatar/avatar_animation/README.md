@@ -3,6 +3,52 @@
 Scripts Blender qui produisent les animations (sorties dans `src/sign_language_3d_avatar/avatar_animation/data/`,
 ignoré par git). Les données d'entrée viennent de `src/sign_language_3d_avatar/dataset_generation/`.
 
+## Dictionnaire de signes LSFB
+
+Chaîne entièrement automatique, des clips LSFB-ISOL jusqu'à un avatar qui signe des
+phrases. Tout ce qu'elle produit va dans `data/dictionnaire/` (ignoré par git, dérivé de
+LSFB : CC BY-NC-SA 4.0).
+
+| Étape | Script | Ce qu'il fait |
+|---|---|---|
+| 1. Choix | `dataset_generation/select_examples.py` | parmi ~10 exemples par signe, garde le meilleur : mains détectées (poses brutes), tremblement, durée proche de la médiane → `selection.csv` |
+| 2. Nettoyage | `clean_signs.py` | droitier (clips gauchers retournés), sauts corrigés, lissage léger, immobilités du début et de la fin coupées, articulations 3D → `signes/*.npz` |
+| 3. Index | `sequence.py index` | chaque glose du projet → signe, pointage généré ou mot affiché → `index.json` |
+| 4. Avatar | `build_dictionary_blender.py` | une action Blender par signe sur l'avatar → `dictionnaire_<avatar>.blend` et `.glb` |
+| 5. Phrase | `demo_phrase_blender.py` (via `tester_phrase_lsfb.py`) | repos, transitions de 0,24 s, signes, pointages, sous-titres → `.mp4` |
+
+```bash
+# poses (nettoyées + brutes) de 10 exemples par signe (≈ 30 Mo)
+uv run python src/sign_language_3d_avatar/dataset_generation/lsfb_subset.py download --words-file src/sign_language_3d_avatar/dataset_generation/lsfb_words.txt --max-par-glose 10 --landmarks pose,left_hand,right_hand --raw
+uv run python src/sign_language_3d_avatar/dataset_generation/select_examples.py
+uv run python src/sign_language_3d_avatar/avatar_animation/clean_signs.py
+uv run python src/sign_language_3d_avatar/avatar_animation/sequence.py index
+/Applications/Blender.app/Contents/MacOS/Blender -b --factory-startup --python src/sign_language_3d_avatar/avatar_animation/build_dictionary_blender.py -- [--avatar mon_avatar.vrm]
+uv run python src/sign_language_3d_avatar/tester_phrase_lsfb.py --gloses "MOI MAISON MERCI" [--avatar mon_avatar.vrm]
+```
+
+**Transfert sur l'avatar** (`avatar_rig.py`) : chaque os humanoïde est orienté d'après
+la *direction* entre deux articulations (mains, torse et tête par deux vecteurs pour le
+roulis). Le résultat ne dépend donc ni de la taille ni des proportions de l'avatar.
+
+**Avatar VRoid Studio** : dans VRoid Studio, *Exporter → Exporter en VRM* (VRM 1.0 ou
+0.x), puis passer le fichier avec `--avatar`. Aucune extension Blender n'est nécessaire :
+le `.vrm` est importé comme un glTF et la table des os humanoïdes est lue dans le
+fichier ; les modèles VRM 0.x (tournés vers l'arrière) sont remis face caméra. Les
+matériaux MToon sont simplifiés (rendu Workbench), suffisant pour des démos.
+
+**Ce qui est généré ou manque** :
+- pointages `MOI`, `TOI`, `LUI` (fixes) et `NOUS`, `VOUS`, `EUX` (balayage) : générés, main
+  droite index tendu (LSFB-ISOL ne fournit pas de clip de pointage) ;
+- verbes directionnels (`AIDER-À-TOI`) : forme de base du verbe, sans orientation ;
+- 173 gloses sans signe (termes techniques, noms propres, synonymes non retenus) : mot
+  affiché en sous-titre, mains au repos. LSFB-ISOL n'a pas d'alphabet manuel complet,
+  donc pas d'épellation ;
+- pas de visage dans cette version.
+
+**Limites** : clips tirés de conversations spontanées (gestes parfois bas ou réduits),
+mains MediaPipe imparfaites, et signes en **LSFB**, pas en LSF de France.
+
 ## Retargeting des poses LSFB (`retarget_blender.py`)
 
 Il fait jouer les poses MediaPipe téléchargées par `src/sign_language_3d_avatar/dataset_generation/lsfb_subset.py` à un squelette Blender (41 os, doigts

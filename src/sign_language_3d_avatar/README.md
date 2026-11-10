@@ -15,7 +15,22 @@ Les poses LSFB téléchargées et les vidéos (`*.mp4`) sont ignorées par git ;
 exports `.glb`/`.bvh` du retargeting (`avatar_animation/data/retarget/`) sont
 commités. Ce sont des dérivés de LSFB, donc sous CC BY-NC-SA 4.0 eux aussi.
 
-## Tester une phrase
+## Tester une phrase en LSFB (dictionnaire complet, piste actuelle)
+
+```bash
+uv run python src/sign_language_3d_avatar/tester_phrase_lsfb.py --gloses "MOI MAISON AIDER-À-TOI MERCI"
+```
+
+L'avatar signe la phrase avec le **dictionnaire LSFB** (330 signes réels nettoyés,
+pointages générés, mots sans signe affichés) et la vidéo s'ouvre. Sans option : mode
+interactif ; `t: phrase en français` passe par le traducteur (Ollama). Avec ton
+avatar VRoid : `--avatar mon_avatar.vrm`. Construction du dictionnaire :
+[avatar_animation/README.md](avatar_animation/README.md#dictionnaire-de-signes-lsfb).
+
+> Ce dictionnaire signe en **LSFB** (langue des signes de Belgique francophone), pas en
+> LSF de France, et dérive de LSFB-ISOL (CC BY-NC-SA 4.0 : usage non commercial).
+
+## Tester une phrase (lexique SiGML, prototype)
 
 ```bash
 uv run python src/sign_language_3d_avatar/tester_phrase_sigml.py
@@ -49,7 +64,8 @@ Si Blender n'est pas dans `/Applications`, passez `--blender` ou la variable `BL
 | 2 | Retargeting des poses LSFB vers un squelette Blender | animation fidèle aux poses | techniquement OK, **non conforme** aux signes attendus |
 | 3 | Chercher un dataset de signes LSF isolés | rien d'exploitable et d'accessible | LSF-ANIMAL non publié |
 | 4 | Faire générer les signes par une IA | écarté | trop d'erreurs invérifiables |
-| 5 | Décrire les signes (HamNoSys/SiGML) et les animer dans Blender | 6 signes animés | **piste retenue pour la suite** |
+| 5 | Décrire les signes (HamNoSys/SiGML) et les animer dans Blender | 50 signes, relecture trop fastidieuse | abandonné |
+| 6 | Dictionnaire **LSFB** automatique : meilleur exemple, nettoyage, transfert sur avatar (mannequin ou VRoid), enchaînement | 330 signes, 533 gloses du projet traitées | **piste actuelle** (LSFB assumée) |
 
 ---
 
