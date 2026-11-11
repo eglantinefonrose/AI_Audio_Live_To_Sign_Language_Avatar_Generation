@@ -180,8 +180,15 @@ uv run python -m src.eval.evaluate --model lsf-gemma9b:v1 --few-shot-cible --pos
 
 Mesuré sur le gold LSFB (`a77bfbad8a13`) avec `lsf-gemma9b:v1` (prod + few-shot ciblé +
 post-traitement) : sans vocabulaire, 51 % exactes, F1 0,893, couverture 85 % ;
-**`--vocab-lsfb` seul : 69 %, F1 0,952, couverture 90 %** ; les premières indications
+`--vocab-lsfb` seul : 69 %, F1 0,952, couverture 90 % ; les premières indications
 dans le prompt faisaient chuter le modèle (49 %, il ne les avait jamais vues).
+**Post-traitement v3 + `--vocab-lsfb` : 76 % (56/74), F1 0,980, ordre 0,943** (dev :
+29 → 40/45). Règles ajoutées, réglées sur le dev : glose inventée remplacée par le mot
+de la phrase qui manque (VOITURE pour « veux »), attribut au masculin (POLLUÉ, CLAIR),
+TOI/VOUS selon la phrase, bloc de temps en tête (`ANNÉE-PROCHAINE`, `LUNDI-DERNIER`,
+`MINUTE CINQ`, jours, temps explicite oublié réinséré, `CHAQUE` retiré), nombre après le
+nom et ses adjectifs (réinséré s'il manque), lieu juste après le temps (`NICE`, `ICI`),
+directionnels de communication (`PARLER-À-TOI`, `RACONTER-À-EUX`).
 
 La colonne « Méthode » affiche `vocabulaire-lsfb (<hash>)` / `indices-lsfb (<hash>)`,
 hash du vocabulaire, des synonymes et du code. En prod : `config.py:

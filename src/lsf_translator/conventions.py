@@ -41,7 +41,7 @@ TIME_MARKERS = {"AVANT", "BIENTÔT"}
 EXPLICIT_TIME = {
     "hier": "HIER", "demain": "DEMAIN", "aujourd'hui": "AUJOURD'HUI",
     "maintenant": "MAINTENANT", "matin": "MATIN", "soir": "SOIR",
-    "week-end": "WEEK-END", "midi": "MIDI", "nuit": "NUIT",
+    "week-end": "WEEK-END", "après-midi": "APRÈS-MIDI", "midi": "MIDI", "nuit": "NUIT",
     "yesterday": "HIER", "tomorrow": "DEMAIN", "today": "AUJOURD'HUI",
 }
 CONNECTOR_END = ("pour finir", "pour conclure", "en conclusion", "pour terminer")
@@ -49,6 +49,8 @@ TECH_TERMS = {
     "dataset": "DATASET", "fine tuning": "FINE-TUNING", "fine-tuning": "FINE-TUNING",
     "random forest": "RANDOM-FOREST", "machine learning": "MACHINE-LEARNING",
     "deep learning": "DEEP-LEARNING", "camembert": "CAMEMBERT",
+    "batch size": "BATCH-SIZE", "learning rate": "LEARNING-RATE",
+    "validation loss": "VALIDATION-LOSS", "hugging face": "HUGGING-FACE",
 }
 # Possessif source -> pointage attendu après le nom.
 POSS_SRC = {"mon": "MOI", "ma": "MOI", "mes": "MOI", "ton": "TOI", "ta": "TOI",
@@ -65,6 +67,8 @@ IMPERSONAL = re.compile(
     r"est (temps|tard|tôt|\w+ de)|a plu|a neigé|a fait|va (pleuvoir|neiger|faire))\b", re.I)
 # Passé composé (avoir + participe, ou être + participe de mouvement).
 PAST_RE = re.compile(
+    r"\b(ai|as|a|avons|avez|ont)-(t-)?(je|tu|il|elle|on|nous|vous|ils|elles)\s+"
+    r"\w+(é|ée|és|ées|i|is|it|u|ue|us)\b|"
     r"\b(j'ai|ai|as|a|avons|avez|ont)\s+((pas|plus|jamais|déjà|bien|beaucoup|encore|rien|tout)\s+)?"
     r"(?!(du|un|une|des|de|le|la|les|au|aux|deux|trois|six|dix|cent|mille|"
     r"beaucoup|peu|assez|trop|faim|soif|froid|chaud|peur|besoin|envie|raison|tort)\b)\w+(é|ée|és|ées|i|is|it|u|ue|us|ert|ort|eint|ait)\b|"
@@ -77,6 +81,8 @@ FUTURE_RE = re.compile(
     r"\b\w{2,}(erai|eras|era|erons|erez|eront|irai|iras|ira|irons|irez|iront|"
     r"rrai|rras|rra|rrons|rrez|rront|drai|dras|dra|drons|drez|dront)\b|"
     r"\b(aurai|auras|aura|aurons|aurez|auront)\b|"
+    r"\b(irai|iras|ira|irons|irez|iront|ferai|feras|fera|ferons|ferez|feront|"
+    r"serai|seras|sera|serons|serez|seront)\b|"
     r"\b(vais|vas|va|allons|allez|vont)\s+((vous|te|me|le|la|les|lui|leur|nous|t'|m')\s*)?"
     r"\w+(er|ir|re|oir)\b", re.I)
 NOT_FUTURE = {"entre", "notre", "votre", "autre", "contre", "être", "lire", "écrire",
@@ -93,7 +99,7 @@ def _strip(s: str) -> str:
 # Repères de temps non glosables en un signe isolé : leur présence dispense de
 # AVANT/BIENTÔT (on ne sait pas les remplacer, mais on n'en ajoute pas).
 OTHER_TIME_RE = re.compile(r"tout à l'heure|\bdans \w+ (jours?|semaines?|mois|ans?)\b|"
-                           r"\b(semaine|année|mois) (prochaine?|dernière?)\b|"
+                           r"\b(semaine|année|mois|an|week-end) (prochaine?|derni(?:er|ère)|passée?)\b|"
                            r"\b(lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche)\b|"
                            r"\bbientôt\b|\bdéjà\b|\b\w+ heures?\b")
 NEAR_FUTURE_RE = re.compile(r"\b(vais|vas|va|allons|allez|vont)\s+((vous|te|me|le|la|les|lui|leur|nous|t'|m')\s*)?"
@@ -103,7 +109,8 @@ NEAR_FUTURE_RE = re.compile(r"\b(vais|vas|va|allons|allez|vont)\s+((vous|te|me|l
 def explicit_times(text: str) -> set[str]:
     """Gloses des temps explicites de la phrase (HIER, DEMAIN, SOIR…)."""
     low = text.lower()
-    return {gl for w, gl in EXPLICIT_TIME.items() if re.search(rf"\b{re.escape(w)}\b", low)}
+    # (?<!-) : « après-midi » n'est pas « midi »
+    return {gl for w, gl in EXPLICIT_TIME.items() if re.search(rf"(?<![\w-]){re.escape(w)}\b", low)}
 
 
 def implicit_time(text: str) -> str | None:
@@ -244,9 +251,16 @@ def check(text: str, glosses: list[str]) -> list[str]:
     src_up = {t.upper() for t in re.findall(r"[\wÀ-ÿ'\-]+", text)}
     for x in g:
         for t in src_up:
-            if x != t and _strip(x) == _strip(t):
+            if x != t and _strip(x) == _strip(t) and not _lsfb_label(x):
                 errs.append(f"accents modifiés « {x} » (source « {t} »)")
     return errs
+
+
+def _lsfb_label(x: str) -> bool:
+    """Glose écrite comme l'étiquette du vocabulaire LSFB (LEGUMES, FORET, AGE) : ses
+    accents ne sont pas une faute."""
+    from src.lsf_translator.lsfb import vocab
+    return x in vocab()
 
 
 def check_rows(rows: list[tuple[str, list[str]]]) -> list[tuple[str, list[str], list[str]]]:

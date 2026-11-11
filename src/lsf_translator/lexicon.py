@@ -83,10 +83,16 @@ def lexicon_parts() -> frozenset[str]:
     return frozenset(out)
 
 
+# Verbes de transfert / communication directionnels en LS, même absents des données.
+EXTRA_DIRECTIONAL = frozenset({"PARLER", "RACONTER", "CONSEILLER", "OFFRIR", "PROMETTRE",
+                               "ENSEIGNER", "MERCI"})
+
+
 @lru_cache(maxsize=1)
 def directional_verbs() -> frozenset[str]:
-    """Verbes que les données composent avec leur destinataire (VERBE-À-X)."""
-    return frozenset(g.split("-À-")[0] for g in lexicon() if "-À-" in g)
+    """Verbes composés avec leur destinataire (VERBE-À-X) : ceux des données, plus
+    les verbes de communication courants."""
+    return frozenset(g.split("-À-")[0] for g in lexicon() if "-À-" in g) | EXTRA_DIRECTIONAL
 
 
 VERB_ENDINGS = ("ent", "ons", "ez", "es", "e", "s", "t", "é", "ée", "és", "ées",
