@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Performances des runs</title>
+<style>
+:root { --surface:#fcfcfb; --page:#f4f3f0; --ink:#0b0b0b; --ink2:#52514e; --muted:#8a8984; --grid:#e6e5e1;
+        --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4; --s6:#008300; --s7:#6250d6; --s8:#e34948; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --surface:#1a1a19; --page:#121211; --ink:#f0efec;
+        --ink2:#c3c2b7; --muted:#8f8e88; --grid:#2e2e2c;
+        --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#008300; --s7:#9085e9; --s8:#e66767; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--page); color:var(--ink); font:15px/1.45 system-ui, sans-serif; }
+main { max-width:1200px; margin:0 auto; padding:20px 16px 40px; }
+h1 { font-size:20px; margin:0 0 4px; }
+.sub { color:var(--ink2); margin:0 0 16px; font-size:14px; }
+.controls { display:flex; flex-wrap:wrap; gap:8px 18px; align-items:center; margin-bottom:12px; font-size:14px; }
+.controls label { display:inline-flex; gap:6px; align-items:center; cursor:pointer; }
+.sw { width:12px; height:12px; border-radius:3px; display:inline-block; }
+select { font:inherit; padding:4px 8px; border-radius:6px; border:1px solid var(--grid); background:var(--surface); color:var(--ink); }
+.card { background:var(--surface); border:1px solid var(--grid); border-radius:12px; padding:12px; }
+.scroll { overflow-x:auto; }
+svg text { fill:var(--ink2); font-size:11px; }
+svg .axis-title { font-size:12px; fill:var(--ink2); }
+svg .value { fill:var(--ink); font-size:11px; font-weight:600; }
+svg .group { fill:var(--ink); font-size:12px; font-weight:600; }
+.bar { cursor:default; }
+.bar:hover, .bar.focus { filter:brightness(1.12); }
+#tip { position:fixed; pointer-events:none; background:var(--surface); color:var(--ink); border:1px solid var(--grid);
+       border-radius:8px; padding:8px 10px; font-size:13px; box-shadow:0 4px 16px rgba(0,0,0,.15); max-width:340px; display:none; z-index:5; }
+#tip b { display:block; margin-bottom:2px; }
+#tip .k { color:var(--ink2); }
+details { margin-top:16px; }
+table { border-collapse:collapse; width:100%; font-size:13px; }
+th, td { text-align:left; padding:5px 8px; border-bottom:1px solid var(--grid); }
+th { color:var(--ink2); font-weight:600; }
+td.num { text-align:right; font-variant-numeric:tabular-nums; }
+</style></head><body><main>
+<h1>Performances des runs d'évaluation</h1>
+<p class="sub">Une barre par run, groupées par dataset d'éval : ne comparer que des runs de même dataset.
+Survol d'une barre : détail du run. Meilleur run de chaque dataset annoté.<br>
+Sous chaque modèle : prompt (<b>prod</b> = règles + exemples, <b>règles</b> = règles seules) et options :
+<b>FSC</b> few-shot ciblé · <b>PP</b> post-traitement · <b>VOC</b> vocabulaire LSFB · <b>IND</b> indications LSFB.</p>
+<div class="controls">
+  <label>Mesure <select id="metric">
+    <option value="exact">Taux d'exactitude</option><option value="f1">F1</option>
+    <option value="ordre">Ordre</option><option value="couverture">Couverture LSFB</option>
+  </select></label>
+  <span id="filters"></span>
+</div>
+<div class="card scroll"><svg id="chart" role="img" aria-label="Graphique en barres des performances par run"></svg></div>
+<details><summary>Tableau des runs</summary><div class="scroll"><table id="table"></table></div></details>
+<div id="tip"></div>
+</main>
+<script>
+const RUNS = [{"fichier": "2026-10-19T00-40-44__gemma2-9b__5ed97b6.json", "label": "gemma2 — prompt lexique+questions", "modele": "gemma2:9b", "methode": "prod", "code": "prod", "dataset": "3db947280fd3", "n": 16, "date": "2026-10-19 00:40", "exact": 0.3125, "f1": 0.9566, "ordre": 0.8208, "couverture": 0.8484848484848485}, {"fichier": "2026-10-19T00-41-33__qwen2.5-7b__5ed97b6.json", "label": "qwen2.5:7b — même prompt", "modele": "qwen2.5:7b", "methode": "prod", "code": "prod", "dataset": "3db947280fd3", "n": 16, "date": "2026-10-19 00:41", "exact": 0.125, "f1": 0.7916, "ordre": 0.6354, "couverture": 0.7538461538461538}, {"fichier": "2026-10-19T10-42-29__lsf-qwen3b-v1__885ed73.json", "label": "finetune v1 (qwen3b)", "modele": "lsf-qwen3b:v1", "methode": "prod", "code": "prod", "dataset": "3db947280fd3", "n": 16, "date": "2026-10-19 10:42", "exact": 0.0, "f1": 0.592, "ordre": 0.4969, "couverture": 0.6764705882352942}, {"fichier": "2026-10-19T14-04-51__lsf-qwen3b-v2__9f40c38.json", "label": "fine-tune v2 (dataset Claude Opus)", "modele": "lsf-qwen3b:v2", "methode": "prod", "code": "prod", "dataset": "3db947280fd3", "n": 16, "date": "2026-10-19 14:04", "exact": 0.0625, "f1": 0.686, "ordre": 0.6125, "couverture": 0.7272727272727273}, {"fichier": "2026-10-19T14-22-37__qwen2.5-3b__9f40c38.json", "label": "base qwen2.5:3b — prompt prod", "modele": "qwen2.5:3b", "methode": "prod", "code": "prod", "dataset": "3db947280fd3", "n": 16, "date": "2026-10-19 14:22", "exact": 0.0625, "f1": 0.6797, "ordre": 0.5677, "couverture": 0.6944444444444444}, {"fichier": "2026-10-19T14-22-51__qwen2.5-3b__9f40c38.json", "label": "base qwen2.5:3b — règles seules", "modele": "qwen2.5:3b", "methode": "règles seules", "code": "règles", "dataset": "3db947280fd3", "n": 16, "date": "2026-10-19 14:22", "exact": 0.0, "f1": 0.4227, "ordre": 0.2771, "couverture": 0.6153846153846154}, {"fichier": "2026-10-19T14-23-20__lsf-qwen3b-v2__9f40c38.json", "label": "fine-tune v2 — règles seules (prompt d'entraînement)", "modele": "lsf-qwen3b:v2", "methode": "règles seules", "code": "règles", "dataset": "3db947280fd3", "n": 16, "date": "2026-10-19 14:23", "exact": 0.0625, "f1": 0.6529, "ordre": 0.5667, "couverture": 0.7833333333333333}, {"fichier": "2026-10-19T20-47-35__gemma2-9b__c9ce7ce.json", "label": "éval74 — gemma2:9b — prompt prod", "modele": "gemma2:9b", "methode": "prod", "code": "prod", "dataset": "01f21c7fbf2d", "n": 74, "date": "2026-10-19 20:47", "exact": 0.2972972972972973, "f1": 0.8159, "ordre": 0.755, "couverture": 0.7862068965517242}, {"fichier": "2026-10-19T20-49-37__qwen2.5-7b__c9ce7ce.json", "label": "éval74 — base qwen2.5:7b — prompt prod", "modele": "qwen2.5:7b", "methode": "prod", "code": "prod", "dataset": "01f21c7fbf2d", "n": 74, "date": "2026-10-19 20:49", "exact": 0.12162162162162163, "f1": 0.7542, "ordre": 0.6622, "couverture": 0.7581699346405228}, {"fichier": "2026-10-19T20-51-05__qwen2.5-7b__c9ce7ce.json", "label": "éval74 — base qwen2.5:7b — règles seules", "modele": "qwen2.5:7b", "methode": "règles seules", "code": "règles", "dataset": "01f21c7fbf2d", "n": 74, "date": "2026-10-19 20:51", "exact": 0.02702702702702703, "f1": 0.4326, "ordre": 0.2962, "couverture": 0.7724137931034483}, {"fichier": "2026-10-19T20-52-04__qwen2.5-3b__c9ce7ce.json", "label": "éval74 — base qwen2.5:3b — prompt prod", "modele": "qwen2.5:3b", "methode": "prod", "code": "prod", "dataset": "01f21c7fbf2d", "n": 74, "date": "2026-10-19 20:52", "exact": 0.06756756756756757, "f1": 0.7129, "ordre": 0.5867, "couverture": 0.7138263665594855}, {"fichier": "2026-10-19T20-52-51__qwen2.5-3b__c9ce7ce.json", "label": "éval74 — base qwen2.5:3b — règles seules", "modele": "qwen2.5:3b", "methode": "règles seules", "code": "règles", "dataset": "01f21c7fbf2d", "n": 74, "date": "2026-10-19 20:52", "exact": 0.0, "f1": 0.4213, "ordre": 0.3277, "couverture": 0.5544554455445545}, {"fichier": "2026-10-19T20-54-23__lsf-qwen3b-v2__c9ce7ce.json", "label": "éval74 — fine-tune v2 (3B) — règles seules", "modele": "lsf-qwen3b:v2", "methode": "règles seules", "code": "règles", "dataset": "01f21c7fbf2d", "n": 74, "date": "2026-10-19 20:54", "exact": 0.05405405405405406, "f1": 0.6465, "ordre": 0.5698, "couverture": 0.7177700348432056}, {"fichier": "2026-10-19T21-00-26__gemma2-9b__4d5ff73.json", "label": "éval74-fr — gemma2:9b — prompt prod", "modele": "gemma2:9b", "methode": "prod", "code": "prod", "dataset": "aa78d1a41ef9", "n": 74, "date": "2026-10-19 21:00", "exact": 0.2972972972972973, "f1": 0.8159, "ordre": 0.755, "couverture": 0.7827586206896552}, {"fichier": "2026-10-19T21-02-26__qwen2.5-7b__4d5ff73.json", "label": "éval74-fr — base qwen2.5:7b — prompt prod", "modele": "qwen2.5:7b", "methode": "prod", "code": "prod", "dataset": "aa78d1a41ef9", "n": 74, "date": "2026-10-19 21:02", "exact": 0.12162162162162163, "f1": 0.7686, "ordre": 0.6626, "couverture": 0.760655737704918}, {"fichier": "2026-10-19T21-03-50__qwen2.5-7b__4d5ff73.json", "label": "éval74-fr — base qwen2.5:7b — règles seules", "modele": "qwen2.5:7b", "methode": "règles seules", "code": "règles", "dataset": "aa78d1a41ef9", "n": 74, "date": "2026-10-19 21:03", "exact": 0.02702702702702703, "f1": 0.4464, "ordre": 0.3061, "couverture": 0.7687074829931972}, {"fichier": "2026-10-19T21-04-47__qwen2.5-3b__4d5ff73.json", "label": "éval74-fr — base qwen2.5:3b — prompt prod", "modele": "qwen2.5:3b", "methode": "prod", "code": "prod", "dataset": "aa78d1a41ef9", "n": 74, "date": "2026-10-19 21:04", "exact": 0.06756756756756757, "f1": 0.7203, "ordre": 0.5901, "couverture": 0.7202572347266881}, {"fichier": "2026-10-19T21-05-34__qwen2.5-3b__4d5ff73.json", "label": "éval74-fr — base qwen2.5:3b — règles seules", "modele": "qwen2.5:3b", "methode": "règles seules", "code": "règles", "dataset": "aa78d1a41ef9", "n": 74, "date": "2026-10-19 21:05", "exact": 0.0, "f1": 0.4413, "ordre": 0.3432, "couverture": 0.5586854460093896}, {"fichier": "2026-10-19T21-07-03__lsf-qwen3b-v2__4d5ff73.json", "label": "éval74-fr — fine-tune v2 (3B) — règles seules", "modele": "lsf-qwen3b:v2", "methode": "règles seules", "code": "règles", "dataset": "aa78d1a41ef9", "n": 74, "date": "2026-10-19 21:07", "exact": 0.05405405405405406, "f1": 0.6566, "ordre": 0.58, "couverture": 0.710801393728223}, {"fichier": "2026-10-21T00-34-18__lsf-qwen3b-v3__f404e2f.json", "label": "éval74-fr — fine-tune v3 (3B, ckpt 500) — règles seules", "modele": "lsf-qwen3b:v3", "methode": "règles seules", "code": "règles", "dataset": "aa78d1a41ef9", "n": 74, "date": "2026-10-21 00:34", "exact": 0.2702702702702703, "f1": 0.8103, "ordre": 0.7412, "couverture": 0.7900355871886121}, {"fichier": "2026-10-27T15-21-02__lsf-gemma9b-v1__f404e2f.json", "label": "éval74-fr — fine-tune gemma9b v1 (ckpt 500, Q4_K_M) — règles seules", "modele": "lsf-gemma9b:v1", "methode": "règles seules", "code": "règles", "dataset": "aa78d1a41ef9", "n": 74, "date": "2026-10-27 15:21", "exact": 0.14864864864864866, "f1": 0.7693, "ordre": 0.6685, "couverture": 0.79}, {"fichier": "2026-10-27T15-33-36__lsf-gemma9b-v1__f404e2f.json", "label": "éval74-fr — fine-tune gemma9b v1 (ckpt 500, Q4_K_M) — prompt prod", "modele": "lsf-gemma9b:v1", "methode": "prod", "code": "prod", "dataset": "aa78d1a41ef9", "n": 74, "date": "2026-10-27 15:33", "exact": 0.35135135135135137, "f1": 0.8283, "ordre": 0.7466, "couverture": 0.8033898305084746}, {"fichier": "2026-10-27T17-08-20__lsf-gemma9b-v1__d2e6d9b.json", "label": "éval74-fr — fine-tune gemma9b v1 (ckpt 500, Q4_K_M) — prompt prod + post-traitement", "modele": "lsf-gemma9b:v1", "methode": "prod + post-traitement", "code": "prod·PP", "dataset": "aa78d1a41ef9", "n": 74, "date": "2026-10-27 17:08", "exact": 0.6486486486486487, "f1": 0.9506, "ordre": 0.8914, "couverture": 0.8523489932885906}, {"fichier": "2026-10-27T17-52-12__lsf-gemma9b-v1__792e673.json", "label": "éval74-fr — fine-tune gemma9b v1 (ckpt 500, Q4_K_M) — prompt prod + few-shot ciblé", "modele": "lsf-gemma9b:v1", "methode": "prod + few-shot-cible", "code": "prod·FSC", "dataset": "aa78d1a41ef9", "n": 74, "date": "2026-10-27 17:52", "exact": 0.36486486486486486, "f1": 0.8529, "ordre": 0.7809, "couverture": 0.8245033112582781}, {"fichier": "2026-10-28T22-32-31__lsf-gemma9b-v1__aa9c1e0.json", "label": "éval74-fr — fine-tune gemma9b v1 (ckpt 500, Q4_K_M) — prompt prod + few-shot ciblé ordre + post-traitement v2", "modele": "lsf-gemma9b:v1", "methode": "prod + few-shot-cible + post-traitement", "code": "prod·FSC·PP", "dataset": "aa78d1a41ef9", "n": 74, "date": "2026-10-28 22:32", "exact": 0.6891891891891891, "f1": 0.9518, "ordre": 0.9036, "couverture": 0.8481848184818482}, {"fichier": "2026-10-28T22-38-53__lsf-gemma9b-v1__aa9c1e0.json", "label": "éval74-fr — fine-tune gemma9b v1 (ckpt 500, Q4_K_M) — prompt prod + post-traitement v2", "modele": "lsf-gemma9b:v1", "methode": "prod + post-traitement", "code": "prod·PP", "dataset": "aa78d1a41ef9", "n": 74, "date": "2026-10-28 22:38", "exact": 0.6486486486486487, "f1": 0.9506, "ordre": 0.8914, "couverture": 0.8523489932885906}, {"fichier": "2026-11-11T10-32-39__lsf-gemma9b-v1__822f11c.json", "label": "éval74-fr — fine-tune gemma9b v1 (ckpt 500, Q4_K_M) — prompt prod + few-shot ciblé ordre + post-traitement v2 + vocabulaire LSFB", "modele": "lsf-gemma9b:v1", "methode": "prod + vocabulaire-lsfb + few-shot-cible + post-traitement", "code": "prod·VOC·FSC·PP", "dataset": "aa78d1a41ef9", "n": 74, "date": "2026-11-11 10:32", "exact": 0.36486486486486486, "f1": 0.8637, "ordre": 0.8205, "couverture": 0.9316}, {"fichier": "2026-11-11T10-17-32__lsf-gemma9b-v1__822f11c.json", "label": "éval74-lsfb — fine-tune gemma9b v1 — prod + few-shot ciblé + post-traitement", "modele": "lsf-gemma9b:v1", "methode": "prod + few-shot-cible + post-traitement", "code": "prod·FSC·PP", "dataset": "a77bfbad8a13", "n": 74, "date": "2026-11-11 10:17", "exact": 0.5135135135135135, "f1": 0.8933, "ordre": 0.8477, "couverture": 0.8482}, {"fichier": "2026-11-11T10-24-48__lsf-gemma9b-v1__822f11c.json", "label": "éval74-lsfb — fine-tune gemma9b v1 — prod + few-shot ciblé + post-traitement + vocabulaire LSFB", "modele": "lsf-gemma9b:v1", "methode": "prod + vocabulaire-lsfb + few-shot-cible + post-traitement", "code": "prod·VOC·FSC·PP", "dataset": "a77bfbad8a13", "n": 74, "date": "2026-11-11 10:24", "exact": 0.4864864864864865, "f1": 0.9171, "ordre": 0.8691, "couverture": 0.9316}, {"fichier": "2026-11-11T10-42-05__lsf-gemma9b-v1__822f11c.json", "label": "éval74-lsfb — fine-tune gemma9b v1 — prod + few-shot ciblé + post-traitement + vocabulaire LSFB (post-traitement seul)", "modele": "lsf-gemma9b:v1", "methode": "prod + few-shot-cible + post-traitement + vocabulaire-lsfb", "code": "prod·FSC·PP·VOC", "dataset": "a77bfbad8a13", "n": 74, "date": "2026-11-11 10:42", "exact": 0.6756756756756757, "f1": 0.954, "ordre": 0.907, "couverture": 0.9046}, {"fichier": "2026-11-11T10-50-22__lsf-gemma9b-v1__822f11c.json", "label": "éval74-lsfb — fine-tune gemma9b v1 — prod + few-shot ciblé + post-traitement + indications LSFB corrigées + vocabulaire LSFB", "modele": "lsf-gemma9b:v1", "methode": "prod + indices-lsfb + few-shot-cible + post-traitement + vocabulaire-lsfb", "code": "prod·IND·FSC·PP·VOC", "dataset": "a77bfbad8a13", "n": 74, "date": "2026-11-11 10:50", "exact": 0.6081081081081081, "f1": 0.9494, "ordre": 0.8912, "couverture": 0.9085}];
+const METRICS = {exact:"Taux d'exactitude", f1:"F1", ordre:"Ordre", couverture:"Couverture LSFB"};
+const datasets = [...new Set(RUNS.map(r => r.dataset))];
+const color = d => `var(--s${datasets.indexOf(d) % 8 + 1})`;   // ordre fixe, jamais réattribué
+const visible = new Set(datasets);
+const $ = id => document.getElementById(id);
+const pct = v => v == null ? "—" : (v * 100).toFixed(0) + " %";
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+$("filters").innerHTML = datasets.map(d => {
+  const n = RUNS.filter(r => r.dataset === d); const ph = n[0].n ? ` · ${n[0].n} phrases` : "";
+  return `<label><input type="checkbox" data-d="${d}" checked><span class="sw" style="background:${color(d)}"></span>${d}${ph} (${n.length} runs)</label>`;
+}).join("");
+$("filters").addEventListener("change", e => { const d = e.target.dataset.d;
+  e.target.checked ? visible.add(d) : visible.delete(d); draw(); });
+$("metric").addEventListener("change", draw);
+
+function draw() {
+  const key = $("metric").value;
+  const runs = RUNS.filter(r => visible.has(r.dataset));
+  const BW = 24, GAP = 2, GROUP_GAP = 20, LEFT = 52, TOP = 24, H = 300, LABEL_H = 215;
+  // positions : barres d'un même dataset accolées, espace entre datasets
+  let x = LEFT, prev = null; const pos = [];
+  runs.forEach(r => { if (prev !== null && r.dataset !== prev) x += GROUP_GAP; pos.push(x); x += BW + GAP; prev = r.dataset; });
+  const W = Math.max(x + 16, 400), y = v => TOP + H - (v || 0) * H;
+  let s = "";
+  for (const t of [0, .25, .5, .75, 1]) {
+    s += `<line x1="${LEFT}" x2="${W - 8}" y1="${y(t)}" y2="${y(t)}" stroke="var(--grid)" stroke-width="1"/>`;
+    s += `<text x="${LEFT - 8}" y="${y(t) + 4}" text-anchor="end">${t * 100} %</text>`;
+  }
+  s += `<text class="axis-title" transform="translate(14 ${TOP + H / 2}) rotate(-90)" text-anchor="middle">${METRICS[key]}</text>`;
+  // meilleur run par dataset (étiquette directe sélective)
+  const best = {};
+  runs.forEach((r, i) => { if (r[key] != null && (best[r.dataset] == null || r[key] > runs[best[r.dataset]][key])) best[r.dataset] = i; });
+  runs.forEach((r, i) => {
+    const v = r[key], h = v == null ? 0 : Math.max(1, v * H), x0 = pos[i], top = TOP + H - h, rad = Math.min(4, h);
+    // barre : coins arrondis en haut seulement, ancrée sur la ligne de base
+    s += `<path class="bar" data-i="${i}" fill="${color(r.dataset)}" d="M${x0},${TOP + H} V${top + rad} Q${x0},${top} ${x0 + rad},${top} H${x0 + BW - rad} Q${x0 + BW},${top} ${x0 + BW},${top + rad} V${TOP + H} Z"/>`;
+    if (best[r.dataset] === i) s += `<text class="value" x="${x0 + BW / 2}" y="${top - 6}" text-anchor="middle">${pct(v)}</text>`;
+    // étiquette d'abscisse : « modèle · méthode » sur une ligne, inclinée
+    const lx = x0 + BW / 2 + 4, ly = TOP + H + 8;
+    s += `<text transform="translate(${lx} ${ly}) rotate(-62)" text-anchor="end"><tspan style="fill:var(--ink)">${esc(r.modele)}</tspan> · ${esc(r.code)}</text>`;
+  });
+  // nom du dataset sous chaque groupe
+  let i = 0;
+  while (i < runs.length) {
+    let j = i; while (j + 1 < runs.length && runs[j + 1].dataset === runs[i].dataset) j++;
+    const cx = (pos[i] + pos[j] + BW) / 2, yy = TOP + H + LABEL_H;
+    s += `<line x1="${pos[i]}" x2="${pos[j] + BW}" y1="${yy - 16}" y2="${yy - 16}" stroke="${color(runs[i].dataset)}" stroke-width="3" stroke-linecap="round"/>`;
+    s += `<text class="group" x="${cx}" y="${yy}" text-anchor="middle">dataset ${runs[i].dataset}</text>`;
+    i = j + 1;
+  }
+  const svg = $("chart");
+  svg.setAttribute("viewBox", `0 0 ${W} ${TOP + H + LABEL_H + 12}`);
+  svg.setAttribute("width", W); svg.setAttribute("height", TOP + H + LABEL_H + 12);
+  svg.innerHTML = s;
+  svg.querySelectorAll(".bar").forEach(b => {
+    b.addEventListener("mousemove", e => tip(e, runs[+b.dataset.i]));
+    b.addEventListener("mouseleave", () => { $("tip").style.display = "none"; });
+  });
+  $("table").innerHTML = "<tr><th>Date</th><th>Dataset</th><th>Modèle</th><th>Méthode</th><th>Label</th>"
+    + "<th>Exact</th><th>F1</th><th>Ordre</th><th>Couv. LSFB</th></tr>"
+    + runs.map(r => `<tr><td>${r.date}</td><td>${r.dataset}</td><td>${esc(r.modele)}</td><td>${esc(r.methode)}</td>`
+      + `<td>${esc(r.label)}</td><td class="num">${pct(r.exact)}</td><td class="num">${r.f1?.toFixed(3) ?? "—"}</td>`
+      + `<td class="num">${r.ordre?.toFixed(3) ?? "—"}</td><td class="num">${pct(r.couverture)}</td></tr>`).join("");
+}
+
+function tip(e, r) {
+  const t = $("tip");
+  t.innerHTML = `<b>${esc(r.modele)}</b><div class="k">${esc(r.label)}</div>`
+    + `<div><span class="k">Dataset</span> ${r.dataset}${r.n ? ` (${r.n} phrases)` : ""} · <span class="k">${r.date}</span></div>`
+    + `<div><span class="k">Méthode</span> ${esc(r.methode)}</div>`
+    + `<div><span class="k">Exact</span> ${pct(r.exact)} · <span class="k">F1</span> ${r.f1?.toFixed(3) ?? "—"}`
+    + ` · <span class="k">Ordre</span> ${r.ordre?.toFixed(3) ?? "—"} · <span class="k">Couv.</span> ${pct(r.couverture)}</div>`;
+  t.style.display = "block";
+  const w = t.offsetWidth, h = t.offsetHeight;
+  t.style.left = Math.min(e.clientX + 14, innerWidth - w - 8) + "px";
+  t.style.top = (e.clientY - h - 12 < 8 ? e.clientY + 16 : e.clientY - h - 12) + "px";
+}
+draw();
+</script></body></html>
