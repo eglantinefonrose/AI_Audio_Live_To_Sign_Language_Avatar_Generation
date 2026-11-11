@@ -2,12 +2,12 @@
 {"text": "Nous vous expliquerons la suite.", "language": "fr", "glosses": ["BIENTÔT", "NOUS", "SUITE", "EXPLIQUER-À-VOUS"], "phenomena": ["directionnel"]}
 {"text": "Le live commence dans cinq minutes.", "language": "fr", "glosses": ["MINUTE", "CINQ", "DIRECT", "COMMENCER"], "phenomena": ["lexique-direct"]}
 {"text": "Tu dois partir ?", "language": "fr", "glosses": ["TOI", "PARTIR", "DEVOIR", "QUESTION"], "phenomena": ["question-ouinon"]}
-{"text": "Nous dînons à huit heures.", "language": "fr", "glosses": ["HEURE", "HUIT", "NOUS", "DÎNER"], "phenomena": ["quotidien"]}
+{"text": "Nous dînons à huit heures.", "language": "fr", "glosses": ["HEURE", "HUIT", "NOUS", "MANGER"], "phenomena": ["quotidien"]}
 {"text": "Je ne connais pas cet homme.", "language": "fr", "glosses": ["MOI", "HOMME", "CONNAÎTRE", "NON"], "phenomena": ["negation"]}
 {"text": "Du coup, on reste ici ce soir.", "language": "fr", "glosses": ["SOIR", "ICI", "NOUS", "RESTER"], "phenomena": ["connecteur"]}
 {"text": "Je bois un café chaque matin.", "language": "fr", "glosses": ["MATIN", "MOI", "CAFÉ", "BOIRE"], "phenomena": ["quotidien"]}
-{"text": "À l'hôpital, les médecins sont très occupés.", "language": "fr", "glosses": ["HÔPITAL", "MÉDECIN", "OCCUPÉ", "TRÈS"], "phenomena": ["lieu"]}
-{"text": "Ce matin, nous avons lancé l'entraînement.", "language": "fr", "glosses": ["MATIN", "NOUS", "ENTRAÎNEMENT", "LANCER"], "phenomena": ["temps"]}
+{"text": "À l'hôpital, les médecins sont très occupés.", "language": "fr", "glosses": ["HÔPITAL", "MÉDECIN", "OCCUPÉ", "BEAUCOUP"], "phenomena": ["lieu"]}
+{"text": "Ce matin, nous avons lancé l'entraînement.", "language": "fr", "glosses": ["MATIN", "NOUS", "ENTRAÎNEMENT", "COMMENCER"], "phenomena": ["temps"]}
 {"text": "Elle range ses livres.", "language": "fr", "glosses": ["LUI", "LIVRE", "LUI", "RANGER"], "phenomena": ["possession"]}
 {"text": "Elle leur raconte une histoire.", "language": "fr", "glosses": ["LUI", "HISTOIRE", "RACONTER-À-EUX"], "phenomena": ["directionnel"]}
 {"text": "Le batch size est petit.", "language": "fr", "glosses": ["BATCH-SIZE", "PETIT"], "phenomena": ["verbatim-technique"]}
@@ -31,8 +31,8 @@
 {"text": "Il m'a dit son secret.", "language": "fr", "glosses": ["AVANT", "LUI", "SECRET", "LUI", "DIRE-À-MOI"], "phenomena": ["directionnel"]}
 {"text": "Le machine learning transforme l'industrie.", "language": "fr", "glosses": ["MACHINE-LEARNING", "INDUSTRIE", "TRANSFORMER"], "phenomena": ["domaine-ml"]}
 {"text": "Je veux te parler.", "language": "fr", "glosses": ["MOI", "PARLER-À-TOI", "VOULOIR"], "phenomena": ["modal"]}
-{"text": "Le système détecte les signes en live.", "language": "fr", "glosses": ["SYSTÈME", "SIGNE", "DÉTECTER", "DIRECT"], "phenomena": ["lexique-direct"]}
-{"text": "Le magasin n'est pas ouvert.", "language": "fr", "glosses": ["MAGASIN", "OUVERT", "NON"], "phenomena": ["negation"]}
+{"text": "Le système détecte les signes en live.", "language": "fr", "glosses": ["SYSTÈME", "SIGNE", "TROUVER", "DIRECT"], "phenomena": ["lexique-direct"]}
+{"text": "Le magasin n'est pas ouvert.", "language": "fr", "glosses": ["MAGASIN", "OUVRIR", "NON"], "phenomena": ["negation"]}
 {"text": "Comment tu t'appelles ?", "language": "fr", "glosses": ["TOI", "APPELER", "COMMENT"], "phenomena": ["question-ouverte"]}
 {"text": "Vous utilisez le GPU ?", "language": "fr", "glosses": ["VOUS", "GPU", "UTILISER", "QUESTION"], "phenomena": ["question-ouinon"]}
 {"text": "Dans le bus, les gens dorment.", "language": "fr", "glosses": ["BUS", "GENS", "DORMIR"], "phenomena": ["lieu"]}

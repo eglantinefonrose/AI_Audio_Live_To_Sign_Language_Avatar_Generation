@@ -110,13 +110,9 @@ class LSFTranslator:
         try:
             response = await self._client.chat(
                 model=self.config.model,
-<<<<<<< Updated upstream:src/lsf_translator/translator.py
-                messages=build_messages(text, language),
-=======
                 messages=build_messages(text, language,
                                         targeted=self.config.few_shot_targeted,
-                                        dynamic=self.config.few_shot_dynamic),
->>>>>>> Stashed changes:lsf_translator/translator.py
+                                        vocab=self.config.vocabulaire_lsfb_indices),
                 format=GLOSS_JSON_SCHEMA,
                 options={
                     "temperature": self.config.temperature,
@@ -137,9 +133,13 @@ class LSFTranslator:
             # Import local : `python -m lsf_translator.postprocess` reste propre.
             from src.lsf_translator.postprocess import postprocess
             raw = glosses
-            glosses, rules = postprocess(text, raw)
+            glosses, rules = postprocess(text, raw, lsfb=self.config.vocabulaire_lsfb)
             if rules:
                 log.debug("Post-traitement %s : %s -> %s", rules, raw, glosses)
+        elif glosses and self.config.vocabulaire_lsfb:
+            # Sans post-traitement : seulement le retour au vocabulaire LSFB jouable.
+            from src.lsf_translator.lsfb import convert
+            glosses = convert(glosses)
         return glosses
 
     async def translate_event(self, sentence: TranscriptEvent) -> GlossEvent:

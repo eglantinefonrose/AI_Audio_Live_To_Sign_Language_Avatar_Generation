@@ -144,13 +144,49 @@ FEW_SHOT_EXAMPLES: list[tuple[str, list[str]]] = [
 ]
 
 
-def build_user_prompt(text: str, language: str | None = None) -> str:
-    """Construit le message utilisateur, en précisant la langue si connue."""
+# Few-shot CIBLÉ (option `few_shot_targeted` / `eval/evaluate.py --few-shot-cible`) :
+# exemples AJOUTÉS aux précédents, pris dans le split TRAIN de
+# finetune/data/2184f8f3751e (jamais le dev ni l'éval). Ils visent l'ORDRE des
+# signes, que le post-traitement ne corrige pas (il traite déjà temps,
+# directionnels, négation, pronoms) : adverbe après le verbe (DIRECT, BEAUCOUP,
+# ENSEMBLE), NOM ADJECTIF NOMBRE, possessif après le nom, objet avant le verbe,
+# VOUS dans les questions. Choisis sur le jeu de dev (eval/dev.jsonl).
+# Placés en dernier : les plus proches de la phrase à traiter.
+FEW_SHOT_TARGETED: list[tuple[str, list[str]]] = [
+    # « en live » -> DIRECT, après le verbe.
+    ("Nous diffusons la conférence en live.", ["NOUS", "CONFÉRENCE", "DIFFUSER", "DIRECT"]),
+    # NOM ADJECTIF NOMBRE, verbe en fin.
+    ("Il a acheté deux pantalons noirs.", ["AVANT", "LUI", "PANTALON", "NOIR", "DEUX", "ACHETER"]),
+    ("Nous utilisons deux méthodes différentes.", ["NOUS", "MÉTHODE", "DIFFÉRENT", "DEUX", "UTILISER"]),
+    # Possessif après le nom, puis objet avant le verbe.
+    ("Votre code contient une erreur.", ["CODE", "VOUS", "ERREUR", "CONTENIR"]),
+    ("Ma sœur étudie la médecine.", ["SŒUR", "MOI", "MÉDECINE", "ÉTUDIER"]),
+    # Quantité après le nom, avant le verbe.
+    ("Nous avons collecté beaucoup de données.", ["AVANT", "NOUS", "DONNÉE", "BEAUCOUP", "COLLECTER"]),
+    # « en direct » après le verbe.
+    ("Le modèle traduit la parole en direct.", ["MODÈLE", "PAROLE", "TRADUIRE", "DIRECT"]),
+    # VOUS (pas TOI) dans une question ouverte.
+    ("Comment vous faites ce gâteau ?", ["VOUS", "GÂTEAU", "FAIRE", "COMMENT"]),
+    ("Où avez-vous mangé hier ?", ["HIER", "VOUS", "MANGER", "OÙ"]),
+    # Objet topicalisé en tête, adverbe après le verbe.
+    ("Ce projet, nous le présentons ensemble.", ["PROJET", "NOUS", "PRÉSENTER", "ENSEMBLE"]),
+]
+
+
+def build_user_prompt(text: str, language: str | None = None, vocab: bool = False) -> str:
+    """Construit le message utilisateur, en précisant la langue si connue.
+
+    `vocab` ajoute les signes LSFB disponibles pour les mots de la phrase et les mots
+    sans signe (lsf_translator/lsfb.py) : le modèle choisit parmi les signes jouables."""
     lang_hint = ""
     if language and language != "auto":
         label = {"fr": "français", "en": "anglais"}.get(language, language)
         lang_hint = f" (langue source : {label})"
-    return f'Phrase à transcrire en gloses LSF{lang_hint} : "{text}"'
+    prompt = f'Phrase à transcrire en gloses LSF{lang_hint} : "{text}"'
+    if vocab:
+        from src.lsf_translator.lsfb import hint_text
+        prompt += "\n" + hint_text(text)
+    return prompt
 
 
 def _assistant_example(glosses: list[str]) -> str:
@@ -158,19 +194,28 @@ def _assistant_example(glosses: list[str]) -> str:
     return json.dumps({"glosses": glosses}, ensure_ascii=False)
 
 
-def build_messages(text: str, language: str | None = None) -> list[dict]:
+def build_messages(text: str, language: str | None = None,
+                   targeted: bool = False, vocab: bool = False) -> list[dict]:
     """Assemble la liste de messages complète pour l'appel au LLM.
 
     Structure : [système] + [paires user/assistant d'exemples] + [phrase réelle].
     Fournir les exemples comme de vrais tours de dialogue (plutôt que dans le
     prompt système) ancre fortement le format de sortie JSON et le style des
     gloses — c'est la bonne pratique de few-shot avec une API de chat.
+
+    `targeted` ajoute FEW_SHOT_TARGETED après les exemples de base. `vocab` guide le
+    modèle vers le vocabulaire LSFB : indications dans chaque message utilisateur et
+    réponses des exemples converties (PÈRE -> PAPA…), pour rester cohérent.
     """
     messages: list[dict] = [{"role": "system", "content": SYSTEM_PROMPT}]
-    for source, glosses in FEW_SHOT_EXAMPLES:
-        messages.append({"role": "user", "content": build_user_prompt(source)})
+    examples = FEW_SHOT_EXAMPLES + (FEW_SHOT_TARGETED if targeted else [])
+    if vocab:
+        from src.lsf_translator.lsfb import convert
+        examples = [(src, convert(g)) for src, g in examples]
+    for source, glosses in examples:
+        messages.append({"role": "user", "content": build_user_prompt(source, vocab=vocab)})
         messages.append({"role": "assistant", "content": _assistant_example(glosses)})
-    messages.append({"role": "user", "content": build_user_prompt(text, language)})
+    messages.append({"role": "user", "content": build_user_prompt(text, language, vocab=vocab)})
     return messages
 
 
@@ -180,13 +225,14 @@ def build_messages(text: str, language: str | None = None) -> list[dict]:
 TRAIN_SYSTEM = SYSTEM_PROMPT.split("\nDes exemples te sont fournis")[0].rstrip() + "\n"
 
 
-def build_rules_only_messages(text: str, language: str | None = None) -> list[dict]:
+def build_rules_only_messages(text: str, language: str | None = None,
+                              vocab: bool = False) -> list[dict]:
     """Prompt « règles seules », identique à celui des exemples d'entraînement :
     [TRAIN_SYSTEM] + [phrase réelle], sans few-shot. À utiliser pour servir ou
     évaluer un modèle fine-tuné (la connaissance est dans les poids)."""
     return [
         {"role": "system", "content": TRAIN_SYSTEM},
-        {"role": "user", "content": build_user_prompt(text, language)},
+        {"role": "user", "content": build_user_prompt(text, language, vocab=vocab)},
     ]
 
 
@@ -206,6 +252,7 @@ GLOSS_JSON_SCHEMA = {
 __all__ = [
     "SYSTEM_PROMPT",
     "FEW_SHOT_EXAMPLES",
+    "FEW_SHOT_TARGETED",
     "build_user_prompt",
     "build_messages",
     "GLOSS_JSON_SCHEMA",

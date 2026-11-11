@@ -27,6 +27,8 @@ Usage :
     uv run python eval/evaluate.py --quiet               # agrégats seulement
     uv run python eval/evaluate.py --postprocess         # + post-traitement déterministe
                                                          # (lsf_translator/postprocess.py)
+    uv run python eval/evaluate.py --few-shot-cible      # + exemples few-shot ciblés
+                                                         # (prompts.py: FEW_SHOT_TARGETED)
     uv run python eval/evaluate.py --dataset eval/dev.jsonl   # jeu de DEV (mise au point)
 """
 from __future__ import annotations
@@ -49,10 +51,10 @@ if str(PROJECT) not in sys.path:
 from ollama import Client
 
 from src.config import CONFIG
-from src.lsf_translator import conventions, lexicon
-from src.lsf_translator import postprocess
+from src.lsf_translator import conventions, lexicon, lsfb, postprocess
 from src.lsf_translator.prompts import (
     FEW_SHOT_EXAMPLES,
+    FEW_SHOT_TARGETED,
     GLOSS_JSON_SCHEMA,
     SYSTEM_PROMPT,
     TRAIN_SYSTEM,
@@ -108,11 +110,39 @@ def _sha(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()[:12]
 
 
-def prompt_hash(mode: str = "prod") -> str:
+def prompt_hash(mode: str = "prod", targeted: bool = False) -> str:
     """Hash du prompt assemblé : change dès que le système ou un exemple change."""
     if mode == "rules-only":
         return _sha(TRAIN_SYSTEM.encode("utf-8"))
-    return _sha((SYSTEM_PROMPT + repr(FEW_SHOT_EXAMPLES)).encode("utf-8"))
+    examples = FEW_SHOT_EXAMPLES + (FEW_SHOT_TARGETED if targeted else [])
+    return _sha((SYSTEM_PROMPT + repr(examples)).encode("utf-8"))
+
+
+def few_shot_hash() -> str:
+    """Version des exemples ciblés (change dès qu'un exemple change)."""
+    return _sha(repr(FEW_SHOT_TARGETED).encode("utf-8"))
+
+
+def messages_for(text: str, language: str, mode: str = "prod",
+                 targeted: bool = False, vocab: bool = False) -> list[dict]:
+    if mode == "rules-only":
+        return build_rules_only_messages(text, language, vocab=vocab)
+    return build_messages(text, language, targeted=targeted, vocab=vocab)
+
+
+def vocab_hash() -> str:
+    """Version du vocabulaire LSFB (gloses jouables + synonymes + code des indications)."""
+    data = b"".join(p.read_bytes() for p in (lsfb.VOCAB_PATH, lsfb.SYNONYMS_PATH) if p.exists())
+    return _sha(data + inspect.getsource(lsfb).encode("utf-8"))
+
+
+def coverage_of(per_sentence: list[dict]) -> float | None:
+    """Part des gloses produites jouables par l'avatar (signe LSFB ou pointage)."""
+    ok = tot = 0
+    for s in per_sentence:
+        a, b = lsfb.coverage(s["pred"])
+        ok, tot = ok + a, tot + b
+    return round(ok / tot, 4) if tot else None
 
 
 def postprocess_hash() -> str:
@@ -188,12 +218,12 @@ def format_training(t: dict | None) -> str:
 
 
 def measure_prompt_tokens(client: Client, model: str, rows: list[dict],
-                          mode: str = "prod") -> int | None:
+                          mode: str = "prod", targeted: bool = False, vocab: bool = False) -> int | None:
     """Taille réelle du prompt (num_ctx large) pour détecter une troncature."""
     longest = max((r["text"] for r in rows), key=len)
     try:
         r = client.chat(
-            model=model, messages=PROMPT_BUILDERS[mode](longest, "fr"),
+            model=model, messages=messages_for(longest, "fr", mode, targeted, vocab),
             format=GLOSS_JSON_SCHEMA, options={"num_ctx": 8192, "temperature": 0.0},
         )
         return r.get("prompt_eval_count")
@@ -203,9 +233,9 @@ def measure_prompt_tokens(client: Client, model: str, rows: list[dict],
 
 # -- appel LLM -----------------------------------------------------------
 def translate(client: Client, model: str, text: str, language: str,
-              mode: str = "prod") -> list[str]:
+              mode: str = "prod", targeted: bool = False, vocab: bool = False) -> list[str]:
     r = client.chat(
-        model=model, messages=PROMPT_BUILDERS[mode](text, language),
+        model=model, messages=messages_for(text, language, mode, targeted, vocab),
         format=GLOSS_JSON_SCHEMA,
         options={"temperature": 0.0, "num_ctx": CONFIG.ollama.num_ctx},
     )
@@ -251,8 +281,8 @@ def _append_results_md(record: dict, fname: str) -> None:
         "`eval/evaluate.py --save`). Une ligne par run ; `git*` = modifs non "
         "commitées au moment du run. Détail complet dans `eval/results/`.\n\n"
         "| Date | Heure | Label | Méthode | Modèle | git | Dataset éval | Dataset train "
-        "| Exact | F1 | Ordre | Fuites | Record |\n"
-        "|---|---|---|---|---|---|---|---|---|---|---|---|---|\n"
+        "| Exact | F1 | Ordre | Fuites | Couv. LSFB | Record |\n"
+        "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|\n"
     )
     if not RESULTS_MD.exists():
         RESULTS_MD.write_text(header, encoding="utf-8")
@@ -276,13 +306,16 @@ def results_row(record: dict, fname: str) -> str:
     method = record.get("method") or "aucune"
     method_cell = "—" if method == "aucune" else \
         f"{method} ({record['method_hash']})" if record.get("method_hash") else method
+    # Couverture LSFB : recalculée depuis les sorties pour les anciens records.
+    cov = m.get("couverture_lsfb", coverage_of(record.get("per_sentence", [])))
+    cov_cell = f"{cov * 100:.0f}%" if cov is not None else "—"
     return (
         f"| {record['timestamp'][:10]} | {record['timestamp'][11:19]} "
         f"| {record['label']} | {method_cell} | {model_cell} "
         f"| {git} | [{record['dataset_sha']}](datasets/{record['dataset_sha']}/) "
         f"| {train_cell} "
         f"| {m['exact']*100:.0f}% | {m['f1']:.3f} | {m['order']:.3f} "
-        f"| {m['leaks']} | [{fname}](results/{fname}) |\n"
+        f"| {m['leaks']} | {cov_cell} | [{fname}](results/{fname}) |\n"
     )
 
 
@@ -297,6 +330,15 @@ def main() -> int:
     ap.add_argument("--postprocess", action="store_true",
                     help="Applique le post-traitement déterministe aux gloses du modèle "
                          "(lsf_translator/postprocess.py) ; le record garde la sortie brute.")
+    ap.add_argument("--few-shot-cible", dest="few_shot_cible", action="store_true",
+                    help="Ajoute au prompt de prod les exemples few-shot ciblés "
+                         "(lsf_translator/prompts.py: FEW_SHOT_TARGETED).")
+    ap.add_argument("--vocab-lsfb", dest="vocab_lsfb", action="store_true",
+                    help="Vocabulaire LSFB (lsf_translator/lsfb.py) : gloses ramenées au vocabulaire "
+                         "jouable par l'avatar (PÈRE -> PAPA…), après le post-traitement s'il est actif.")
+    ap.add_argument("--indices-lsfb", dest="indices_lsfb", action="store_true",
+                    help="Indications LSFB dans le prompt (signes disponibles pour la phrase) : pour "
+                         "un modèle entraîné avec ; dégradent un modèle qui ne les a jamais vues.")
     ap.add_argument("--quiet", action="store_true", help="Agrégats seulement.")
     ap.add_argument("--save", action="store_true",
                     help="Archive le run (JSON + ligne dans RESULTS.md).")
@@ -306,7 +348,17 @@ def main() -> int:
     ap.add_argument("--label", default="(sans label)",
                     help="Description courte du run (ex. 'ajout lexique').")
     args = ap.parse_args()
-    method = "post-traitement" if args.postprocess else "aucune"
+    if args.few_shot_cible and args.prompt != "prod":
+        ap.error("--few-shot-cible complète le prompt de prod : utilise --prompt prod.")
+    # Méthodes actives, dans l'ordre de la chaîne (prompt puis sortie).
+    active = [m for m, on in (("indices-lsfb", args.indices_lsfb),
+                              ("few-shot-cible", args.few_shot_cible),
+                              ("post-traitement", args.postprocess),
+                              ("vocabulaire-lsfb", args.vocab_lsfb)) if on]
+    method = "+".join(active) or "aucune"
+    hashes = {"indices-lsfb": vocab_hash, "vocabulaire-lsfb": vocab_hash,
+              "few-shot-cible": few_shot_hash, "post-traitement": postprocess_hash}
+    method_hash = "+".join(hashes[m]() for m in active) or None
 
     rows = [json.loads(l) for l in
             Path(args.dataset).read_text(encoding="utf-8").splitlines() if l.strip()]
@@ -329,11 +381,14 @@ def main() -> int:
     for row in rows:
         gold = row["glosses"]
         pred = translate(client, args.model, row["text"], row.get("language", "fr"),
-                         args.prompt)
+                         args.prompt, args.few_shot_cible, args.indices_lsfb)
         extra: dict = {}
         if args.postprocess:
             extra["raw"] = pred
-            pred, extra["rules"] = postprocess.postprocess(row["text"], pred)
+            pred, extra["rules"] = postprocess.postprocess(row["text"], pred, lsfb=args.vocab_lsfb)
+        elif args.vocab_lsfb:
+            extra["raw"] = pred
+            pred = lsfb.convert(pred)
         _, _, f = multiset_f1(pred, gold)
         o = order_score(pred, gold)
         is_exact = pred == gold
@@ -364,7 +419,9 @@ def main() -> int:
     metrics = {
         "exact": exact / n, "exact_count": exact, "n": n,
         "f1": round(sum_f / n, 4), "order": round(sum_o / n, 4), "leaks": leaks,
+        "couverture_lsfb": coverage_of(per_sentence),
     }
+    gold_cov = coverage_of([{"pred": r["glosses"]} for r in rows])
     by_phen_avg = {ph: round(sum(v) / len(v), 3) for ph, v in by_phen.items()}
 
     print("── Agrégats ──────────────────────────────")
@@ -372,13 +429,16 @@ def main() -> int:
     print(f"  F1 moyen   : {metrics['f1']:.3f}")
     print(f"  Ordre moyen: {metrics['order']:.3f}")
     print(f"  Fuites     : {leaks}/{n} phrase(s) avec mot-outil")
+    print(f"  Couv. LSFB : {metrics['couverture_lsfb']:.0%} des gloses jouables par l'avatar "
+          f"(référence : {gold_cov:.0%})")
     print("\n── F1 moyen par phénomène ────────────────")
     for ph in sorted(by_phen_avg, key=by_phen_avg.get):
         print(f"  {ph:24s} {by_phen_avg[ph]:.2f}  (n={len(by_phen[ph])})")
 
     if args.save or args.out:
         commit, dirty = git_info()
-        tokens = measure_prompt_tokens(client, args.model, rows, args.prompt)
+        tokens = measure_prompt_tokens(client, args.model, rows, args.prompt,
+                                       args.few_shot_cible, args.indices_lsfb)
         ds_sha = _sha(Path(args.dataset).read_bytes())
         # Un essai --out seul ne fige pas le dataset (pas de record archivé).
         snapshot = snapshot_dataset(Path(args.dataset), ds_sha) if args.save \
@@ -393,11 +453,13 @@ def main() -> int:
             "training": training,
             "git_commit": commit, "git_dirty": dirty,
             "prompt_mode": args.prompt,
-            "prompt_hash": prompt_hash(args.prompt),
+            "prompt_hash": prompt_hash(args.prompt, args.few_shot_cible),
             "method": method,
-            "method_hash": postprocess_hash() if args.postprocess else None,
+            "method_hash": method_hash,
             "num_ctx": CONFIG.ollama.num_ctx,
-            "few_shot": len(FEW_SHOT_EXAMPLES) if args.prompt == "prod" else 0,
+            "few_shot": (len(FEW_SHOT_EXAMPLES)
+                         + (len(FEW_SHOT_TARGETED) if args.few_shot_cible else 0))
+                        if args.prompt == "prod" else 0,
             "prompt_tokens": tokens,
             "dataset": _rel(Path(args.dataset)),
             "dataset_sha": ds_sha,

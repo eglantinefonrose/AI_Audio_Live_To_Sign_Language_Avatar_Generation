@@ -10,7 +10,7 @@ Garde-fou : appliqué aux gloses de RÉFÉRENCE (train + dev), il ne doit rien
 changer (`python -m lsf_translator.postprocess`). Une règle qui modifie une
 référence est trop large.
 
-    from lsf_translator.postprocess import postprocess
+    from src.lsf_translator.postprocess import postprocess
     glosses, applied = postprocess("Il pleut encore ?", ["LUI", "PLEU", "ENCORE"])
 """
 from __future__ import annotations
@@ -27,6 +27,7 @@ from src.lsf_translator.conventions import (
     IMPERSONAL,
     NEAR_FUTURE_RE,
     NEG_RE,
+    OTHER_TIME_RE,
     TECH_TERMS,
     explicit_times,
     implicit_time,
@@ -35,9 +36,11 @@ from src.lsf_translator.lexicon import (
     CLOSED_CLASS,
     NEGATIONS,
     POINTING_OF,
+    POINTS,
     WH,
     directional_verbs,
     lemma,
+    lexicon,
     lexicon_parts,
     strip_accents,
     tokens,
@@ -68,8 +71,9 @@ def _ratio(a: str, b: str) -> float:
 class _Ctx:
     """Ce que la phrase source permet de vérifier."""
 
-    def __init__(self, text: str) -> None:
+    def __init__(self, text: str, lsfb: bool = False) -> None:
         self.text = text
+        self.lsfb = lsfb
         self.low = text.lower().replace("’", "'")
         self.toks = tokens(text)
         self.lemmas = [lemma(t) for t in self.toks]
@@ -83,6 +87,15 @@ class _Ctx:
         parts = gloss.split("-À-")[0].split("-")
         return all(p in CLOSED_CLASS or p in self.support or p.isdigit()
                    or any(_ratio(p, s) >= 0.7 for s in self.support) for p in parts if p)
+
+
+def _known(ctx: _Ctx) -> frozenset[str]:
+    """Gloses connues : lexique d'entraînement, plus le vocabulaire LSFB s'il est activé
+    (un signe LSFB choisi par le modèle, PAPA pour « père », n'est pas une invention)."""
+    if not ctx.lsfb:
+        return lexicon_parts()
+    from src.lsf_translator.lsfb import vocab
+    return lexicon_parts() | frozenset(p for g in vocab() for p in [g, *g.split("-")])
 
 
 def _head(g: list[str]) -> int:
@@ -143,7 +156,7 @@ def r_lexique(ctx: _Ctx, g: list[str]) -> list[str]:
 def _fix_word(ctx: _Ctx, x: str) -> str:
     """Graphie d'un mot : rapprochée du mot source, verbe à l'infinitif, nom au
     singulier. Ne touche jamais une glose connue du lexique."""
-    lex = lexicon_parts()
+    lex = _known(ctx)
     if x in CLOSED_CLASS or x in lex or x.isdigit():
         return x
     if x not in ctx.support:   # graphie inventée : mot ou lemme source le plus proche
@@ -176,7 +189,7 @@ def r_inventees(ctx: _Ctx, g: list[str]) -> list[str]:
     une invention : graphie hors lexique (« AÉ »), ou mot répété (« VOITURE »
     ×3). Un signe connu sans mot source littéral (VITE pour « rapidement »,
     ÇA-VA, PLEUVOIR pour « plu ») est gardé."""
-    lex = lexicon_parts()
+    lex = _known(ctx)
     return [x for x in g if ctx.supported(x)
             or (all(p in lex for p in x.split("-À-")[0].split("-") if p) and g.count(x) == 1)]
 
@@ -247,6 +260,9 @@ def r_eux(ctx: _Ctx, g: list[str]) -> list[str]:
 def r_temps(ctx: _Ctx, g: list[str]) -> list[str]:
     g = list(g)
     explicit = explicit_times(ctx.text)
+    if ctx.lsfb:   # un temps peut se signer autrement en LSFB (MAINTENANT -> AUJOURD'HUI)
+        from src.lsf_translator.lsfb import to_lsfb
+        explicit = {e for gl in explicit for e in (gl, *to_lsfb(gl))}
     marker = implicit_time(ctx.text)
     if explicit:
         g = [x for x in g if x not in {"AVANT", "BIENTÔT"}]
@@ -258,6 +274,17 @@ def r_temps(ctx: _Ctx, g: list[str]) -> list[str]:
         other = "BIENTÔT" if marker == "AVANT" else "AVANT"
         g = [x for x in g if x not in {marker, other}]
         g.insert(_head(g), marker)
+    elif re.search(r"\bdéjà\b", ctx.low):
+        # « déjà » : adverbe après le verbe, qui dispense de AVANT.
+        g = [x for x in g if x != "AVANT"]
+        if "DÉJÀ" not in g:
+            k = len(g)
+            while k > 0 and g[k - 1] in {*NEGATIONS, *WH, "QUESTION"}:
+                k -= 1
+            g.insert(k, "DÉJÀ")
+    elif not OTHER_TIME_RE.search(ctx.low):
+        # Aucun temps dans la phrase source : AVANT / BIENTÔT inventés.
+        g = [x for x in g if x not in {"AVANT", "BIENTÔT"}]
     m = NEAR_FUTURE_RE.search(ctx.low)
     if m and lemma(m.group(0).split()[-1]) != "aller" and "ALLER" in g:
         g.remove("ALLER")   # « aller » + infinitif = futur, pas le verbe ALLER
@@ -272,6 +299,8 @@ def r_negation(ctx: _Ctx, g: list[str]) -> list[str]:
                      if re.search(rf"\b{w}\b", ctx.low)), None)
     if specific and "NON" in g and not re.search(r"\bpas\b", ctx.low):
         g.remove("NON")
+    if re.search(r"\b(ne|n')\b.*\bplus\b", ctx.low) and "PLUS" in g:
+        g.remove("PLUS")   # « ne … plus » -> NON seul
     negs = [x for x in g if x in NEGATIONS]
     if not negs:
         negs = [specific or "NON"]
@@ -299,9 +328,21 @@ def r_question(ctx: _Ctx, g: list[str]) -> list[str]:
 
 
 def r_connecteur(ctx: _Ctx, g: list[str]) -> list[str]:
+    if re.search(r"\bdu coup\b", ctx.low) and "COUP" in g:
+        g = [x for x in g if x != "COUP"]   # connecteur de discours supprimé
     if ctx.low.lstrip().startswith(CONNECTOR_END):
         return ["ENFIN"] + [x for x in g if x != "ENFIN"]
     return g
+
+
+def r_lsfb(ctx: _Ctx, g: list[str]) -> list[str]:
+    """Vocabulaire LSFB (si activé) : graphie du vocabulaire (ECOLE -> ÉCOLE) ou
+    synonyme jouable (PÈRE -> PAPA, REMERCIER-À-VOUS -> MERCI) ; un mot sans signe
+    (nom propre, terme technique) est gardé : il sera épelé."""
+    if not ctx.lsfb:
+        return g
+    from src.lsf_translator.lsfb import convert
+    return convert(g)
 
 
 RULES = [
@@ -309,13 +350,14 @@ RULES = [
     ("lexique", r_lexique), ("orthographe", r_orthographe), ("inventées", r_inventees),
     ("doublons", r_doublons), ("directionnel", r_directionnel), ("possessifs", r_possessifs),
     ("eux", r_eux), ("temps", r_temps), ("négation", r_negation), ("question", r_question),
-    ("connecteur", r_connecteur),
+    ("connecteur", r_connecteur), ("lsfb", r_lsfb),
 ]
 
 
-def postprocess(text: str, glosses: list[str]) -> tuple[list[str], list[str]]:
-    """Gloses corrigées + noms des règles qui ont modifié quelque chose."""
-    ctx = _Ctx(text)
+def postprocess(text: str, glosses: list[str], lsfb: bool = False) -> tuple[list[str], list[str]]:
+    """Gloses corrigées + noms des règles qui ont modifié quelque chose. `lsfb` ramène
+    les gloses au vocabulaire LSFB (lsf_translator/lsfb.py)."""
+    ctx = _Ctx(text, lsfb)
     applied: list[str] = []
     g = list(glosses)
     if not g:
@@ -328,7 +370,16 @@ def postprocess(text: str, glosses: list[str]) -> tuple[list[str], list[str]]:
     return g, applied
 
 
-def _check_references(paths: list[Path]) -> int:
+def source_text(messages: list[dict]) -> str:
+    """Phrase source d'un exemple au format chat, quel que soit le format : avec ou sans
+    message système (Gemma : règles fusionnées dans le message utilisateur), avec ou
+    sans indications du vocabulaire LSFB après la phrase."""
+    user = [m for m in messages if m["role"] == "user"][-1]["content"]
+    line = next(l for l in user.splitlines() if l.startswith("Phrase à transcrire"))
+    return re.search(r'"(.*)"\s*$', line).group(1)
+
+
+def _check_references(paths: list[Path], lsfb: bool = False) -> int:
     """Garde-fou : les références ne doivent pas être modifiées."""
     changed = total = 0
     for path in paths:
@@ -337,12 +388,12 @@ def _check_references(paths: list[Path]) -> int:
                 continue
             r = json.loads(line)
             if "messages" in r:
-                text = re.search(r'"(.*)"\s*$', r["messages"][-2]["content"]).group(1)
+                text = source_text(r["messages"])
                 gold = json.loads(r["messages"][-1]["content"])["glosses"]
             else:
                 text, gold = r["text"], r["glosses"]
             total += 1
-            out, applied = postprocess(text, gold)
+            out, applied = postprocess(text, gold, lsfb=lsfb)
             if out != gold:
                 changed += 1
                 print(f"  ✗ {text}\n      réf : {' '.join(gold)}\n      pp  : {' '.join(out)}  "
@@ -352,6 +403,8 @@ def _check_references(paths: list[Path]) -> int:
 
 
 if __name__ == "__main__":
+    # python -m src.lsf_translator.postprocess [--lsfb] [fichiers.jsonl…]
     project = Path(__file__).resolve().parent.parent
+    args = [a for a in sys.argv[1:] if a != "--lsfb"]
     default = [project / "finetune/data/2184f8f3751e/train.jsonl", project / "eval/dev.jsonl"]
-    sys.exit(1 if _check_references([Path(p) for p in sys.argv[1:]] or default) else 0)
+    sys.exit(1 if _check_references([Path(p) for p in args] or default, lsfb="--lsfb" in sys.argv) else 0)

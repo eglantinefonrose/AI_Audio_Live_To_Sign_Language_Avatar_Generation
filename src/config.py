@@ -78,6 +78,13 @@ class OllamaConfig:
     # Few-shot dynamique : nb d'exemples choisis phrase par phrase dans la banque
     # (lsf_translator/retrieval.py) ; 0 = désactivé (eval/evaluate.py --few-shot-dynamique).
     few_shot_dynamic: int = 0
+    # Vocabulaire LSFB (lsf_translator/lsfb.py) : le post-traitement ramène les gloses
+    # au vocabulaire jouable par l'avatar (PÈRE -> PAPA…). Le prompt ne change pas.
+    vocabulaire_lsfb: bool = False
+    # Indications LSFB dans le prompt (signes disponibles pour la phrase) : seulement
+    # pour un modèle entraîné avec (dataset construit avec --indices-lsfb) ; elles
+    # dégradent un modèle qui ne les a jamais vues (cf. eval/README.md).
+    vocabulaire_lsfb_indices: bool = False
 
 
 @dataclass(frozen=True)

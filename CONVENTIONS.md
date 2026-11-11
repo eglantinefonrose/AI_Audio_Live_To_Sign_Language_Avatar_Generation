@@ -141,3 +141,29 @@ repris tels quels.
 | « du coup », « donc », « alors » (connecteurs) | supprimés |
 | termes techniques / anglais (« dataset », « fine tuning », « random forest », « machine learning », « deep learning ») | repris à l'identique, mots reliés par des traits d'union (`DATASET`, `FINE-TUNING`, `RANDOM-FOREST`) |
 | noms propres (« Paris », « Camembert ») | repris à l'identique (`PARIS`, `CAMEMBERT`) |
+
+## 13. Vocabulaire LSFB (le projet signe en LSFB)
+
+L'avatar signe en **LSFB** (langue des signes de Belgique francophone). Les gloses
+gardent le format ci-dessus (majuscules, accents, nombres en lettres), mais une glose
+n'est **jouable** que si elle a un signe LSFB :
+
+- `src/lsf_translator/vocabulaire_lsfb.csv` : les gloses jouables et leur étiquette
+  LSFB (~1 250, signes LSFB-ISOL avec au moins 10 exemples, signes-noms, nombres),
+  généré par `python -m src.lsf_translator.vocabulaire_lsfb`. C'est le **contrat**
+  entre la traduction et l'avatar ;
+- les pointages `MOI`, `TOI`, `LUI`, `NOUS`, `VOUS`, `EUX` sont générés par l'avatar ;
+- `src/lsf_translator/synonymes_lsfb.csv` (édité à la main) : un mot sans signe est
+  remplacé par un signe de même sens (`PÈRE` → `PAPA`, `TRÈS` → `BEAUCOUP`,
+  `MAINTENANT` → `AUJOURD'HUI`, `REMERCIER-À-VOUS` → `MERCI-À-VOUS`…) ;
+- un mot sans signe ni synonyme (nom propre, terme technique : `DATASET`,
+  `CAMEMBERT`) est **gardé tel quel** : l'avatar l'épellera (alphabet manuel LSFB).
+
+Le gold de l'éval et les datasets d'entraînement suivent ce vocabulaire.
+`python -m src.lsf_translator.lsfb couverture <fichier.jsonl>` mesure la part de gloses
+jouables.
+
+> Les remplacements de `synonymes_lsfb.csv` et le choix du signe par défaut d'une
+> étiquette à variantes sont des choix automatiques ou faits sans locuteur LSFB : à
+> relire.
+

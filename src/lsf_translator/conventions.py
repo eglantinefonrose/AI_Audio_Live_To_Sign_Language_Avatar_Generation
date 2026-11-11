@@ -180,6 +180,9 @@ def check(text: str, glosses: list[str]) -> list[str]:
 
     # 7. Temps : explicite gardé, pas de AVANT/BIENTÔT en plus, temps en tête
     explicit = explicit_times(text)
+    # Vocabulaire LSFB : un temps peut se signer autrement (MAINTENANT -> AUJOURD'HUI).
+    from src.lsf_translator.lsfb import to_lsfb
+    explicit = {gl if gl in g else next((e for e in to_lsfb(gl) if e in g), gl) for gl in explicit}
     for gl in explicit:
         if gl not in g:
             errs.append(f"temps explicite non gardé ({gl})")
@@ -258,14 +261,23 @@ def _report(name: str, rows: list[tuple[str, list[str]]]) -> int:
     return len(bad)
 
 
+def source_text(messages: list[dict]) -> str:
+    """Phrase source d'un exemple au format chat, quel que soit le format : avec ou sans
+    message système (Gemma : règles fusionnées dans le message utilisateur), avec ou
+    sans indications du vocabulaire LSFB après la phrase."""
+    user = [m for m in messages if m["role"] == "user"][-1]["content"]
+    line = next(l for l in user.splitlines() if l.startswith("Phrase à transcrire"))
+    return re.search(r'"(.*)"\s*$', line).group(1)
+
+
 def _load_jsonl(path: Path) -> list[tuple[str, list[str]]]:
     rows = []
     for line in path.read_text(encoding="utf-8").splitlines():
         if line.strip():
             r = json.loads(line)
             if "messages" in r:   # format chat (train/valid)
-                text = re.search(r'"(.*)"\s*$', r["messages"][1]["content"]).group(1)
-                rows.append((text, json.loads(r["messages"][2]["content"])["glosses"]))
+                text = source_text(r["messages"])
+                rows.append((text, json.loads(r["messages"][-1]["content"])["glosses"]))
             else:
                 rows.append((r["text"], r["glosses"]))
     return rows
