@@ -21,7 +21,7 @@ commités. Ce sont des dérivés de LSFB, donc sous CC BY-NC-SA 4.0 eux aussi.
 uv run python src/sign_language_3d_avatar/tester_phrase_lsfb.py --gloses "MOI MAISON AIDER-À-TOI MERCI"
 ```
 
-L'avatar signe la phrase avec le **dictionnaire LSFB** (330 signes réels nettoyés,
+L'avatar signe la phrase avec le **dictionnaire LSFB** (378 signes réels nettoyés,
 pointages générés, mots sans signe affichés) et la vidéo s'ouvre. Sans option : mode
 interactif ; `t: phrase en français` passe par le traducteur (Ollama). Avec ton
 avatar VRoid : `--avatar mon_avatar.vrm`. Construction du dictionnaire :
@@ -65,7 +65,7 @@ Si Blender n'est pas dans `/Applications`, passez `--blender` ou la variable `BL
 | 3 | Chercher un dataset de signes LSF isolés | rien d'exploitable et d'accessible | LSF-ANIMAL non publié |
 | 4 | Faire générer les signes par une IA | écarté | trop d'erreurs invérifiables |
 | 5 | Décrire les signes (HamNoSys/SiGML) et les animer dans Blender | 50 signes, relecture trop fastidieuse | abandonné |
-| 6 | Dictionnaire **LSFB** automatique : meilleur exemple, nettoyage, transfert sur avatar (mannequin ou VRoid), enchaînement | 330 signes, 533 gloses du projet traitées | **piste actuelle** (LSFB assumée) |
+| 6 | Dictionnaire **LSFB** automatique : meilleur exemple, nettoyage, transfert sur avatar (mannequin ou VRoid), enchaînement | 378 signes, 573 gloses du projet traitées | **piste actuelle** (LSFB assumée) |
 
 ---
 
@@ -111,25 +111,24 @@ Si Blender n'est pas dans `/Applications`, passez `--blender` ou la variable `BL
 
 ### Correspondance avec les gloses du projet
 
-Les 533 gloses du projet (`src/lsf_translator/lexicon.txt` et `src/eval/dataset.jsonl`) ont été
-comparées aux étiquettes LSFB, qui sont sans accents, avec des nombres en chiffres et
-des variantes `BASE.X`. Résultat dans `dataset_generation/lsfb_mapping.csv` :
+Les 573 gloses du projet (`src/lsf_translator/lexicon.txt`, `src/eval/dataset.jsonl` et
+`src/eval/dev.jsonl`) ont été comparées aux étiquettes LSFB, qui sont sans accents, avec des
+nombres en chiffres et des variantes `BASE.X`, puis les cas douteux ont été relus à la main
+(page `candidats_absents.py`). Résultat dans `dataset_generation/lsfb_mapping.csv` :
 
 | Statut | Nombre | Exemple |
 |---|---|---|
-| exact | 325 | `ÉCOLE` → `ECOLE`, `DEUX` → `2` |
-| directionnel | 29 | `AIDER-À-TOI` → `AIDER` (orientation à produire par l'avatar) |
-| synonyme (à valider) | 20 | `PÈRE` → `PAPA`, `REMERCIER` → `MERCI` |
-| variante (à valider) | 14 | `GRAND` → `GRAND.HAUTEUR` / `.LARGEUR` |
-| nom propre (à valider) | 7 | `PARIS` → `NS:PARIS` (signe belge) |
-| décomposé / incertain | 3 | `LUNDI-DERNIER` → `LUNDI+DERNIER` ; `OÙ` → `OU` (homographe) |
+| exact | 342 | `ÉCOLE` → `ECOLE`, `DEUX` → `2` |
+| directionnel | 35 | `AIDER-À-TOI` → `AIDER` (orientation à produire par l'avatar) |
+| validé (relu à la main) | 52 | `PÈRE` → `PAPA`, `GRAND` → `GRAND.HAUTEUR`, `ITALIE` → `NS:ITALIE` |
+| épeler (relu) | 42 | noms propres et termes techniques : `MARIE`, `LYON`, `GPU`, `LORA` |
+| décomposé (à valider) | 5 | `LUNDI-DERNIER` → `LUNDI+DERNIER` |
 | pointage | 6 | `MOI`…`EUX` → `PT:PRO1…6` : annotés, mais **aucun clip disponible** |
-| absent | 129 | termes techniques, noms français, `MAINTENANT`, `TRÈS`… |
+| absent | 91 | aucun signe LSFB convenable à la relecture : `OÙ`, `QUAND`, `MAINTENANT`… |
 
-**Téléchargé** : les poses (corps et mains) des 354 gloses sûres (exactes et
-directionnelles), 10 clips au plus par glose. Cela fait 2 925 clips distincts de
-89 signeurs, soit 8 775 fichiers (≈ 32 Mo de données, 48 Mo sur disque). Ni vidéos ni
-visage. Deux coupures réseau ont été rattrapées par la reprise.
+**Téléchargé** : les poses (corps et mains) des 429 gloses sûres (exactes, directionnelles
+et validées), 10 clips au plus par glose. Cela fait 3 273 clips distincts de 91 signeurs,
+soit 19 638 fichiers (poses nettoyées et brutes). Ni vidéos ni visage.
 
 ```bash
 uv run python src/sign_language_3d_avatar/dataset_generation/lsfb_subset.py download \

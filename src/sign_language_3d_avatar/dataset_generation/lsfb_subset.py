@@ -8,7 +8,7 @@ Le `Downloader` officiel (`lsfb-dataset`) ne filtre que par split et par signeur
 ce script lit l'index `instances.csv` et ne récupère que les instances des gloses
 choisies. Bibliothèque standard uniquement.
 
-    uv run python src/sign_language_3d_avatar/dataset_generation/lsfb_subset.py map            # correspondances -> src/sign_language_3d_avatar/dataset_generation/lsfb_mapping.csv
+    uv run python src/sign_language_3d_avatar/dataset_generation/lsfb_subset.py map            # correspondances -> lsfb_mapping.csv + lsfb_words.txt
     uv run python src/sign_language_3d_avatar/dataset_generation/lsfb_subset.py download --words MAISON,AIDER-À-TOI --dry-run
     uv run python src/sign_language_3d_avatar/dataset_generation/lsfb_subset.py download --words-file src/sign_language_3d_avatar/dataset_generation/lsfb_words.txt
 """
@@ -32,6 +32,9 @@ ROOT = BASE.parent                               # src/ (lsf_translator/, eval/)
 SOURCE = "https://lsfb.info.unamur.be/static/datasets/lsfb_v2/isol"
 DEFAULT_DEST = BASE / "dataset_generation" / "data" / "lsfb"
 MAPPING_PATH = BASE / "dataset_generation" / "lsfb_mapping.csv"
+WORDS_PATH = BASE / "dataset_generation" / "lsfb_words.txt"
+# Choix faits à la main sur la page de relecture (candidats_absents.py) : ils priment.
+DECISIONS_PATH = BASE / "dataset_generation" / "lsfb_candidats.csv"
 LICENCE = ("CC BY-NC-SA 4.0 ; Meurant, Laurence (2015), Corpus LSFB, "
            "LSFB-Lab, FRS-FNRS et Université de Namur ; https://lsfb.info.unamur.be/")
 INDEX_FILES = ("instances.csv", "instances_special.csv", "metadata/sign_occurrences.csv")
@@ -55,7 +58,8 @@ SYNONYMS = {"PÈRE": "PAPA", "MÈRE": "MAMAN", "PARENT": "PARENTS", "D'ACCORD": 
 # Gloses dont l'accent distingue deux mots que LSFB (sans accents) confond.
 HOMOGRAPHS = {"OÙ": "OU (« ou » ?) / OU.OU : où ≠ ou, à vérifier dans la vidéo"}
 # Statuts téléchargés par défaut ; les autres demandent --inclure-incertains.
-SAFE_STATUSES = {"exact", "directionnel"}
+# « validé » = étiquette choisie à la main sur la page de relecture.
+SAFE_STATUSES = {"exact", "directionnel", "validé"}
 
 
 # --------------------------------------------------------------------------- index
@@ -122,10 +126,19 @@ def norm(label: str) -> str:
     return re.sub(r"-{2,}", "-", s)
 
 
+def load_decisions() -> dict[str, dict]:
+    """Réponses de la page de relecture, par glose du projet (`lsfb_candidats.csv`)."""
+    if not DECISIONS_PATH.exists():
+        return {}
+    with open(DECISIONS_PATH, newline="", encoding="utf-8-sig") as f:
+        return {r["glose"]: r for r in csv.DictReader(f) if r.get("verdict")}
+
+
 class LsfbLabels:
-    def __init__(self, instances: list[dict], special: Counter):
+    def __init__(self, instances: list[dict], special: Counter, decisions: dict[str, dict] | None = None):
         self.count = Counter(r["sign"] for r in instances)
         self.special = special
+        self.decisions = decisions or {}
         self.by_norm: dict[str, list[str]] = defaultdict(list)   # forme exacte
         self.by_base: dict[str, list[str]] = defaultdict(list)   # avant le « .VARIANTE »
         for label in self.count:
@@ -141,6 +154,29 @@ class LsfbLabels:
         return self._best(self.by_norm.get(n, [])), self._best(self.by_base.get(n, []))
 
     def resolve(self, gloss: str) -> dict:
+        """Correspondance d'une glose ; une réponse de la page de relecture prime sur la
+        proposition automatique (`decide`)."""
+        return self.decide(self.propose(gloss))
+
+    def decide(self, row: dict) -> dict:
+        d = self.decisions.get(row["glose_projet"])
+        if not d or d["verdict"] == "incertain":
+            return row
+        source = "relecture (lsfb_candidats.csv)"
+        if d["verdict"] in ("candidat", "autre") and d["choix"] in self.count:
+            m = DIRECTIONAL_RE.match(row["glose_projet"])
+            orient = f"forme de citation ; orientation vers {m.group(2)} à produire par l'avatar ; " if m else ""
+            return row | {"etiquette_lsfb": d["choix"], "statut": "validé", "instances": self.count[d["choix"]],
+                          "note": f"{orient}choisi à la {source}"}
+        if d["verdict"] == "épeler":
+            return row | {"statut": "épeler", "note": f"à épeler, d'après la {source}"}
+        if d["verdict"] == "aucun":
+            return row | {"etiquette_lsfb": "", "statut": "absent", "instances": 0,
+                          "note": f"aucun signe ne convient, d'après la {source}"}
+        return row
+
+    def propose(self, gloss: str) -> dict:
+        """Correspondance automatique (sans les réponses de la relecture)."""
         row = {"glose_projet": gloss, "etiquette_lsfb": "", "statut": "absent",
                "instances": 0, "autres_etiquettes": "", "note": ""}
         if gloss in POINTS:
@@ -191,23 +227,40 @@ def project_glosses() -> list[str]:
     for line in (ROOT / "lsf_translator" / "lexicon.txt").read_text(encoding="utf-8").splitlines():
         if line.strip() and not line.startswith("#"):
             glosses.add(line.strip())
-    with open(ROOT / "eval" / "dataset.jsonl", encoding="utf-8") as f:
-        for line in f:
-            if line.strip():
-                glosses.update(json.loads(line)["glosses"])
+    for name in ("dataset.jsonl", "dev.jsonl"):     # éval + dev = banc de l'évaluation de l'avatar
+        with open(ROOT / "eval" / name, encoding="utf-8") as f:
+            for line in f:
+                if line.strip():
+                    glosses.update(json.loads(line)["glosses"])
     return sorted(glosses)
+
+
+def write_words(rows: list[dict]) -> None:
+    """Liste de téléchargement : gloses sûres actives, celles à valider commentées."""
+    safe = [r for r in rows if r["statut"] in SAFE_STATUSES]
+    todo = [r for r in rows if r["statut"] not in SAFE_STATUSES and r["etiquette_lsfb"]
+            and r["statut"] not in ("pointage", "épeler")]
+    lines = ["# Gloses à télécharger depuis LSFB-ISOL (une par ligne, # = commentaire).",
+             f"# Généré par `lsfb_subset.py map` depuis {MAPPING_PATH.name}. Voir README.md.", "",
+             f"# --- Correspondance sûre ({len(safe)}) : {' / '.join(sorted(SAFE_STATUSES))} ---"]
+    lines += sorted(r["glose_projet"] for r in safe)
+    lines += ["", f"# --- À valider ({len(todo)}) : décommenter ET lancer avec --inclure-incertains ---"]
+    lines += [f"# {r['glose_projet']:22} -> {r['etiquette_lsfb']} [{r['statut']}] {r['note']}".rstrip()
+              for r in sorted(todo, key=lambda r: r["glose_projet"])]
+    WORDS_PATH.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
 def cmd_map(args) -> None:
     instances, special = load_index(args.dest)
-    labels = LsfbLabels(instances, special)
+    labels = LsfbLabels(instances, special, load_decisions())
     rows = [labels.resolve(g) for g in project_glosses()]
     with open(MAPPING_PATH, "w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=list(rows[0]))
         w.writeheader()
         w.writerows(rows)
+    write_words(rows)
     stats = Counter(r["statut"] for r in rows)
-    print(f"{len(rows)} gloses du projet -> {MAPPING_PATH.relative_to(ROOT)}")
+    print(f"{len(rows)} gloses du projet -> {MAPPING_PATH.relative_to(ROOT)}, {WORDS_PATH.name}")
     for status, n in stats.most_common():
         print(f"  {status:13} {n}")
 
@@ -303,7 +356,7 @@ def cmd_download(args) -> None:
     if not words:
         sys.exit("Aucun mot : --words A,B ou --words-file fichier.txt")
     instances, special = load_index(args.dest)
-    labels = LsfbLabels(instances, special)
+    labels = LsfbLabels(instances, special, load_decisions())
     by_label: dict[str, list[dict]] = defaultdict(list)
     for r in instances:
         by_label[r["sign"]].append(r)

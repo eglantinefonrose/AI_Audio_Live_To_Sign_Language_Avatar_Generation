@@ -100,15 +100,39 @@ des nombres en chiffres (`2`) et des variantes `BASE.PRÉCISION` (`GRAND.HAUTEUR
 | `nom-propre` | signe-nom belge `NS:PARIS` ; l'épellation est peut-être préférable | non |
 | `incertain` | homographe sans accent (`OÙ` → `OU`, qui veut aussi dire « ou ») | non |
 | `pointage` | `MOI/TOI/…` → `PT:PRO1…6` : annotés dans le corpus mais **aucun clip servi** dans ISOL ; à générer | — |
+| `validé` | étiquette choisie à la main sur la page de relecture (`lsfb_candidats.csv`) | oui |
+| `épeler` | relu : nom propre ou terme technique à épeler (pas encore d'alphabet manuel) | — |
 | `absent` | pas dans LSFB (termes techniques, noms français, etc.) | — |
+
+Les réponses de la page de relecture (`lsfb_candidats.csv`, voir plus bas) priment sur
+la proposition automatique à chaque `map`.
 
 Même `exact` ne garantit pas le sens : `AIMER` a aussi `AIMER.PLAISIR`, et le
 clip sans suffixe peut mélanger plusieurs signes annotés pareil. Il faut regarder
 quelques vidéos (`--videos --max-par-glose 3`) avant de figer un signe.
 
-`src/sign_language_3d_avatar/dataset_generation/lsfb_words.txt` contient la liste proposée : les gloses sûres sont actives,
-celles à valider sont commentées. Pour régénérer la table après une mise à jour de
-`lexicon.txt` ou de `eval/dataset.jsonl`, relancer `map`.
+`src/sign_language_3d_avatar/dataset_generation/lsfb_words.txt`, réécrit par `map`, contient la liste de
+téléchargement : les gloses sûres (`exact`, `directionnel`, `validé`) sont actives, celles à
+valider sont commentées. Pour régénérer les deux fichiers après une mise à jour de
+`lexicon.txt`, de `eval/dataset.jsonl`, de `eval/dev.jsonl` ou de `lsfb_candidats.csv`, relancer `map`.
+
+## Relire les gloses sans signe sûr (`candidats_absents.py`)
+
+Les gloses `absent`, `variante`, `incertain`, `synonyme` et `nom-propre` ne sont pas
+dans le dictionnaire de l'avatar. La page de relecture propose, pour chacune, jusqu'à 4
+étiquettes LSFB (synonymes proposés à la main, lemme, racine, variantes, orthographe
+voisine en dernier recours), avec 2 clips par étiquette :
+
+```bash
+uv run python src/sign_language_3d_avatar/dataset_generation/candidats_absents.py --ouvrir
+```
+
+Au clavier : <kbd>1</kbd>–<kbd>4</kbd> ce signe, <kbd>A</kbd> aucun, <kbd>E</kbd> à épeler,
+<kbd>I</kbd> incertain ; une autre étiquette LSFB peut être tapée à la main (elle devient
+un candidat, avec sa vidéo, à la relance). **Exporter le CSV**, le copier à la place de
+`lsfb_candidats.csv`, puis relancer `lsfb_subset.py map` : les signes choisis passent en
+`validé` (téléchargés et indexés comme `exact`), les noms à épeler en `épeler`. Ensuite,
+reconstruire le dictionnaire ([avatar_animation/README.md](../avatar_animation/README.md#dictionnaire-de-signes-lsfb)).
 
 ## Choisir le meilleur exemple de chaque signe (`select_examples.py`)
 

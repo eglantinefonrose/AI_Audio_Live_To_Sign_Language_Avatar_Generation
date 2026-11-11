@@ -1,6 +1,6 @@
 """Choisit automatiquement le meilleur exemple LSFB de chaque signe (sans relecture).
 
-Pour chaque étiquette LSFB utilisée par le projet (statuts `exact` et `directionnel` de
+Pour chaque étiquette LSFB utilisée par le projet (statuts `exact`, `directionnel` et `validé` de
 `lsfb_mapping.csv`), tous les exemples téléchargés sont notés sur trois critères :
 
 - **mains détectées** : part des images où MediaPipe a trouvé les deux mains (poses
@@ -36,7 +36,7 @@ GEN = Path(__file__).resolve().parent
 DATA = GEN / "data" / "lsfb"
 MAPPING = GEN / "lsfb_mapping.csv"
 OUT = GEN / "selection.csv"
-STATUSES = {"exact", "directionnel"}
+STATUSES = {"exact", "directionnel", "validé"}
 SHOULDER_L, SHOULDER_R = 11, 12
 HAND_POINTS = [0, 4, 8, 12, 16, 20]          # poignet + bouts des doigts
 WEIGHTS = {"mains": 0.5, "tremblement": 0.3, "duree": 0.2}

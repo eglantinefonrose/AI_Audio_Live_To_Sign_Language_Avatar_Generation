@@ -25,7 +25,7 @@ reconnaissance chargent la machine.
    par main. Pas de vidéo ni de MediaPipe : la détection des mains sur un avatar stylisé
    serait elle-même une source d'erreur.
 2. **Un reconnaisseur** (`features.py`) compare chaque signe à une galerie d'exemples
-   **réels** de LSFB-ISOL (~9 signeurs par signe, 330 signes) : descripteurs indépendants
+   **réels** de LSFB-ISOL (~9 signeurs par signe, 378 signes) : descripteurs indépendants
    de la taille du corps (directions des bras dans le plan de l'image, orientation et
    configuration des mains, main dominante comptée double), alignement temporel par DTW,
    plus proche exemple par signe.

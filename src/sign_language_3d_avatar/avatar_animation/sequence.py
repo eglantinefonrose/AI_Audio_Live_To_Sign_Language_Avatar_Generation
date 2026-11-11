@@ -5,7 +5,7 @@ que l'avatar doit faire.
 
 | type | quand | rendu |
 |---|---|---|
-| `signe` | statut `exact` ou `directionnel` dans `lsfb_mapping.csv` | clip nettoyé (forme de base pour un directionnel) |
+| `signe` | statut `exact`, `directionnel` ou `validé` (choisi à la relecture) dans `lsfb_mapping.csv` | clip nettoyé (forme de base pour un directionnel) |
 | `pointage` | `MOI`, `TOI`, `LUI`, `NOUS`, `VOUS`, `EUX` | geste de pointage généré (LSFB-ISOL n'en fournit pas) |
 | `absent` | autres statuts, ou glose inconnue | mot affiché en sous-titre, mains au repos |
 
@@ -67,8 +67,9 @@ def build_index() -> dict:
         g, label, status = r["glose_projet"], r["etiquette_lsfb"], r["statut"]
         if g in POINTS:
             glosses[g] = {"type": "pointage", "cible": g}
-        elif status in ("exact", "directionnel") and label in signs:
-            glosses[g] = {"type": "signe", "signe": label} | ({"forme": "base"} if status == "directionnel" else {})
+        elif status in ("exact", "directionnel", "validé") and label in signs:
+            directional = status == "directionnel" or (status == "validé" and "-À-" in g)
+            glosses[g] = {"type": "signe", "signe": label} | ({"forme": "base"} if directional else {})
         else:
             glosses[g] = {"type": "absent", "statut": status}
     index = {"fps": FPS, "licence": LICENCE, "signes": signs, "gloses": glosses,

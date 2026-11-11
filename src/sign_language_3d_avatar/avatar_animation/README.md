@@ -41,7 +41,8 @@ matériaux MToon sont simplifiés (rendu Workbench), suffisant pour des démos.
 - pointages `MOI`, `TOI`, `LUI` (fixes) et `NOUS`, `VOUS`, `EUX` (balayage) : générés, main
   droite index tendu (LSFB-ISOL ne fournit pas de clip de pointage) ;
 - verbes directionnels (`AIDER-À-TOI`) : forme de base du verbe, sans orientation ;
-- 173 gloses sans signe (termes techniques, noms propres, synonymes non retenus) : mot
+- 138 gloses sans signe (termes techniques, noms propres à épeler, gloses sans signe LSFB
+  convenable à la relecture) : mot
   affiché en sous-titre, mains au repos. LSFB-ISOL n'a pas d'alphabet manuel complet,
   donc pas d'épellation ;
 - pas de visage dans cette version.
