@@ -6,11 +6,10 @@ que l'avatar doit faire.
 | type | quand | rendu |
 |---|---|---|
 | `signe` | statut `exact`, `directionnel` ou `validé` (choisi à la relecture) dans `lsfb_mapping.csv` | clip nettoyé (forme de base pour un directionnel) |
+| `composé` | statut `décomposé` (`LUNDI-DERNIER` → `LUNDI+DERNIER`) | les signes à la suite |
+| `épelé` | statut `épeler` (relu : noms propres, termes techniques) | lettres de l'alphabet manuel LSFB (`FS:A`…`FS:Z`), rapprochées |
 | `pointage` | `MOI`, `TOI`, `LUI`, `NOUS`, `VOUS`, `EUX` | geste de pointage généré (LSFB-ISOL n'en fournit pas) |
 | `absent` | autres statuts, ou glose inconnue | mot affiché en sous-titre, mains au repos |
-
-LSFB-ISOL ne contient pas d'alphabet manuel complet (quelques lettres seulement) :
-pas d'épellation dans cette version.
 
 `assemble(gloses)` construit la trajectoire d'une phrase : repos → transition → signe →
 transition → … → repos. Les transitions interpolent toutes les articulations (courbe
@@ -40,6 +39,8 @@ POINTS = ("MOI", "TOI", "LUI", "NOUS", "VOUS", "EUX")
 LICENCE = ("Dérivé de LSFB-ISOL, CC BY-NC-SA 4.0 ; Meurant, Laurence (2015), Corpus LSFB, "
            "LSFB-Lab, FRS-FNRS et Université de Namur ; https://lsfb.info.unamur.be/")
 REST_FRAMES, TRANSITION, HOLD_MISSING, POINT_FRAMES = 15, 12, 30, 24
+LETTER_FRAMES, LETTER_TRANSITION = 20, 6       # épellation : lettres de 0,4 s au plus, enchaînées en 0,12 s
+SUITES = {"décomposé": "composé", "épeler": "épelé"}   # statut -> type (étiquettes `A+B+…`)
 
 
 # ------------------------------------------------------------------------- index
@@ -70,6 +71,8 @@ def build_index() -> dict:
         elif status in ("exact", "directionnel", "validé") and label in signs:
             directional = status == "directionnel" or (status == "validé" and "-À-" in g)
             glosses[g] = {"type": "signe", "signe": label} | ({"forme": "base"} if directional else {})
+        elif status in SUITES and label and all(l in signs for l in label.split("+")):
+            glosses[g] = {"type": SUITES[status], "signes": label.split("+")}
         else:
             glosses[g] = {"type": "absent", "statut": status}
     index = {"fps": FPS, "licence": LICENCE, "signes": signs, "gloses": glosses,
@@ -206,8 +209,39 @@ def _blend(a: dict[str, np.ndarray], b: dict[str, np.ndarray], n: int) -> dict[s
     return {k: a[k][-1][None] * (1 - t) + b[k][0][None] * t for k in a}
 
 
+def _letter(clip: dict[str, np.ndarray], rest: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
+    """Partie centrale d'une lettre (LETTER_FRAMES images au plus) : la configuration de la
+    main compte, pas l'approche ni le retrait du clip d'origine. La main gauche, qui ne
+    participe pas à l'épellation, reste au repos (dans le clip, elle finit ou prépare
+    d'autres signes de la conversation)."""
+    n = len(next(iter(clip.values())))
+    a = max(0, (n - LETTER_FRAMES) // 2)
+    out = {k: v[a:a + LETTER_FRAMES] for k, v in clip.items()}
+    shift = out["shoulder.L"] - rest["shoulder.L"]                # bras de repos accroché à l'épaule du clip
+    for k in out:
+        if k in ("elbow.L", "wrist.L") or k.startswith("hand.L."):
+            out[k] = rest[k][None] + shift
+    return out
+
+
+def steps(gloss: str, p: dict) -> list[tuple[str, str | None, str]]:
+    """Ce que l'avatar joue pour une glose : [(type, étiquette LSFB ou None, détail)].
+    Un composé ou un mot épelé donne plusieurs signes (ou lettres) à la suite."""
+    if p["type"] == "signe":
+        return [("signe", p["signe"], p["signe"] + (" (forme de base)" if p.get("forme") == "base" else ""))]
+    if p["type"] == "composé":
+        return [("signe", l, f"{l} ({k + 1}/{len(p['signes'])} de {gloss})") for k, l in enumerate(p["signes"])]
+    if p["type"] == "épelé":
+        return [("lettre", l, f"lettre {l[3:]} ({k + 1}/{len(p['signes'])})") for k, l in enumerate(p["signes"])]
+    if p["type"] == "pointage":
+        return [("pointage", None, "pointage généré")]
+    return [("absent", None, f"pas de signe ({p.get('statut', '?')}) : mot affiché")]
+
+
 def assemble(glosses: list[str], index: dict | None = None):
-    """(articulations (T, 3) de la phrase, chronologie [(début, fin, glose, type, détail)])."""
+    """(articulations (T, 3) de la phrase, chronologie [(début, fin, glose, type, détail,
+    étiquette)]) ; une entrée par signe joué : un mot épelé en a une par lettre (type
+    `lettre`), un composé une par signe (type `signe`)."""
     index = index or load_index()
     plan = [(g, resolve(g, index)) for g in glosses]
     first = next((p["signe"] for _, p in plan if p["type"] == "signe"), None)
@@ -216,23 +250,25 @@ def assemble(glosses: list[str], index: dict | None = None):
     rest_one = rest_pose(torso)
     rest = {k: v[None] for k, v in rest_one.items()}
     parts, timeline, t = [_repeat(rest_one, REST_FRAMES)], [], REST_FRAMES
+    previous = None                                               # type du pas précédent, dans le mot
     for gloss, p in plan:
-        if p["type"] == "signe":
-            clip = load_sign(p["signe"], index)
-            detail = p["signe"] + (" (forme de base)" if p.get("forme") == "base" else "")
-        elif p["type"] == "pointage":
-            clip = pointing(p["cible"], torso, rest_one)
-            detail = "pointage généré"
-        else:
-            clip = _repeat(rest_one, HOLD_MISSING)
-            detail = f"pas de signe ({p.get('statut', '?')}) : mot affiché"
-        clip = {k: clip[k] for k in rest}                         # mêmes articulations partout
-        trans = _blend(parts[-1], clip, TRANSITION)
-        parts += [trans, clip]
-        t += TRANSITION
-        n = len(next(iter(clip.values())))
-        timeline.append((t, t + n, gloss, p["type"], detail))
-        t += n
+        for kind, label, detail in steps(gloss, p):
+            if kind in ("signe", "lettre"):
+                clip = load_sign(label, index)
+                clip = _letter(clip, rest_one) if kind == "lettre" else clip
+            elif kind == "pointage":
+                clip = pointing(p["cible"], torso, rest_one)
+            else:
+                clip = _repeat(rest_one, HOLD_MISSING)
+            clip = {k: clip[k] for k in rest}                     # mêmes articulations partout
+            n_trans = LETTER_TRANSITION if kind == previous == "lettre" else TRANSITION
+            parts += [_blend(parts[-1], clip, n_trans), clip]
+            t += n_trans
+            n = len(next(iter(clip.values())))
+            timeline.append((t, t + n, gloss, kind, detail, label))
+            t += n
+            previous = kind
+        previous = None                                           # entre deux mots : transition normale
     parts += [_blend(parts[-1], rest, TRANSITION), _repeat(rest_one, REST_FRAMES)]
     joints = {k: np.concatenate([part[k] for part in parts]) for k in rest}
     return joints, timeline
@@ -249,7 +285,7 @@ def main() -> None:
     elif len(sys.argv) >= 3 and sys.argv[1] == "plan":
         joints, timeline = assemble(sys.argv[2].split())
         total = len(joints["hip"])
-        for a, b, g, kind, detail in timeline:
+        for a, b, g, kind, detail, _ in timeline:
             print(f"  {a / FPS:5.2f}–{b / FPS:5.2f} s  {g:18s} {kind:9s} {detail}")
         print(f"  durée totale : {total / FPS:.2f} s")
     else:

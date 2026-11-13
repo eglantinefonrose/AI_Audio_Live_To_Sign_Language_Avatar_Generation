@@ -25,7 +25,8 @@ reconnaissance chargent la machine.
    par main. Pas de vidéo ni de MediaPipe : la détection des mains sur un avatar stylisé
    serait elle-même une source d'erreur.
 2. **Un reconnaisseur** (`features.py`) compare chaque signe à une galerie d'exemples
-   **réels** de LSFB-ISOL (~9 signeurs par signe, 378 signes) : descripteurs indépendants
+   **réels** de LSFB-ISOL (moitié « eval » des signeurs, ~8 exemples par signe, 408 signes
+   dont 26 lettres ; l'autre moitié a servi à choisir les clips, voir `select_examples.py`) : descripteurs indépendants
    de la taille du corps (directions des bras dans le plan de l'image, orientation et
    configuration des mains, main dominante comptée double), alignement temporel par DTW,
    plus proche exemple par signe.
@@ -40,7 +41,8 @@ reconnaissance chargent la machine.
 |---|---|---|
 | **Score** (chiffre de tête) | l'avatar est-il aussi reconnaissable que le signeur qu'il copie, une fois les signes enchaînés en phrase ? | (centile en contexte − 50 %) ÷ (centile des clips sources − 50 %). 100 % = aussi reconnaissable que le vrai signeur ; 0 % = hasard. |
 | **Phrases** | la phrase **entière** est-elle bien signée ? | **jouables** : % de phrases dont chaque glose a un vrai signe ou un pointage (aucun mot sans signe). **Reconnues au seuil 80 % / 90 %** : jouables, et chaque vrai signe, en contexte, a un rang centile ≥ 80 % (top 20 %) ou ≥ 90 %. Référence : la même phrase avec les clips sources joués par les vrais signeurs. |
-| Couverture | chaque glose du banc est-elle jouée par un vrai signe ? | % signes réels / pointages générés / mots sans signe |
+| Couverture | chaque glose du banc est-elle jouée par un vrai signe ? | % signes réels (composés compris) / mots épelés / pointages générés / mots sans signe |
+| Lettres | les lettres des mots épelés sont-elles reconnues, en phrase ? | rang centile, comparé aux clips sources des lettres ; hors chiffre de tête, mais comptées dans « phrases reconnues » |
 | Reconnaissance isolée | un signe seul de l'avatar est-il reconnu ? | rang centile, top-1 / 5 / 10 |
 | Reconnaissance en contexte | et une fois dans une phrase ? On connaît le début et la fin exacts de chaque signe (c'est nous qui générons la chronologie) : on découpe et on reconnaît chaque morceau | idem |
 | Qualité du mouvement | vitesses ou à-coups anormaux, main enfoncée dans le torse | % d'images sans défaut ; seuils = 99,5e centile des vrais signeurs |
@@ -55,7 +57,13 @@ Le rapport liste aussi :
 - les signes **perdus par l'avatar** (clip source nettement mieux reconnu que l'avatar) :
   problème de transfert ou de transition ;
 - les **clips sources à changer** (mal reconnus alors qu'un autre signeur du même signe
-  l'est bien) : à corriger dans `dataset_generation/select_examples.py`.
+  l'est bien) : à corriger dans `dataset_generation/select_examples.py` ;
+- les **signes qui font échouer des phrases jouables** au seuil 80 % (combien de phrases,
+  dont combien à eux seuls, lettres comprises ; aussi dans le record :
+  `metrics.phrases.signes_bloquants`). C'est la liste que relit
+  `dataset_generation/revue_clips.py`. Attention : re-choisir les clips des signes qui
+  échouent sur la moitié « eval » améliore mécaniquement un peu sa note (régression
+  vers la moyenne) ; le gain mesuré après une telle relecture est donc un peu optimiste.
 
 ## Contrôles et limites
 
@@ -97,6 +105,21 @@ aux transitions. Le point faible est en amont, dans le **choix des clips** : 12 
 sources sont mal reconnus alors qu'un autre signeur l'est bien (NOIR, PORTER, IDEE,
 VIDEO, 16, BESOIN…). Couverture du banc : 63 % de signes réels, 20 % de pointages, 17 %
 de mots sans signe.
+
+## Choix des clips par le reconnaisseur (galerie : moitié eval)
+
+Même avatar (mannequin), même banc, même galerie (moitié « eval » des signeurs, jamais
+utilisée pour le choix) ; seul le choix des clips change :
+
+| Choix des clips | Phrases reconnues 80 % (avatar / vrais signeurs) | 90 % | Centile contexte | Lettres |
+|---|---|---|---|---|
+| score technique (mains, tremblement, durée) | 38 % / 37 % | 21 % / 20 % | 87 % | 84 % |
+| reconnaisseur, moitié « choix » | **54 % / 54 %** | **46 % / 46 %** | **93 %** | 82 % |
+
+Le clip choisi est le plus typique du signe ; le gain se retrouve sur des signeurs que le
+choix n'a jamais vus. Limite : le reconnaisseur regarde surtout la configuration des mains
+(voir les contrôles ci-dessus), donc « typique » veut dire « mains typiques » ; il ne
+garantit pas un mouvement de bras naturel.
 
 ## Fichiers
 

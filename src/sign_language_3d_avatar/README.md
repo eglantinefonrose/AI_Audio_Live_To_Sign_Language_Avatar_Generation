@@ -21,7 +21,7 @@ commités. Ce sont des dérivés de LSFB, donc sous CC BY-NC-SA 4.0 eux aussi.
 uv run python src/sign_language_3d_avatar/tester_phrase_lsfb.py --gloses "MOI MAISON AIDER-À-TOI MERCI"
 ```
 
-L'avatar signe la phrase avec le **dictionnaire LSFB** (378 signes réels nettoyés,
+L'avatar signe la phrase avec le **dictionnaire LSFB** (408 signes réels nettoyés dont l'alphabet manuel,
 pointages générés, mots sans signe affichés) et la vidéo s'ouvre. Sans option : mode
 interactif ; `t: phrase en français` passe par le traducteur (Ollama). Avec ton
 avatar VRoid : `--avatar mon_avatar.vrm`. Construction du dictionnaire :
@@ -65,7 +65,7 @@ Si Blender n'est pas dans `/Applications`, passez `--blender` ou la variable `BL
 | 3 | Chercher un dataset de signes LSF isolés | rien d'exploitable et d'accessible | LSF-ANIMAL non publié |
 | 4 | Faire générer les signes par une IA | écarté | trop d'erreurs invérifiables |
 | 5 | Décrire les signes (HamNoSys/SiGML) et les animer dans Blender | 50 signes, relecture trop fastidieuse | abandonné |
-| 6 | Dictionnaire **LSFB** automatique : meilleur exemple, nettoyage, transfert sur avatar (mannequin ou VRoid), enchaînement | 378 signes, 573 gloses du projet traitées | **piste actuelle** (LSFB assumée) |
+| 6 | Dictionnaire **LSFB** automatique : meilleur exemple, nettoyage, transfert sur avatar (mannequin ou VRoid), enchaînement | 408 signes (dont 26 lettres), 573 gloses du projet traitées | **piste actuelle** (LSFB assumée) |
 
 ---
 
@@ -121,14 +121,14 @@ nombres en chiffres et des variantes `BASE.X`, puis les cas douteux ont été re
 | exact | 342 | `ÉCOLE` → `ECOLE`, `DEUX` → `2` |
 | directionnel | 35 | `AIDER-À-TOI` → `AIDER` (orientation à produire par l'avatar) |
 | validé (relu à la main) | 52 | `PÈRE` → `PAPA`, `GRAND` → `GRAND.HAUTEUR`, `ITALIE` → `NS:ITALIE` |
-| épeler (relu) | 42 | noms propres et termes techniques : `MARIE`, `LYON`, `GPU`, `LORA` |
-| décomposé (à valider) | 5 | `LUNDI-DERNIER` → `LUNDI+DERNIER` |
+| épeler (relu) | 42 | noms propres et termes techniques, épelés lettre par lettre (`FS:A`…`FS:Z`) : `MARIE`, `LYON`, `GPU` |
+| décomposé | 5 | `LUNDI-DERNIER` → `LUNDI+DERNIER` (signes joués à la suite) |
 | pointage | 6 | `MOI`…`EUX` → `PT:PRO1…6` : annotés, mais **aucun clip disponible** |
 | absent | 91 | aucun signe LSFB convenable à la relecture : `OÙ`, `QUAND`, `MAINTENANT`… |
 
-**Téléchargé** : les poses (corps et mains) des 429 gloses sûres (exactes, directionnelles
-et validées), 10 clips au plus par glose. Cela fait 3 273 clips distincts de 91 signeurs,
-soit 19 638 fichiers (poses nettoyées et brutes). Ni vidéos ni visage.
+**Téléchargé** : les poses (corps et mains) des gloses sûres (exactes, directionnelles,
+validées, composées) et des 26 lettres de l'alphabet manuel, 10 clips au plus par signe.
+Cela fait 3 498 clips distincts de 93 signeurs (poses nettoyées et brutes). Ni vidéos ni visage.
 
 ```bash
 uv run python src/sign_language_3d_avatar/dataset_generation/lsfb_subset.py download \

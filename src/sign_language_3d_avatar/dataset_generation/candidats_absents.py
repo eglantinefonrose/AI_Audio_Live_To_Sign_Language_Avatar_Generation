@@ -36,8 +36,22 @@ Sorties :
 Les vidéos des candidats (2 signeurs par étiquette) sont téléchargées depuis LSFB-ISOL
 (CC BY-NC-SA 4.0) dans `data/lsfb/videos/`, puis copiées en H.264 pour le navigateur.
 
+Relecture ciblée (`--bloquantes`) : seulement les gloses encore sans signe qui empêchent
+de jouer une phrase du banc d'essai (`src/eval/dataset.jsonl` et `dev.jsonl`), même déjà
+relues. Les candidats sont de nouvelles pistes (`PISTES` ci-dessous : synonymes, signes
+composés A+B joués à la suite), puis toutes les variantes LSFB du mot, puis les candidats
+déjà refusés. La page (`data/lsfb/candidats_bloquants.html`) rappelle la réponse précédente ;
+son export contient tout `lsfb_candidats.csv` (les gloses non relues ici gardent leur
+réponse) et le remplace comme d'habitude. Une suite « A+B », choisie ou tapée, devient
+le statut « décomposé » dans `lsfb_mapping.csv`.
+
+Changement de variante (`--variantes`) : les signes pour lesquels aucun clip ne convenait
+(verdict « autre variante » dans `choix_clips.csv`, page `revue_clips.py`). Une carte par
+glose du projet jouée par ce signe, avec les pistes, toutes les variantes LSFB du mot, et
+le signe actuel en dernier. Page `data/lsfb/candidats_variantes.html`, même export.
+
 Usage :
-    uv run python src/sign_language_3d_avatar/dataset_generation/candidats_absents.py [--ouvrir] [--sans-video]
+    uv run python src/sign_language_3d_avatar/dataset_generation/candidats_absents.py [--ouvrir] [--sans-video] [--bloquantes | --variantes]
 """
 from __future__ import annotations
 
@@ -58,8 +72,17 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lsf_comparaison import DATA, GEN, SRC, gloss_frequencies, to_h264  # noqa: E402
 from lsfb_subset import SOURCE, LsfbLabels, fetch, load_index, norm, pick, project_glosses  # noqa: E402
 
+sys.path.insert(0, str(GEN.parent / "avatar_animation"))
+from sequence import load_index as load_dictionary, resolve  # noqa: E402
+
 CSV_PATH = GEN / "lsfb_candidats.csv"
 HTML_PATH = DATA / "candidats.html"
+HTML_BLOCKING = DATA / "candidats_bloquants.html"
+HTML_VARIANTS = DATA / "candidats_variantes.html"
+CLIP_CHOICES = GEN / "choix_clips.csv"
+SELECTION = GEN / "selection.csv"
+BENCH = [SRC / "eval" / "dataset.jsonl", SRC / "eval" / "dev.jsonl"]
+MAX_BLOCKING = 8
 FIELDS = ["glose", "frequence", "candidats", "choix", "verdict", "note", "date"]
 MAX_CANDIDATES = 4
 REVIEW_STATUSES = ("absent", "variante", "incertain", "synonyme", "nom-propre")
@@ -108,6 +131,32 @@ SYNONYMES = {
     "BOULANGERIE": ["BOULANGER", "PAIN"], "BRUITÉ": ["BRUIT"], "CHANGEMENT": ["CHANGER"],
     "LÉGUME": ["LEGUMES"], "VOISINE": ["VOISIN"], "TRANSCRIPTION": ["ECRIRE", "TRADUIRE"],
     "LOCAL": ["SALLE"], "CHEZ-MOI": ["MAISON", "CHEZ"], "ALGORITHME": ["PROGRAMME", "ORDINATEUR"],
+}
+# Nouvelles pistes pour les gloses qui bloquent une phrase du banc (relecture ciblée) :
+# étiquettes LSFB exactes, « A+B » = signes joués à la suite. Toujours à vérifier en vidéo.
+PISTES = {
+    "QUAND": ["MOMENT", "DATE", "QUELLE+MOMENT", "QUELLE+DATE"],
+    "MODÈLE": ["MODELE.EXEMPLE", "EXEMPLE"],
+    "ENFIN": ["ENFIN.TRANQUILLE", "FIN", "FINIR"],
+    "DEVOIR": ["OBLIGER.DEVOIR", "FALLOIR", "OBLIGER"],
+    "OÙ": ["ENDROIT", "QUELLE+ENDROIT"],
+    "PRÉ-ENTRAÎNÉ": ["AVANT+ENTRAINEMENT", "DEJA+ENTRAINEMENT", "ENTRAINEMENT"],
+    "GARER": ["VOITURE+METTRE", "METTRE", "METTRE.05"],
+    "TOURNER": ["MARCHER", "TRAVAIL.ACTIF", "ROULER"],
+    "PRÉSENTATION": ["EXPLIQUER.COMMENTAIRE", "MONTRER", "EXPLIQUER"],
+    "POLLUÉ": ["SALE", "POLLUTION+SALE"],
+    "FORMULAIRE": ["FEUILLE.F", "PAPIER.BIEN"],
+    "COMMENTER": ["EXPLIQUER.COMMENTAIRE", "EXPLIQUER.8", "PARLER"],
+    "COURSE": ["COURIR", "MATCH"],
+    "FRAUDE": ["FAUX.TRICHER", "VOLER.PRENDRE", "FAUX"],
+    "CONSEILLER-À-VOUS": ["CONSEIL", "PROPOSER"],
+    "SUITE": ["SUIVANT", "APRES", "CONTINUER", "PROCHAINE"],
+    "OCCUPÉ": ["TRAVAIL.ACTIF", "CHARGE"],
+    "DÉCISION": ["DECIDER", "CHOISIR"],
+    "ÉLECTION": ["VOTER", "VOTE"],
+    "DURER": ["LONGTEMPS.DUREE", "LONGTEMPS", "TEMPS"],
+    "INDUSTRIE": ["ENTREPRISE", "FABRIQUER", "TRAVAIL+FABRIQUER"],
+    "GENS": ["PERSONNE.HUMAIN", "HUMAIN", "PUBLIC", "PERSONNE"],
 }
 
 
@@ -171,6 +220,48 @@ def candidates_for(row: dict, bases: dict[str, list[str]], extra: list[str]) -> 
     return out[:MAX_CANDIDATES + len(extra)]
 
 
+def blocking_candidates(gloss: str, bases: dict[str, list[str]], by_label: dict[str, list[dict]],
+                        refused: list[str], extra: list[str], current: str = "") -> list[dict]:
+    """Relecture ciblée : pistes, variantes LSFB du mot, candidats déjà refusés, puis le
+    signe actuel (`current`, quand aucun de ses clips ne convenait)."""
+    out: list[dict] = []
+
+    def add(label: str, why: str) -> None:
+        if label not in {c["etiquette"] for c in out} and all(p in by_label for p in label.split("+")):
+            out.append({"etiquette": label, "raison": why})
+
+    for label in extra:
+        add(label, "proposée à la relecture")
+    for label in PISTES.get(gloss, []):
+        add(label, "signes joués à la suite" if "+" in label else "nouvelle piste")
+    for p in [p for p in gloss.split("-") if p]:
+        for label in bases.get(norm(p), []):
+            if label != current:
+                add(label, "variante LSFB du mot")
+    for label in refused:
+        if label != current:
+            add(label, "déjà refusé à la 1re relecture")
+    out = out[:MAX_BLOCKING - bool(current)]
+    if current:
+        add(current, "signe actuel : aucun de ses clips ne convenait")
+    return out
+
+
+def blocking_glosses(only: set[str] | None = None) -> dict[str, list[str]]:
+    """Gloses sans signe dans le dictionnaire de l'avatar (ou les gloses `only`) -> phrases
+    du banc où elles apparaissent."""
+    index = load_dictionary()
+    out: dict[str, list[str]] = defaultdict(list)
+    for path in BENCH:
+        for line in path.read_text(encoding="utf-8").splitlines():
+            if line.strip():
+                r = json.loads(line)
+                for g in dict.fromkeys(r["glosses"]):
+                    if (g in only) if only is not None else resolve(g, index)["type"] == "absent":
+                        out[g].append(r["text"])
+    return out
+
+
 def example_sentences() -> dict[str, list[str]]:
     """Phrases françaises du projet où chaque glose apparaît (éval, dev, dataset d'entraînement)."""
     paths = [SRC / "eval" / "dataset.jsonl", SRC / "eval" / "dev.jsonl",
@@ -207,10 +298,14 @@ def write_csv(cards: list[dict], old: dict[str, dict]) -> None:
 
 
 def attach_videos(cards: list[dict], by_label: dict[str, list[dict]], download: bool) -> int:
-    """Clips de chaque candidat (CLIPS_PER_LABEL signeurs) : téléchargés si besoin, puis
-    copiés en H.264. Renvoie le nombre de clips indisponibles."""
-    wanted = {c["etiquette"]: [r["id"] for r in pick(by_label[c["etiquette"]], CLIPS_PER_LABEL)]
-              for card in cards for c in card["candidats"]}
+    """Clips de chaque candidat (CLIPS_PER_LABEL signeurs ; pour une suite A+B, un clip par
+    signe, joués à la suite) : téléchargés si besoin, puis copiés en H.264. Renvoie le nombre
+    de clips indisponibles."""
+    def clips(label: str) -> list[str]:
+        if "+" in label:
+            return [pick(by_label[p], 1)[0]["id"] for p in label.split("+")]
+        return [r["id"] for r in pick(by_label[label], CLIPS_PER_LABEL)]
+    wanted = {c["etiquette"]: clips(c["etiquette"]) for card in cards for c in card["candidats"]}
     todo = [i for ids in wanted.values() for i in ids if not (DATA / "videos" / f"{i}.mp4").exists()]
     if todo and download:
         print(f"Téléchargement de {len(todo)} clips LSFB-ISOL (CC BY-NC-SA 4.0)…", flush=True)
@@ -232,7 +327,10 @@ def attach_videos(cards: list[dict], by_label: dict[str, list[dict]], download: 
     for card in cards:
         for c in card["candidats"]:
             c["videos"] = [ready[i] for i in wanted[c["etiquette"]] if i in ready]
-            c["exemples"] = len(by_label[c["etiquette"]])
+            c["suite"] = "+" in c["etiquette"]
+            c["exemples"] = min(len(by_label[p]) for p in c["etiquette"].split("+"))
+            if c["suite"] and len(c["videos"]) < len(wanted[c["etiquette"]]):
+                c["videos"] = []
             missing += not c["videos"]
     return missing
 
@@ -241,7 +339,7 @@ def attach_videos(cards: list[dict], by_label: dict[str, list[dict]], download: 
 PAGE = r"""<!doctype html>
 <html lang="fr"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Gloses à relire LSFB</title>
+<title>__TITRE__</title>
 <style>
 :root { --bg:#f6f5f2; --card:#fff; --ink:#1d1d1f; --mute:#6b6b70; --line:#e2e0da; --accent:#2457c5;
         --ok:#1e6b3a; --mid:#a15c00; --bad:#b3261e; --none:#5f5f66; }
@@ -292,7 +390,7 @@ textarea { width:100%; padding:6px; background:var(--bg); resize:vertical; }
 @media (max-width: 560px) { .verdicts { grid-template-columns:1fr; } }
 </style></head><body>
 <header>
-  <h1>Gloses à relire (LSFB)</h1>
+  <h1>__TITRE__</h1>
   <span id="stats"></span>
   <label>Afficher <select id="filter">
     <option value="todo">à relire</option><option value="all">toutes</option>
@@ -309,6 +407,7 @@ textarea { width:100%; padding:6px; background:var(--bg); resize:vertical; }
   </div>
   <div class="meta" id="freq"></div>
   <div class="ctx" id="ctx"></div>
+  <div class="meta" id="ancien"></div>
   <ul id="sentences" class="meta"></ul>
   <div class="question">Lequel de ces signes LSFB peut jouer cette glose ? <span id="current"></span></div>
   <div id="cands"></div>
@@ -331,13 +430,14 @@ textarea { width:100%; padding:6px; background:var(--bg); resize:vertical; }
   <textarea id="note" rows="2" placeholder="Note facultative (N pour écrire, Échap pour revenir)"></textarea>
   <div class="help"><kbd>1</kbd>–<kbd>__MAXK__</kbd> choisir ce candidat · <kbd>A</kbd> aucun · <kbd>E</kbd> à épeler ·
     <kbd>I</kbd> incertain · <kbd>0</kbd> effacer · <kbd>←</kbd> <kbd>→</kbd> naviguer · <kbd>L</kbd> ralenti ·
-    <kbd>N</kbd> note. Choisir un signe veut dire : l'avatar jouera ce signe à chaque fois que la glose apparaît.
+    <kbd>N</kbd> note. Une suite de signes s'écrit A+B dans « Autre étiquette ». Choisir un signe veut dire : l'avatar jouera ce signe à chaque fois que la glose apparaît.
     Les réponses sont gardées dans ce navigateur : exporte le CSV régulièrement.</div>
 </section></main>
 <script>
 const CARDS = __CARDS__;
 const LABELS = __LABELS__;
-const KEY = "lsfb-candidats-absents";
+const KEY = __KEY__;
+const AUTRES = __AUTRES__;   // lignes du CSV absentes de cette page, recopiées à l'export
 const EXPORT_EVERY = 20;
 let store = { answers: {}, sinceExport: 0 };
 try { store = Object.assign(store, JSON.parse(localStorage.getItem(KEY) || "{}")); } catch (e) {}
@@ -384,18 +484,22 @@ function show() {
   idx = Math.max(0, Math.min(idx, order.length - 1));
   const c = CARDS[order[idx]], cur = a(c.glose);
   $("gloss").textContent = c.glose;
-  $("freq").innerHTML = `<b>${c.frequence}</b> occurrence(s) dans les datasets du projet · statut automatique : <b>${esc(c.statut)}</b>`;
+  $("freq").innerHTML = (c.bloque ? `empêche de jouer <b>${c.bloque}</b> phrase(s) du banc · ` : "") +
+    `<b>${c.frequence}</b> occurrence(s) dans les datasets du projet · statut automatique : <b>${esc(c.statut)}</b>`;
+  const old = c.ancien || {};
+  $("ancien").innerHTML = old.verdict ? `Relecture précédente : <b class="v-${esc(old.verdict)}">${esc(old.choix || old.verdict)}</b>` +
+    (old.candidats ? ` parmi ${esc(old.candidats)}` : "") + (old.note ? ` — « ${esc(old.note)} »` : "") : "";
   $("ctx").textContent = c.contexte;
   $("sentences").innerHTML = c.phrases.map(p => `<li>« ${esc(p)} »</li>`).join("");
   $("cands").innerHTML = c.candidats.length ? c.candidats.map((x, k) => `
     <div class="cand${cur.choix === x.etiquette ? " on" : ""}" data-k="${k}">
       <div class="label">${k + 1}. ${esc(x.etiquette)}</div>
-      ${x.videos.length ? `<video autoplay loop muted playsinline src="${x.videos[0]}"></video>`
+      ${x.videos.length ? `<video autoplay ${x.suite ? "" : "loop "}muted playsinline src="${x.videos[0]}"></video>`
                         : `<div class="novideo">vidéo indisponible</div>`}
       <div class="why${x.raison.startsWith("orthographe") ? " risky" : ""}">${esc(x.raison)} · ${x.exemples} exemple(s) LSFB</div>
       <div class="row">
         <button class="pick">Choisir <kbd>${k + 1}</kbd></button>
-        ${x.videos.length > 1 ? `<button class="swap">Autre signeur</button>` : ""}
+        ${x.videos.length > 1 && !x.suite ? `<button class="swap">Autre signeur</button>` : ""}
       </div>
     </div>`).join("") : `<p class="meta">Aucun candidat trouvé automatiquement : « Aucun », « À épeler », ou tape une autre étiquette ci-dessous.</p>`;
   document.querySelectorAll(".cand").forEach(el => {
@@ -403,6 +507,7 @@ function show() {
     if (vid) vid.playbackRate = rate;
     el.querySelector(".pick").onclick = () => answer("candidat", x.etiquette);
     const sw = el.querySelector(".swap");
+    if (vid && x.suite) { let i = 0; vid.onended = () => { i = (i + 1) % x.videos.length; vid.src = x.videos[i]; vid.playbackRate = rate; vid.play().catch(() => {}); }; }
     if (sw) { let i = 0; sw.onclick = () => { i = (i + 1) % x.videos.length; vid.src = x.videos[i]; vid.playbackRate = rate; vid.play().catch(() => {}); }; }
   });
   const label = cur.verdict === "candidat" || cur.verdict === "autre" ? `signe ${cur.choix}` : cur.verdict;
@@ -430,7 +535,7 @@ function move(d) { idx = Math.max(0, Math.min(idx + d, order.length - 1)); show(
 document.querySelectorAll(".verdicts button").forEach(b => b.addEventListener("click", () => answer(b.dataset.v)));
 $("otherBtn").onclick = () => {
   const l = $("other").value.trim().toUpperCase(); if (!l) return;
-  if (!LABELS.includes(l) && !confirm(`« ${l} » n'est pas une étiquette LSFB-ISOL connue. La retenir quand même ?`)) return;
+  if (!l.split("+").every(p => LABELS.includes(p)) && !confirm(`« ${l} » n'est pas une étiquette LSFB-ISOL connue. La retenir quand même ?`)) return;
   $("other").value = ""; answer("autre", l);
 };
 $("prev").onclick = () => move(-1);
@@ -458,9 +563,11 @@ $("exportBtn").onclick = () => {
   const q = x => '"' + String(x ?? "").replace(/"/g, '""') + '"';
   const lines = [cols.join(",")].concat(CARDS.map(c => {
     const cur = a(c.glose);
+    if (!cur.verdict && c.ancien)      // pas relue ici : la réponse précédente est gardée
+      return [c.glose, c.frequence, c.ancien.candidats, c.ancien.choix, c.ancien.verdict, c.ancien.note, c.ancien.date].map(q).join(",");
     return [c.glose, c.frequence, c.candidats.map(x => x.etiquette).join(" "), cur.choix, cur.verdict, cur.note, cur.date]
       .map(q).join(",");
-  }));
+  }), AUTRES.map(r => cols.map(k => q(r[k])).join(",")));
   const link = document.createElement("a");
   link.href = URL.createObjectURL(new Blob(["﻿" + lines.join("\n") + "\n"], { type: "text/csv" }));
   link.download = "lsfb_candidats.csv"; link.click();
@@ -490,17 +597,32 @@ show();
 """
 
 
-def write_html(cards: list[dict], labels: list[str]) -> None:
+MODES = {   # mode -> (titre, page, clé du navigateur)
+    "relecture": ("Gloses à relire (LSFB)", HTML_PATH, "lsfb-candidats-absents"),
+    "bloquantes": ("Gloses qui bloquent le banc (LSFB)", HTML_BLOCKING, "lsfb-candidats-bloquants"),
+    "variantes": ("Variantes à changer (LSFB)", HTML_VARIANTS, "lsfb-candidats-variantes"),
+}
+
+
+def write_html(cards: list[dict], labels: list[str], mode: str = "relecture", others: list[dict] = ()) -> Path:
     dump = lambda x: json.dumps(x, ensure_ascii=False).replace("</", "<\\/")
+    title, path, key = MODES[mode]
     page = (PAGE.replace("__CARDS__", dump(cards)).replace("__LABELS__", dump(labels))
-            .replace("__MAXK__", str(MAX_CANDIDATES)))
-    HTML_PATH.write_text(page, encoding="utf-8")
+            .replace("__AUTRES__", dump(list(others))).replace("__TITRE__", title)
+            .replace("__KEY__", dump(key))
+            .replace("__MAXK__", str(MAX_CANDIDATES if mode == "relecture" else MAX_BLOCKING)))
+    path.write_text(page, encoding="utf-8")
+    return path
 
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--ouvrir", action="store_true", help="ouvrir la page dans le navigateur")
     ap.add_argument("--sans-video", action="store_true", help="ne télécharge aucun clip (seulement ceux déjà présents)")
+    ap.add_argument("--variantes", action="store_true",
+                    help="changer de variante LSFB pour les signes « autre variante » de choix_clips.csv")
+    ap.add_argument("--bloquantes", action="store_true",
+                    help="relecture ciblée : gloses sans signe qui bloquent une phrase du banc, avec de nouvelles pistes")
     args = ap.parse_args()
     if not (DATA / "instances.csv").exists():
         sys.exit("Index LSFB absent : lance d'abord lsfb_subset.py map (voir l'aide).")
@@ -508,6 +630,8 @@ def main() -> None:
     labels = LsfbLabels(*load_index(DATA))       # proposition automatique, sans les réponses
     old = read_csv()
     freq, sentences = gloss_frequencies(), example_sentences()
+    if args.bloquantes or args.variantes:
+        return main_blocking(args, by_label, bases, labels, old, freq)
     cards = []
     for gloss in project_glosses():
         row = labels.propose(gloss)
@@ -535,6 +659,53 @@ def main() -> None:
     if args.ouvrir:
         opener = {"darwin": ["open"], "win32": ["cmd", "/c", "start", ""]}.get(sys.platform, ["xdg-open"])
         subprocess.run([*opener, str(HTML_PATH)], check=False)
+
+
+def variants_to_change() -> dict[str, str]:
+    """Glose du projet -> signe LSFB actuel, pour les signes dont aucun clip ne convenait."""
+    if not CLIP_CHOICES.exists():
+        return {}
+    with open(CLIP_CHOICES, newline="", encoding="utf-8-sig") as f:
+        labels = {r["etiquette_lsfb"] for r in csv.DictReader(f) if r["verdict"] == "variante"}
+    with open(SELECTION, newline="", encoding="utf-8") as f:
+        return {g: r["etiquette_lsfb"] for r in csv.DictReader(f) if r["etiquette_lsfb"] in labels
+                for g in r["gloses_projet"].split()}
+
+
+def main_blocking(args, by_label, bases, labels, old, freq) -> None:
+    """Relecture ciblée (gloses bloquantes ou variantes à changer) : le CSV n'est pas
+    réécrit, l'export de la page le remplace."""
+    current = variants_to_change() if args.variantes else {}
+    if args.variantes and not current:
+        sys.exit(f"Aucun signe « autre variante » dans {CLIP_CHOICES.name} (page revue_clips.py).")
+    context = (("Aucun clip du signe actuel ne convenait (relecture des clips) : quelle autre variante "
+                "LSFB peut jouer cette glose ?") if args.variantes else
+               ("Déjà relue sans signe retenu : voici d'autres pistes (synonymes, signes joués à la "
+                "suite). « À épeler » reste possible pour un nom propre."))
+    cards = []
+    for gloss, texts in blocking_glosses(set(current) if args.variantes else None).items():
+        prev = old.get(gloss, {})
+        extra = [prev["choix"]] if prev.get("verdict") == "autre" and prev.get("choix") else []
+        refused = prev.get("candidats", "").split()
+        cards.append({"glose": gloss, "frequence": freq.get(gloss, 0), "phrases": texts, "bloque": len(texts),
+                      "statut": labels.propose(gloss)["statut"], "contexte": context,
+                      "candidats": blocking_candidates(gloss, bases, by_label, refused, extra, current.get(gloss, "")),
+                      "ancien": {k: prev.get(k, "") for k in ("candidats", "choix", "verdict", "note", "date")}
+                      if prev.get("verdict") else None,
+                      "choix": "", "verdict": "", "note": "", "date": ""})
+    cards.sort(key=lambda c: (-c["bloque"], -c["frequence"], c["glose"]))
+    missing = attach_videos(cards, by_label, download=not args.sans_video)
+    others = [r for g, r in old.items() if g not in {c["glose"] for c in cards}]
+    path = write_html(cards, sorted(by_label), "variantes" if args.variantes else "bloquantes", others)
+    verb = "apparaissent dans" if args.variantes else "bloquent"
+    print(f"{len(cards)} gloses {verb} {len({t for c in cards for t in c["phrases"]})} phrase(s) du banc ; "
+          f"{sum(len(c['candidats']) for c in cards)} candidats ({sum(not c['candidats'] for c in cards)} gloses sans candidat)")
+    if missing:
+        print(f"⚠️  {missing} candidat(s) sans vidéo lisible.")
+    print(f"Page : {path.relative_to(SRC.parent)} — son export remplace {CSV_PATH.relative_to(SRC.parent)}")
+    if args.ouvrir:
+        opener = {"darwin": ["open"], "win32": ["cmd", "/c", "start", ""]}.get(sys.platform, ["xdg-open"])
+        subprocess.run([*opener, str(path)], check=False)
 
 
 if __name__ == "__main__":

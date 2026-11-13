@@ -96,12 +96,12 @@ des nombres en chiffres (`2`) et des variantes `BASE.PRÉCISION` (`GRAND.HAUTEUR
 | `directionnel` | `VERBE-À-X` → forme de citation `VERBE` ; l'orientation vers X est à produire par l'avatar | oui |
 | `variante` | seulement des `BASE.X` : choisir le bon signe | non |
 | `synonyme` | équivalent proposé à la main (`PÈRE`→`PAPA`, `REMERCIER`→`MERCI`) | non |
-| `décomposé` | composé absent, signes séparés (`LUNDI+DERNIER`) | non |
+| `décomposé` | composé absent, signes séparés joués à la suite (`LUNDI+DERNIER`) | oui |
 | `nom-propre` | signe-nom belge `NS:PARIS` ; l'épellation est peut-être préférable | non |
 | `incertain` | homographe sans accent (`OÙ` → `OU`, qui veut aussi dire « ou ») | non |
 | `pointage` | `MOI/TOI/…` → `PT:PRO1…6` : annotés dans le corpus mais **aucun clip servi** dans ISOL ; à générer | — |
 | `validé` | étiquette choisie à la main sur la page de relecture (`lsfb_candidats.csv`) | oui |
-| `épeler` | relu : nom propre ou terme technique à épeler (pas encore d'alphabet manuel) | — |
+| `épeler` | relu : nom propre ou terme technique, épelé avec l'alphabet manuel LSFB (`GPU` → `FS:G+FS:P+FS:U`) | oui |
 | `absent` | pas dans LSFB (termes techniques, noms français, etc.) | — |
 
 Les réponses de la page de relecture (`lsfb_candidats.csv`, voir plus bas) priment sur
@@ -131,16 +131,60 @@ Au clavier : <kbd>1</kbd>–<kbd>4</kbd> ce signe, <kbd>A</kbd> aucun, <kbd>E</k
 <kbd>I</kbd> incertain ; une autre étiquette LSFB peut être tapée à la main (elle devient
 un candidat, avec sa vidéo, à la relance). **Exporter le CSV**, le copier à la place de
 `lsfb_candidats.csv`, puis relancer `lsfb_subset.py map` : les signes choisis passent en
-`validé` (téléchargés et indexés comme `exact`), les noms à épeler en `épeler`. Ensuite,
+`validé` (téléchargés et indexés comme `exact`), les noms à épeler en `épeler` (suite de
+lettres `FS:A`…`FS:Z`, les 26 lettres existent dans LSFB-ISOL). Ensuite,
 reconstruire le dictionnaire ([avatar_animation/README.md](../avatar_animation/README.md#dictionnaire-de-signes-lsfb)).
+
+**Relecture ciblée** (`--bloquantes`) : seulement les gloses encore sans signe qui empêchent
+de jouer une phrase du banc d'essai (21 gloses, 21 phrases au 11/11/2026), même si elles
+ont déjà reçu « aucun ». Jusqu'à 8 candidats : de nouvelles pistes écrites à la main
+(`PISTES` : synonymes, suites de signes `A+B` comme `AVANT+ENTRAINEMENT`, jouées l'une
+après l'autre dans la vidéo), toutes les variantes LSFB du mot, puis les candidats déjà
+refusés. La page `data/lsfb/candidats_bloquants.html` rappelle la réponse précédente ; son
+export contient tout le CSV (les gloses non relues ici gardent leur réponse) et remplace
+`lsfb_candidats.csv`. Une suite `A+B` choisie ou tapée devient le statut `décomposé`.
+
+```bash
+uv run python src/sign_language_3d_avatar/dataset_generation/candidats_absents.py --bloquantes --ouvrir
+```
 
 ## Choisir le meilleur exemple de chaque signe (`select_examples.py`)
 
-Sans relecture : parmi les ~10 exemples téléchargés par signe, le script garde celui qui
-a le meilleur score (0,5 × taux d'images où les deux mains sont détectées, mesuré sur les
-poses **brutes** ; 0,3 × faible tremblement ; 0,2 × durée proche de la médiane du signe).
+Sans relecture : parmi les ~20 exemples téléchargés par signe, le script garde celui que
+le **reconnaisseur** de l'évaluation (`evaluation/features.py`) reconnaît le mieux parmi les
+exemples des autres signeurs : le plus typique du signe. Les personnes filmées sont
+partagées en deux moitiés fixes (`features.signer_half`) : la moitié « choix » sert ici,
+la moitié « eval » sert seulement à noter l'avatar, pour que l'évaluation ne note jamais
+des clips choisis avec ses propres exemples. À égalité, ou pour les signes sans autre
+exemple dans la moitié « choix », le score technique départage (0,5 × taux d'images où
+les deux mains sont détectées, mesuré sur les poses **brutes** ; 0,3 × faible
+tremblement ; 0,2 × durée proche de la médiane du signe ; seul critère avec
+`--sans-reconnaisseur`). Prérequis : `download --max-par-glose 20` (≈ 10 exemples par moitié).
 Résultat : `selection.csv` (versionné, identifiants et scores seulement). Suite de la
 chaîne : [avatar_animation/README.md](../avatar_animation/README.md#dictionnaire-de-signes-lsfb).
+
+### Choisir les clips à l'œil (`revue_clips.py`)
+
+Le reconnaisseur se laisse piéger : deux clips atypiques qui se ressemblent se classent
+1ers l'un grâce à l'autre (OU, QUAND.8, ENFIN, DEVOIR…). Les corriger avec les scores de
+l'évaluation reviendrait à régler sur l'évaluation : on les choisit donc à l'œil. La page
+montre les signes qui font échouer le plus de phrases du banc (dernier record du
+dictionnaire actuel), avec tous leurs exemples, sans aucun score :
+
+```bash
+uv run python src/sign_language_3d_avatar/dataset_generation/revue_clips.py --ouvrir
+```
+
+Exporter le CSV, le copier dans `dataset_generation/choix_clips.csv` (versionné), puis
+relancer `select_examples.py` : chaque clip choisi passe avant les critères automatiques
+(critère « relecture »). « Autre variante » ne change pas le clip : ces signes se relisent
+ensuite avec `candidats_absents.py --variantes` (pistes comme MODELE.EXEMPLE ou
+OBLIGER.DEVOIR, toutes les variantes LSFB du mot, le signe actuel en dernier) ; son export
+remplace `lsfb_candidats.csv`, puis `lsfb_subset.py map` et la suite de la chaîne.
+
+```bash
+uv run python src/sign_language_3d_avatar/dataset_generation/candidats_absents.py --variantes --ouvrir
+```
 
 ## Étiqueter LSFB → LSF (`lsf_comparaison.py`)
 

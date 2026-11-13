@@ -1,7 +1,8 @@
 """Démo : l'avatar signe une phrase (suite de gloses) et la rend en vidéo dans Blender.
 
 La phrase est assemblée par `sequence.assemble` (repos, transitions, signes LSFB nettoyés,
-pointages générés, mots sans signe affichés), transférée sur l'avatar, puis rendue en
+composés et mots épelés joués signe par signe ou lettre par lettre, pointages générés,
+mots sans signe affichés), transférée sur l'avatar, puis rendue en
 .mp4 (Workbench, vue de trois-quarts, 25 images/s) avec la glose en cours en sous-titre.
 
     /Applications/Blender.app/Contents/MacOS/Blender -b --factory-startup \\
@@ -27,8 +28,9 @@ def add_subtitles(timeline) -> None:
     """Glose en cours incrustée en bas de chaque image (tampon de rendu Blender, toujours
     au premier plan), mise à jour à chaque image par un gestionnaire d'événement."""
     text = {}
-    for start, end, gloss, kind, _ in timeline:
-        label = f"« {gloss.lower()} » — pas de signe" if kind == "absent" else gloss
+    for start, end, gloss, kind, _, sign in timeline:
+        label = {"absent": f"« {gloss.lower()} » — pas de signe",
+                 "lettre": f"{gloss} — {sign[3:] if sign else ''}"}.get(kind, gloss)
         for f in range(start + 1, end + 1):     # image i des articulations = image i + 1
             text[f] = label
     r = bpy.context.scene.render
@@ -57,7 +59,7 @@ def main() -> None:
     bpy.ops.wm.read_factory_settings(use_empty=True)
     index = load_index()
     joints, timeline = assemble(args.gloses.split(), index)
-    for start, end, gloss, kind, detail in timeline:
+    for start, end, gloss, kind, detail, _ in timeline:
         print(f"[démo] {start / index['fps']:5.2f} s  {gloss:16s} {detail}")
 
     if args.avatar:

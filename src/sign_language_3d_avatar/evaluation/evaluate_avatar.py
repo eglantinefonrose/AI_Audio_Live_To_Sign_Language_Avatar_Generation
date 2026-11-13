@@ -21,7 +21,7 @@ est exactement ce que perdent le transfert sur l'avatar et l'enchaînement en ph
 Un clip d'un autre signeur sert de second repère : s'il est bien reconnu alors que le
 clip source ne l'est pas, c'est le choix du clip (`select_examples.py`) qui est en cause.
 
-Le reconnaisseur (plus proches voisins, ~9 exemples par signe, 330 signes) est faible
+Le reconnaisseur (plus proches voisins, ~9 exemples par signe, ~400 signes) est faible
 en top-1 même sur de vrais signeurs (~10 %) : le score s'appuie donc sur le **rang
 centile** du bon signe (part des autres signes classés derrière lui : 100 % = premier,
 50 % = hasard), continu et mesuré de la même façon pour l'avatar et pour les humains.
@@ -29,11 +29,17 @@ centile** du bon signe (part des autres signes classés derrière lui : 100 % = 
 **Chiffre de tête** : (centile en contexte − 50 %) ÷ (centile des clips sources − 50 %),
 soit la part de la reconnaissabilité du vrai signeur que l'avatar conserve au-dessus du
 hasard (100 % = aussi reconnaissable que le signeur qu'il copie). Les pointages (générés) et les mots sans signe
-ne sont pas reconnaissables par la galerie : ils comptent dans la couverture seulement.
+ne sont pas reconnaissables par la galerie : ils comptent dans la couverture seulement. Les
+lettres des mots épelés (`FS:A`…`FS:Z`) sont reconnues à part (ligne « Lettres ») et ne
+comptent pas dans le chiffre de tête ; elles comptent dans « phrases reconnues ».
 La fidélité au clip source (écart angulaire bras / doigts) explique les signes ratés.
 
     uv run python src/sign_language_3d_avatar/evaluation/evaluate_avatar.py [--avatar mon_avatar.vrm] \\
         [--phrases fichier.jsonl ...] [--save] [--label "…"]
+
+La galerie ne garde que la moitié « eval » des signeurs (`features.signer_half`) : l'autre
+moitié sert à choisir les clips du dictionnaire (`select_examples.py`). `--galerie toutes`
+reprend l'ancienne galerie (lignes de RESULTS.md antérieures au 2026-11-11 18 h).
 
 `--save` archive le run (JSON dans `evaluation/results/`, ligne dans `RESULTS.md`).
 Données dérivées de LSFB-ISOL (CC BY-NC-SA 4.0) : les caches restent dans
@@ -60,8 +66,8 @@ BASE = HERE.parent
 PROJECT = BASE.parent.parent
 sys.path.insert(0, str(BASE / "avatar_animation"))
 sys.path.insert(0, str(HERE))
-from clean_signs import LSFB, clean  # noqa: E402
-from features import Gallery, angle_error, percentile, rank_of, resample, vector  # noqa: E402
+from clean_signs import LSFB, clean, is_letter  # noqa: E402
+from features import Gallery, angle_error, percentile, rank_of, resample, signer_half, vector  # noqa: E402
 from pose3d import FPS, unstack  # noqa: E402
 from sequence import DICT, INDEX, load_index, load_sign, resolve  # noqa: E402
 
@@ -95,13 +101,16 @@ def load_bench(paths: list[Path]) -> tuple[list[list[str]], str]:
     return phrases, sha(raw)
 
 
-def build_gallery(index: dict) -> tuple[Gallery, dict]:
+def build_gallery(index: dict, half: str | None = "eval") -> tuple[Gallery, dict]:
     """Exemples réels LSFB-ISOL des signes du dictionnaire, nettoyés comme ceux de
     l'avatar (droitier, sauts, lissage, découpe), et référence humaine du mouvement
-    (seuils de vitesse / accélération = 99,5e centile des vrais signeurs) ; mis en cache."""
+    (seuils de vitesse / accélération = 99,5e centile des vrais signeurs) ; mis en cache.
+    `half` : seulement les signeurs de cette moitié (`features.signer_half`) ; l'autre a
+    servi à choisir les clips du dictionnaire."""
     labels = set(index["signes"])
     with open(LSFB / "instances.csv", newline="", encoding="utf-8") as f:
         rows = [r for r in csv.DictReader(f) if r["sign"] in labels
+                and (half is None or signer_half(r["signer"]) == half)
                 and (LSFB / "poses" / "pose" / f"{r['id']}.npy").exists()]
     key = sha("|".join(sorted(r["id"] for r in rows)).encode(), (BASE / "avatar_animation" / "clean_signs.py").read_bytes(),
               (HERE / "features.py").read_bytes())
@@ -114,7 +123,7 @@ def build_gallery(index: dict) -> tuple[Gallery, dict]:
     labs, signers, insts, seqs, speeds = [], [], [], [], []
     for k, r in enumerate(rows):
         try:
-            j, _ = clean(r["id"])
+            j, _ = clean(r["id"], is_letter(r["sign"]))
         except Exception:
             continue
         labs.append(r["sign"]), signers.append(r["signer"]), insts.append(r["id"])
@@ -186,12 +195,13 @@ def evaluate(args) -> dict:
     index = load_index()
     bench_paths = [Path(p) for p in args.phrases] if args.phrases else DEFAULT_BENCH
     phrases, bench_hash = load_bench(bench_paths)
-    gallery, ref = build_gallery(index)
+    half = None if args.galerie == "toutes" else "eval"
+    gallery, ref = build_gallery(index, half)
     items, meta = export_avatar(index, phrases, args)
     t0 = time.time()
 
     # 1. Couverture des gloses du banc.
-    kinds = {"signe": 0, "pointage": 0, "absent": 0}
+    kinds = {"signe": 0, "composé": 0, "épelé": 0, "pointage": 0, "absent": 0}
     for g in (g for p in phrases for g in p):
         kinds[resolve(g, index)["type"]] += 1
     n_gloss = sum(kinds.values())
@@ -207,7 +217,11 @@ def evaluate(args) -> dict:
         av = items[f"signe::{lab}"]
         rank = rank_of(gallery.rank(vector(av), exclude_signer=info["signeur"]), lab)
         own = [i for i in real_by_label.get(lab, []) if gallery.instances[i] == info["instance"]]
-        s_rank = rank_of(_rank_real(gallery, own[0]), lab) if own else None
+        if own:
+            s_rank = rank_of(_rank_real(gallery, own[0]), lab)
+        else:                                 # clip source de l'autre moitié des signeurs
+            src_seq = resample(vector(clean(info["instance"], is_letter(lab))[0]))
+            s_rank = rank_of(gallery.rank(src_seq, exclude_signer=info["signeur"]), lab)
         others = sorted(i for i in real_by_label.get(lab, []) if gallery.signers[i] != info["signeur"])
         h_rank = rank_of(_rank_real(gallery, others[0]), lab) if others else None
         fid = angle_error(av, load_sign(lab, index))
@@ -220,19 +234,22 @@ def evaluate(args) -> dict:
 
     # 3. Signes en contexte et qualité du mouvement des phrases.
     print(f"Reconnaissance en contexte ({len(phrases)} phrases)…", flush=True)
-    ctx, ctx_labels, quality, per_phrase = [], [], {"vitesse": 0, "acceleration": 0, "torse": 0, "images": 0}, []
+    ctx, ctx_labels, letters, quality, per_phrase = [], [], [], {"vitesse": 0, "acceleration": 0, "torse": 0, "images": 0}, []
     for k, ph in enumerate(meta["phrases"]):
         j = items[f"phrase::{k}"]
         found = []
-        for start, end, gloss, kind, _ in ph["chronologie"]:
-            if kind != "signe":
+        for start, end, gloss, kind, _, lab in ph["chronologie"]:
+            if kind not in ("signe", "lettre"):
                 continue
-            lab = resolve(gloss, index)["signe"]
             seg = {n: v[start:end] for n, v in j.items()}
             r = rank_of(gallery.rank(vector(seg), exclude_signer=index["signes"][lab]["signeur"]), lab)
-            ctx.append(r)
-            ctx_labels.append(lab)
-            found.append({"glose": gloss, "etiquette": lab, "rang": r and r[0], "centile": percentile(r)})
+            if kind == "lettre":              # mesurées à part : le score reste celui des vrais signes
+                letters.append(r)
+            else:
+                ctx.append(r)
+                ctx_labels.append(lab)
+            found.append({"glose": gloss, "etiquette": lab, "rang": r and r[0], "centile": percentile(r)}
+                         | ({"lettre": True} if kind == "lettre" else {}))
         m = motion_stats(j)
         bad = {"vitesse": m["vitesse"] > ref["vitesse"], "acceleration": m["acceleration"] > ref["acceleration"]}
         quality["vitesse"] += int(bad["vitesse"].sum())
@@ -253,12 +270,18 @@ def evaluate(args) -> dict:
     gain = lambda c, ref: (c - 0.5) / (ref - 0.5) if ref > 0.5 else None
     n_img = max(1, quality["images"])
     metrics = {
-        "couverture": {"signe": kinds["signe"] / max(1, n_gloss), "pointage": kinds["pointage"] / max(1, n_gloss),
+        "couverture": {"signe": (kinds["signe"] + kinds["composé"]) / max(1, n_gloss),
+                       "epele": kinds["épelé"] / max(1, n_gloss), "pointage": kinds["pointage"] / max(1, n_gloss),
                        "absent": kinds["absent"] / max(1, n_gloss), "gloses": n_gloss},
         "isoles": {"centile": c_iso, "top1": top(iso_av, 1), "top5": top(iso_av, 5),
                    "top10": top(iso_av, 10), "n": len(iso_av)},
         "contexte": {"centile": c_ctx, "top1": top(ctx, 1), "top5": top(ctx, 5), "top10": top(ctx, 10),
                      "n": len(ctx), "centile_clips_sources": c_src_ctx},
+        "lettres": {"centile": mean_centile(letters), "top1": top(letters, 1), "top5": top(letters, 5),
+                    "top10": top(letters, 10), "n": len(letters),
+                    "centile_clips_sources": float(np.mean([src[s["etiquette"]] for p in per_phrase for s in p["signes"]
+                                                            if s.get("lettre") and src.get(s["etiquette"]) is not None]
+                                                           or [np.nan]))},
         "clip_source": {"centile": c_src, "top1": top(iso_s, 1), "top5": top(iso_s, 5),
                         "top10": top(iso_s, 10), "n": len(iso_s)},
         "autre_signeur": {"centile": mean_centile(iso_h), "top1": top(iso_h, 1), "top5": top(iso_h, 5),
@@ -278,7 +301,7 @@ def evaluate(args) -> dict:
             "avatar": meta["avatar"], "dictionnaire": sha(INDEX.read_bytes()), "banc": bench_hash,
             "banc_fichiers": [str(p.relative_to(PROJECT)) for p in bench_paths], "phrases": len(phrases),
             "galerie": {"exemples": len(gallery.labels), "signes": len(set(gallery.labels)),
-                        "signeurs": len(set(gallery.signers))},
+                        "signeurs": len(set(gallery.signers)), "moitie": half or "toutes"},
             "code": sha(*(p.read_bytes() for p in (HERE / "features.py", Path(__file__), EXPORT))),
             "git_commit": git("rev-parse", "--short", "HEAD") or None, "git_dirty": bool(git("status", "--porcelain")),
             "metrics": metrics, "signes": signs, "par_phrase": per_phrase}
@@ -304,7 +327,24 @@ def phrase_scores(per_phrase: list[dict], src: dict[str, float | None]) -> dict:
             hu += ok and all((src.get(s["etiquette"]) or 0) >= th for s in measured)
         out["reconnues"][f"{th:.0%}"] = av / n
         out["reconnues_clips_sources"][f"{th:.0%}"] = hu / n
+    out["signes_bloquants"] = {f"{th:.0%}": blocking_signs(per_phrase, th) for th in PHRASE_THRESHOLDS}
     return out
+
+
+def blocking_signs(per_phrase: list[dict], th: float) -> list[dict]:
+    """Signes et lettres épelées (FS:N : lettre N d'un mot épelé, pas un signe à part) sous le seuil dans des phrases jouables : combien de
+    phrases ils font échouer, dont combien à eux seuls. Du plus bloquant au moins bloquant."""
+    count: dict[str, list[int]] = {}
+    for p in per_phrase:
+        if p["absents"]:
+            continue
+        bad = {s["etiquette"] for s in p["signes"] if s["centile"] is not None and s["centile"] < th}
+        for lab in bad:
+            c = count.setdefault(lab, [0, 0])
+            c[0] += 1
+            c[1] += len(bad) == 1
+    return [{"etiquette": lab, "phrases": n, "seul": alone}
+            for lab, (n, alone) in sorted(count.items(), key=lambda x: (-x[1][0], -x[1][1], x[0]))]
 
 
 def _rank_real(gallery: Gallery, q: int):
@@ -329,7 +369,12 @@ def report(rec: dict) -> None:
     print(f"  Phrases      : {pct(ph['jouables'])} jouables en entier (aucun mot sans signe) ; reconnues "
           + ", ".join(f"{pct(ph['reconnues'][s])} au seuil {s} (vrais signeurs {pct(ph['reconnues_clips_sources'][s])})"
                       for s in ph["reconnues"]) + f" — sur {ph['n']} phrases")
-    print(f"  Couverture   : {pct(c['signe'])} signes réels, {pct(c['pointage'])} pointages, {pct(c['absent'])} sans signe")
+    print(f"  Couverture   : {pct(c['signe'])} signes réels, {pct(c.get('epele'))} épelés, {pct(c['pointage'])} pointages, "
+          f"{pct(c['absent'])} sans signe")
+    if m.get("lettres", {}).get("n"):
+        x = m["lettres"]
+        print(f"  Lettres      : centile {pct(x['centile'])} (clips sources {pct(x['centile_clips_sources'])}), "
+              f"top-10 {pct(x['top10'])} ({x['n']} lettres épelées en phrase)")
     for name, k, what in (("Avatar isolé ", "isoles", "signes"), ("Avatar phrase", "contexte", "signes en phrase"),
                           ("Clip source  ", "clip_source", "clips réels copiés"),
                           ("Autre signeur", "autre_signeur", "clips réels d'un autre signeur")):
@@ -350,6 +395,11 @@ def report(rec: dict) -> None:
                        f"{s['ecart_doigts_deg']:.0f}°)" for s in lost) or "aucun"))
     bad_clip = sorted((s for s in ok if s["rang_clip_source"] > 50 and (s["rang_autre_signeur"] or 999) <= 10),
                       key=lambda s: -s["rang_clip_source"])[:12]
+    blocking = m["phrases"].get("signes_bloquants", {}).get("80%", [])
+    for name, keep in (("Signes", lambda l: not is_letter(l)), ("Lettres", is_letter)):
+        worst = [b for b in blocking if keep(b["etiquette"])][:12]
+        print(f"  {name} qui font échouer des phrases jouables (seuil 80 %) : "
+              + (", ".join(f"{b['etiquette']} {b['phrases']} (dont {b['seul']} à lui seul)" for b in worst) or "aucun"))
     print("  Clips sources à changer (un autre signeur est bien reconnu) : "
           + (", ".join(f"{s['etiquette']} (rang {s['rang_clip_source']} contre {s['rang_autre_signeur']})"
                        for s in bad_clip) or "aucun"))
@@ -378,7 +428,9 @@ def save(rec: dict) -> Path:
                          "Fidélité bras / doigts | Record |\n"
                          "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|\n", encoding="utf-8")
     d, t = rec["timestamp"].split("T")
-    row = (f"| {d} | {t} | {rec['label'] or ''} | {rec['avatar']} | {rec['dictionnaire']} | {rec['banc']} | "
+    half = rec.get("galerie", {}).get("moitie")
+    label = (rec["label"] or "") + (" — galerie : moitié eval" if half == "eval" else "")
+    row = (f"| {d} | {t} | {label} | {rec['avatar']} | {rec['dictionnaire']} | {rec['banc']} | "
            f"**{pct(m['score'])}** | {phrase_cells(m)} | {pct(m['contexte']['centile'])} | {pct(m['isoles']['centile'])} | "
            f"{pct(m['clip_source']['centile'])} | {pct(m['couverture']['signe'])} | "
            f"{pct(m['mouvement']['images_sans_defaut'])} | {m['fidelite']['bras_deg']:.0f}° / "
@@ -395,6 +447,9 @@ def main() -> None:
     ap.add_argument("--blender", default=os.environ.get("BLENDER", DEFAULT_BLENDER))
     ap.add_argument("--save", action="store_true", help="archive le run (results/ + RESULTS.md)")
     ap.add_argument("--label", default="", help="description courte du run")
+    ap.add_argument("--galerie", choices=("eval", "toutes"), default="eval",
+                    help="signeurs de la galerie : moitié « eval » (défaut ; l'autre moitié choisit les "
+                         "clips du dictionnaire) ou tous (runs antérieurs, à ne pas comparer)")
     args = ap.parse_args()
     if not Path(args.blender).exists():
         sys.exit(f"Blender introuvable : {args.blender} (option --blender ou variable BLENDER)")

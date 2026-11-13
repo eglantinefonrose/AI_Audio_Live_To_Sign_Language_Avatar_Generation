@@ -17,8 +17,14 @@ de gauchers sont retournés) compte double. Choix mesurés sur les vrais signeur
 Le reconnaisseur ramène chaque séquence à
 `LENGTH` images puis compare par DTW (alignement temporel souple) à une galerie
 d'exemples réels ; la classe d'un exemple est son étiquette LSFB.
+
+**Deux moitiés de signeurs** (`signer_half`) : le choix des clips du dictionnaire
+(`select_examples.py`) n'utilise que la moitié « choix », l'évaluation de l'avatar que la
+moitié « eval ». Sinon le reconnaisseur noterait des clips qu'il a lui-même choisis.
 """
 from __future__ import annotations
+
+import hashlib
 
 import numpy as np
 
@@ -28,6 +34,11 @@ FINGER_CHAINS = ((0, 1, 2, 3, 4), (0, 5, 6, 7, 8), (0, 9, 10, 11, 12), (0, 13, 1
                  (0, 17, 18, 19, 20))
 SEGMENTS = [(c[i], c[i + 1]) for c in FINGER_CHAINS for i in range(4)]   # 20 segments
 GROUPS = ("bras", "orientation", "configuration")
+
+
+def signer_half(signer: str) -> str:
+    """Moitié fixe d'un signeur LSFB : « choix » (sélection des clips) ou « eval »."""
+    return "choix" if int(hashlib.sha256(str(signer).encode()).hexdigest(), 16) % 2 == 0 else "eval"
 
 
 def _unit(v: np.ndarray) -> np.ndarray:
@@ -101,16 +112,17 @@ class Gallery:
         self.labels, self.signers, self.instances = np.array(labels), np.array(signers), np.array(instances)
         self.seqs = seqs.astype(np.float32)
 
-    def rank(self, query: np.ndarray, exclude_signer: str | None = None) -> list[tuple[str, float]]:
-        """Classes triées de la plus proche à la plus lointaine (distance au plus proche
-        exemple de la classe). Les exemples du signeur exclu sont ignorés : on ne doit pas
-        reconnaître un signe parce qu'on reconnaît son signeur."""
+    def rank(self, query: np.ndarray, exclude_signer: str | None = None, k: int = 1) -> list[tuple[str, float]]:
+        """Classes triées de la plus proche à la plus lointaine (distance moyenne aux `k`
+        plus proches exemples de la classe ; k = 1 : au plus proche). Les exemples du
+        signeur exclu sont ignorés : on ne doit pas reconnaître un signe parce qu'on
+        reconnaît son signeur."""
         keep = self.signers != exclude_signer if exclude_signer else np.ones(len(self.labels), bool)
         d = dtw_batch(resample(query).astype(np.float32), self.seqs[keep])
-        best: dict[str, float] = {}
+        by_label: dict[str, list[float]] = {}
         for lab, dist in zip(self.labels[keep], d):
-            if dist < best.get(lab, np.inf):
-                best[lab] = float(dist)
+            by_label.setdefault(lab, []).append(float(dist))
+        best = {lab: float(np.mean(sorted(ds)[:k])) for lab, ds in by_label.items()}
         return sorted(best.items(), key=lambda x: x[1])
 
 

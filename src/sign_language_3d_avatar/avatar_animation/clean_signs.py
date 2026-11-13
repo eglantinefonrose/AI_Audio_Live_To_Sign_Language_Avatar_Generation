@@ -6,7 +6,8 @@ lissées par LSFB). Pour chaque signe, sans intervention humaine :
 
 1. **droitier** : si la main gauche du signeur bouge nettement plus que la droite, le
    clip est retourné (gauche ↔ droite) pour que la main dominante de l'avatar soit
-   toujours la droite ;
+   toujours la droite. Pour les lettres de l'alphabet manuel (`FS:A`…), presque immobiles,
+   c'est la main **levée** qui épelle : l'autre bouge parfois plus en redescendant ;
 2. **sauts** : les images où une main saute loin de ses voisines (> 0,25 largeur
    d'épaules par rapport à la médiane locale) sont remplacées par interpolation ;
 3. **lissage léger** : Savitzky-Golay (fenêtre 5, ordre 2) ;
@@ -113,15 +114,23 @@ def active_range(pose: np.ndarray, hands: dict[str, np.ndarray], width: float) -
     return start, end
 
 
-def clean(instance: str) -> tuple[dict[str, np.ndarray], dict]:
+def is_letter(label: str) -> bool:
+    return label.startswith("FS:")
+
+
+def clean(instance: str, letter: bool = False) -> tuple[dict[str, np.ndarray], dict]:
     load = lambda part: np.load(LSFB / "poses" / part / f"{instance}.npy").astype(np.float64)
     pose = interpolate_nan(load("pose"))
     hands = {"L": interpolate_nan(load("left_hand")), "R": interpolate_nan(load("right_hand"))}
     width = float(np.median(np.linalg.norm(pose[:, SHOULDER["L"], :2] - pose[:, SHOULDER["R"], :2], axis=1)))
 
-    # 1. Main dominante : longueur du trajet de chaque poignet.
-    path = {s: float(np.linalg.norm(np.diff(hands[s][:, 0, :2], axis=0), axis=1).sum()) for s in "LR"}
-    mirrored = path["L"] > 1.3 * path["R"]
+    # 1. Main dominante : longueur du trajet de chaque poignet ; lettre : poignet le plus haut
+    #    (y image vers le bas).
+    if letter:
+        mirrored = float(np.mean(pose[:, WRIST["L"], 1])) < float(np.mean(pose[:, WRIST["R"], 1]))
+    else:
+        path = {s: float(np.linalg.norm(np.diff(hands[s][:, 0, :2], axis=0), axis=1).sum()) for s in "LR"}
+        mirrored = path["L"] > 1.3 * path["R"]
     if mirrored:
         pose, hands = mirror(pose, hands)
 
@@ -152,7 +161,7 @@ def main() -> None:
     stats = {"retourne": 0, "sauts": 0, "images": [], "erreurs": []}
     for r in rows:
         try:
-            j, meta = clean(r["instance"])
+            j, meta = clean(r["instance"], is_letter(r["etiquette_lsfb"]))
         except Exception as e:  # un exemple défectueux ne bloque pas les autres
             stats["erreurs"].append(f"{r['etiquette_lsfb']} : {e}")
             continue

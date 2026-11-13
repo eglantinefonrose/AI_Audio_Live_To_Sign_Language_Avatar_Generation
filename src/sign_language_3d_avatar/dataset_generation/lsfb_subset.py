@@ -59,7 +59,8 @@ SYNONYMS = {"PÈRE": "PAPA", "MÈRE": "MAMAN", "PARENT": "PARENTS", "D'ACCORD": 
 HOMOGRAPHS = {"OÙ": "OU (« ou » ?) / OU.OU : où ≠ ou, à vérifier dans la vidéo"}
 # Statuts téléchargés par défaut ; les autres demandent --inclure-incertains.
 # « validé » = étiquette choisie à la main sur la page de relecture.
-SAFE_STATUSES = {"exact", "directionnel", "validé"}
+# `décomposé` et `épeler` sont des suites d'étiquettes (`LUNDI+DERNIER`, `FS:G+FS:P+FS:U`).
+SAFE_STATUSES = {"exact", "directionnel", "validé", "décomposé", "épeler"}
 
 
 # --------------------------------------------------------------------------- index
@@ -168,12 +169,25 @@ class LsfbLabels:
             orient = f"forme de citation ; orientation vers {m.group(2)} à produire par l'avatar ; " if m else ""
             return row | {"etiquette_lsfb": d["choix"], "statut": "validé", "instances": self.count[d["choix"]],
                           "note": f"{orient}choisi à la {source}"}
+        parts = d["choix"].split("+")
+        if d["verdict"] in ("candidat", "autre") and len(parts) > 1 and all(p in self.count for p in parts):
+            return row | {"etiquette_lsfb": d["choix"], "statut": "décomposé",
+                          "instances": min(self.count[p] for p in parts), "autres_etiquettes": "",
+                          "note": f"signes joués à la suite, choisis à la {source}"}
         if d["verdict"] == "épeler":
-            return row | {"statut": "épeler", "note": f"à épeler, d'après la {source}"}
+            letters = self.spell(row["glose_projet"])
+            return row | {"etiquette_lsfb": "+".join(letters), "statut": "épeler",
+                          "instances": min((self.count[l] for l in letters), default=0),
+                          "autres_etiquettes": "", "note": f"épelé (alphabet manuel FS:A–Z), d'après la {source}"}
         if d["verdict"] == "aucun":
             return row | {"etiquette_lsfb": "", "statut": "absent", "instances": 0,
                           "note": f"aucun signe ne convient, d'après la {source}"}
         return row
+
+    def spell(self, gloss: str) -> list[str]:
+        """Lettres de l'alphabet manuel LSFB (`FS:A`…`FS:Z`) ; vide si une lettre manque."""
+        letters = [f"FS:{c}" for c in norm(gloss) if "A" <= c <= "Z"]
+        return letters if all(l in self.count for l in letters) else []
 
     def propose(self, gloss: str) -> dict:
         """Correspondance automatique (sans les réponses de la relecture)."""
@@ -214,7 +228,7 @@ class LsfbLabels:
             if all(labels):
                 row.update(etiquette_lsfb="+".join(labels), statut="décomposé",
                            instances=min(self.count[l] for l in labels),
-                           note="composé absent : signes séparés, enchaînement à valider")
+                           note="composé absent : signes séparés, joués à la suite")
         if row["statut"] == "absent" and self.count.get("NS:" + norm(base)):
             label = "NS:" + norm(base)
             row.update(etiquette_lsfb=label, statut="nom-propre", instances=self.count[label],
@@ -432,7 +446,7 @@ def main() -> None:
     d.add_argument("--raw", action="store_true", help="ajoute les poses brutes (sans lissage)")
     d.add_argument("--videos", action="store_true", help="ajoute les vidéos .mp4")
     d.add_argument("--inclure-incertains", action="store_true",
-                   help="télécharge aussi les statuts variante / décomposé / incertain")
+                   help="télécharge aussi les statuts variante / synonyme / nom-propre / incertain")
     d.add_argument("--dry-run", action="store_true", help="affiche le volume sans rien télécharger")
     d.add_argument("--jobs", type=int, default=8, help="connexions parallèles")
     d.add_argument("--sample", type=int, default=40, help="taille de l'échantillon HEAD pour l'estimation")
