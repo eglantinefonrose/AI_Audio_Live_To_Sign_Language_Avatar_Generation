@@ -60,7 +60,7 @@ def build_index() -> dict:
         signs[meta["etiquette_lsfb"]] = {
             "fichier": f"signes/{path.name}", "images": meta["images"], "instance": meta["instance"],
             "signeur": meta["signeur"], "retourne": meta["retourne"],
-            "score_selection": meta["score_selection"],
+            "score_selection": meta["score_selection"], "mouvement": meta.get("mouvement", False),
             "taux_deux_mains": float(selection.get(meta["etiquette_lsfb"], {}).get("taux_deux_mains") or 0),
         }
     glosses = {}
@@ -209,14 +209,16 @@ def _blend(a: dict[str, np.ndarray], b: dict[str, np.ndarray], n: int) -> dict[s
     return {k: a[k][-1][None] * (1 - t) + b[k][0][None] * t for k in a}
 
 
-def _letter(clip: dict[str, np.ndarray], rest: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
+def _letter(clip: dict[str, np.ndarray], rest: dict[str, np.ndarray], whole: bool = False) -> dict[str, np.ndarray]:
     """Partie centrale d'une lettre (LETTER_FRAMES images au plus) : la configuration de la
     main compte, pas l'approche ni le retrait du clip d'origine. La main gauche, qui ne
     participe pas à l'épellation, reste au repos (dans le clip, elle finit ou prépare
-    d'autres signes de la conversation)."""
+    d'autres signes de la conversation). Lettre qui bouge (`whole`, vidéo de référence
+    entière : rotation de K…) : gardée en entier."""
     n = len(next(iter(clip.values())))
-    a = max(0, (n - LETTER_FRAMES) // 2)
-    out = {k: v[a:a + LETTER_FRAMES] for k, v in clip.items()}
+    keep = n if whole else LETTER_FRAMES
+    a = max(0, (n - keep) // 2)
+    out = {k: v[a:a + keep] for k, v in clip.items()}
     shift = out["shoulder.L"] - rest["shoulder.L"]                # bras de repos accroché à l'épaule du clip
     for k in out:
         if k in ("elbow.L", "wrist.L") or k.startswith("hand.L."):
@@ -255,7 +257,8 @@ def assemble(glosses: list[str], index: dict | None = None):
         for kind, label, detail in steps(gloss, p):
             if kind in ("signe", "lettre"):
                 clip = load_sign(label, index)
-                clip = _letter(clip, rest_one) if kind == "lettre" else clip
+                clip = (_letter(clip, rest_one, index["signes"][label].get("mouvement", False))
+                        if kind == "lettre" else clip)
             elif kind == "pointage":
                 clip = pointing(p["cible"], torso, rest_one)
             else:

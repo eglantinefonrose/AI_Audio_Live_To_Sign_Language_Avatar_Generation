@@ -11,8 +11,10 @@ Signes relus : ceux qui font échouer au moins une phrase jouable au seuil 80 %,
 dernier record d'évaluation du dictionnaire actuel (`evaluation/results/*__mannequin.json`,
 ou `--record`), les
 plus bloquants d'abord (`--max`, 20 par défaut). Les lettres de l'alphabet manuel (`FS:N`…)
-n'y figurent pas : elles servent à épeler les termes techniques et noms propres, et se
-relisent avec l'épellation, pas comme un signe.
+n'y figurent pas : elles servent à épeler les termes techniques et noms propres. Elles se
+relisent à part avec `--lettres` : les lettres qui font échouer des phrases (N, P, H…),
+pour choisir la forme de main la plus nette. L'export garde aussi les réponses déjà dans
+`choix_clips.csv` pour les signes absents de la page.
 
 Réponses (clavier) : 1-9 ou clic = ce clip, G = garder le clip actuel, V = aucun ne convient
 (autre variante LSFB à envisager, voir la note), 0 = effacer. « Exporter le CSV » produit
@@ -23,7 +25,7 @@ Les vidéos (CC BY-NC-SA 4.0) sont téléchargées dans `data/lsfb/videos/` puis
 H.264 ; la page est `data/lsfb/revue_clips.html` (ignorée par git).
 
 Usage :
-    uv run python src/sign_language_3d_avatar/dataset_generation/revue_clips.py [--ouvrir] [--max 20] [--record chemin.json]
+    uv run python src/sign_language_3d_avatar/dataset_generation/revue_clips.py [--ouvrir] [--max 20] [--record chemin.json] [--lettres]
 """
 from __future__ import annotations
 
@@ -47,6 +49,7 @@ from clean_signs import is_letter  # noqa: E402
 
 CSV_PATH = GEN / "choix_clips.csv"
 HTML_PATH = DATA / "revue_clips.html"
+HTML_LETTERS = DATA / "revue_lettres.html"
 SELECTION = GEN / "selection.csv"
 FIELDS = ["etiquette_lsfb", "instance", "verdict", "note", "date"]
 MAX_CLIPS = 20
@@ -90,7 +93,7 @@ def videos(ids: list[str]) -> dict[str, str]:
 PAGE = r"""<!doctype html>
 <html lang="fr"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Relecture des clips</title>
+<title>__TITRE__</title>
 <style>
 :root { --bg:#f6f5f2; --card:#fff; --ink:#1d1d1f; --mute:#6b6b70; --line:#e2e0da; --accent:#2457c5;
         --ok:#1e6b3a; --mid:#a15c00; --bad:#b3261e; }
@@ -129,7 +132,7 @@ textarea { width:100%; padding:6px; font:inherit; font-size:14px; border-radius:
 .v-choisi, .v-garder { color:var(--ok); } .v-variante { color:var(--bad); }
 </style></head><body>
 <header>
-  <h1>Relecture des clips</h1>
+  <h1>__TITRE__</h1>
   <span id="stats"></span>
   <button id="slow">Ralenti <kbd>L</kbd></button>
   <button id="exportBtn">Exporter le CSV</button>
@@ -140,7 +143,7 @@ textarea { width:100%; padding:6px; font:inherit; font-size:14px; border-radius:
   <div class="meta">Phrases du banc que ce signe fait échouer :</div>
   <ul id="phrases" class="meta"></ul>
   <div><b>Quel exemple montre le mieux ce signe ?</b> Le plus net, le plus typique, celui qu'un signeur
-    reconnaîtrait sans contexte. <span id="current"></span></div>
+    reconnaîtrait sans contexte (pour une lettre : la forme de main la plus lisible, tenue nettement). <span id="current"></span></div>
   <div id="grid"></div>
   <div class="row">
     <button data-v="garder">Garder le clip actuel <kbd>G</kbd></button>
@@ -154,6 +157,7 @@ textarea { width:100%; padding:6px; font:inherit; font-size:14px; border-radius:
 </section></main>
 <script>
 const SIGNS = __SIGNS__;
+const AUTRES = __AUTRES__;   // réponses du CSV pour des signes absents de cette page, recopiées à l'export
 const KEY = "lsfb-revue-clips";
 let store = { answers: {} };
 try { store = Object.assign(store, JSON.parse(localStorage.getItem(KEY) || "{}")); } catch (e) {}
@@ -172,9 +176,9 @@ function stats() {
 }
 function show() {
   const s = SIGNS[idx], a = ans(s.etiquette);
-  $("label").textContent = s.etiquette;
+  $("label").textContent = s.nom || s.etiquette;
   $("pos").textContent = `${idx + 1} / ${SIGNS.length}`;
-  $("info").innerHTML = `gloses du projet : <b>${esc(s.gloses)}</b> · fait échouer <b>${s.phrases.length}</b> phrase(s), ` +
+  $("info").innerHTML = (s.nom ? `étiquette LSFB ${esc(s.etiquette)} · ` : "") + `${s.nom ? "mots épelés avec cette lettre" : "gloses du projet"} : <b>${esc(s.gloses)}</b> · fait échouer <b>${s.phrases.length}</b> phrase(s), ` +
     `dont ${s.seul} à lui seul · ${s.clips.length} exemple(s)` +
     (s.variantes.length ? ` · autres variantes LSFB : ${s.variantes.map(esc).join(", ")}` : "");
   $("phrases").innerHTML = s.phrases.map(p => `<li>${esc(p)}</li>`).join("");
@@ -222,6 +226,8 @@ $("exportBtn").onclick = () => {
   const lines = [cols.join(",")];
   for (const [lab, a] of Object.entries(store.answers))
     lines.push([lab, a.instance, a.verdict, a.note, a.date].map(q).join(","));
+  for (const r of AUTRES)
+    if (!store.answers[r.etiquette_lsfb]) lines.push(cols.map(k => q(r[k])).join(","));
   const link = document.createElement("a");
   link.href = URL.createObjectURL(new Blob(["﻿" + lines.join("\n") + "\n"], { type: "text/csv" }));
   link.download = "choix_clips.csv"; link.click();
@@ -254,12 +260,14 @@ def main() -> None:
     ap.add_argument("--record", type=Path, help="record d'évaluation (par défaut : le plus récent du mannequin)")
     ap.add_argument("--max", type=int, default=20, help="nombre de signes à relire (les plus bloquants)")
     ap.add_argument("--ouvrir", action="store_true", help="ouvrir la page dans le navigateur")
+    ap.add_argument("--lettres", action="store_true",
+                    help="relire les lettres de l'alphabet manuel qui font échouer des phrases (FS:N…)")
     args = ap.parse_args()
     record = args.record or latest_record()
     rec = json.loads(record.read_text(encoding="utf-8"))
     blocking = blocking_signs(rec["par_phrase"], 0.8)
     letters = [b["etiquette"] for b in blocking if is_letter(b["etiquette"])]
-    worst = [b for b in blocking if not is_letter(b["etiquette"])][:args.max]
+    worst = [b for b in blocking if is_letter(b["etiquette"]) == args.lettres][:args.max]
     with open(SELECTION, newline="", encoding="utf-8") as f:
         selection = {r["etiquette_lsfb"]: r for r in csv.DictReader(f)}
     by_label: dict[str, list[dict]] = defaultdict(list)
@@ -273,10 +281,14 @@ def main() -> None:
         clips = [r for r in sorted(by_label[lab], key=lambda r: r["id"])
                  if (DATA / "poses" / "pose" / f"{r['id']}.npy").exists()][:MAX_CLIPS]
         base = lab.split(".")[0]
-        failing = [" ".join(p["gloses"]) for p in rec["par_phrase"] if not p["absents"]
+        failing = [" ".join(p["gloses"]) + (f" — dans {', '.join(dict.fromkeys(s['glose'] for s in p['signes'] if s['etiquette'] == lab))}"
+                                             if args.lettres else "")
+                   for p in rec["par_phrase"] if not p["absents"]
                    and any(s["etiquette"] == lab and s["centile"] is not None and s["centile"] < 0.8 for s in p["signes"])]
         prev = old.get(lab)
-        signs.append({"etiquette": lab, "gloses": selection.get(lab, {}).get("gloses_projet", ""),
+        signs.append({"etiquette": lab, "gloses": " ".join(dict.fromkeys(selection.get(lab, {}).get("gloses_projet", "").split())),
+                      # FS:H = la lettre H de l'alphabet manuel (« FS » : fingerspelling), pas F-S-H
+                      "nom": f"Lettre {lab.split(':', 1)[1]} (une seule lettre de l'alphabet manuel)" if is_letter(lab) else "",
                       "actuel": selection.get(lab, {}).get("instance", ""), "seul": w["seul"], "phrases": failing,
                       "variantes": [f"{l} ({len(v)})" for l, v in sorted(by_label.items())
                                     if l != lab and l.split(".")[0] == base and len(v) >= 2],
@@ -286,13 +298,18 @@ def main() -> None:
     for s in signs:
         s["clips"] = [c | {"video": ready[c["id"]]} for c in s["clips"] if c["id"] in ready]
     dump = json.dumps(signs, ensure_ascii=False).replace("</", "<\\/")
-    HTML_PATH.write_text(PAGE.replace("__SIGNS__", dump), encoding="utf-8")
-    print(f"{len(signs)} signes à relire (record {record.name}), {sum(len(s['clips']) for s in signs)} clips"
-          + (f" ; lettres épelées écartées : {', '.join(letters)}" if letters else ""))
-    print(f"Page : {HTML_PATH.relative_to(SRC.parent)} — export à copier dans {CSV_PATH.relative_to(SRC.parent)}")
+    others = [r for lab, r in old.items() if lab not in {s["etiquette"] for s in signs}]
+    path = HTML_LETTERS if args.lettres else HTML_PATH
+    title = "Relecture des lettres" if args.lettres else "Relecture des clips"
+    path.write_text(PAGE.replace("__SIGNS__", dump).replace("__AUTRES__", json.dumps(others, ensure_ascii=False).replace("</", "<\\/"))
+                    .replace("__TITRE__", title), encoding="utf-8")
+    what = "lettres" if args.lettres else "signes"
+    print(f"{len(signs)} {what} à relire (record {record.name}), {sum(len(s['clips']) for s in signs)} clips"
+          + (f" ; lettres épelées écartées : {', '.join(letters)}" if letters and not args.lettres else ""))
+    print(f"Page : {path.relative_to(SRC.parent)} — export à copier dans {CSV_PATH.relative_to(SRC.parent)}")
     if args.ouvrir:
         opener = {"darwin": ["open"], "win32": ["cmd", "/c", "start", ""]}.get(sys.platform, ["xdg-open"])
-        subprocess.run([*opener, str(HTML_PATH)], check=False)
+        subprocess.run([*opener, str(path)], check=False)
 
 
 if __name__ == "__main__":

@@ -175,6 +175,38 @@ dictionnaire actuel), avec tous leurs exemples, sans aucun score :
 uv run python src/sign_language_3d_avatar/dataset_generation/revue_clips.py --ouvrir
 ```
 
+Les lettres de l'alphabet manuel (`FS:N`…) se relisent à part, avec `--lettres` (page
+`data/lsfb/revue_lettres.html`) : chaque carte indique les mots épelés où la lettre fait
+échouer une phrase. L'export contient aussi les réponses déjà présentes dans le CSV.
+
+**Lettres d'après une vidéo ou une image de référence** (`lettres_images.py`) : déposer
+une vidéo par lettre (`A.mp4`…, de face, main bien visible, la lettre tenue ~1 s entre deux
+repos) ou à défaut une photo (`N.jpg`, `P.png`…) dans `data/alphabet/` (ignoré par git),
+nommée par la lettre ; la vidéo l'emporte. Pour les lettres aux doigts repliés cachés par
+la main (K, Q, X, Z…), ajouter une vidéo de profil `K-profil.mp4`, prioritaire : seuls les
+doigts sont repris, l'orientation vient du clip. Une source jugée correcte sur la page de
+vérification est gardée. Puis :
+
+```bash
+uv run --with mediapipe python src/sign_language_3d_avatar/dataset_generation/lettres_images.py
+```
+
+MediaPipe extrait les 21 points de la main (`N.json`) et dessine une image de contrôle
+(`N_controle.png`) à vérifier. `clean_signs.py` garde ensuite le bras, la position et
+l'orientation du clip LSFB de la lettre, et remplace seulement les doigts par ceux de
+l'image. Supprimer `N.json` revient au clip seul. MediaPipe ne lit que des photos de vraies
+mains, assez grandes : les dessins au trait ne sont pas détectés.
+
+**Vérifier les lettres sur l'avatar** (`verif_lettres.py`) : l'avatar signe chaque lettre
+(rendu Blender, `avatar_animation/demo_lettres_blender.py`), en pied et en gros plan sur la
+main, à côté du clip LSFB copié et de l'image de référence s'il y en a une. On répond
+correcte / douteuse / incorrecte (touches C / D / I) ; l'export `verif_lettres.csv` est à
+copier dans `dataset_generation/`. Page : `data/lsfb/verif_lettres.html`.
+
+```bash
+uv run python src/sign_language_3d_avatar/dataset_generation/verif_lettres.py --ouvrir
+```
+
 Exporter le CSV, le copier dans `dataset_generation/choix_clips.csv` (versionné), puis
 relancer `select_examples.py` : chaque clip choisi passe avant les critères automatiques
 (critère « relecture »). « Autre variante » ne change pas le clip : ces signes se relisent
