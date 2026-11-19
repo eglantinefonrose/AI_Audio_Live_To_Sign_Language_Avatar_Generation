@@ -41,6 +41,11 @@ la lettre tenue) ; celle de la vidéo est réduite à proportion (`limit_rotatio
 Ces réglages ne valent que pour la source jugée (`image_reference`) : une nouvelle vidéo
 repart de la mesure.
 
+Galerie de l'évaluation : `galerie_lettres.json` (même dossier) garde, pour chaque lettre, la
+main qui signe à chaque image de sa vidéo de face (`<LETTRE>.mp4`, sinon de profil), quelle
+que soit la source retenue pour l'avatar ; `evaluation/evaluate_avatar.py` y compare les
+lettres de l'avatar au lieu des exemples LSFB (option `--lettres videos`, par défaut).
+
 Sortie, dans le même dossier : `<LETTRE>.json` (21 points de la main, en unités de hauteur
 d'image) et `<LETTRE>_controle.png` (l'image, ou l'image du milieu de la lettre tenue, avec
 les points détectés, à vérifier à l'œil : un doigt mal placé ici le sera aussi sur
@@ -74,6 +79,7 @@ MODEL_URL = ("https://storage.googleapis.com/mediapipe-models/hand_landmarker/ha
 EXTENSIONS = (".jpg", ".jpeg", ".png", ".webp")
 VIDEOS = (".mp4", ".mov", ".m4v")
 VERIFS = Path(__file__).resolve().parent / "verif_lettres.csv"
+GALLERY = ALPHABET / "galerie_lettres.json"
 FINGERS = {"pouce": (1, 2, 3, 4), "index": (5, 6, 7, 8), "majeur": (9, 10, 11, 12),
            "annulaire": (13, 14, 15, 16), "auriculaire": (17, 18, 19, 20)}
 # Flexion cumulée de chaque phalange vers la paume (degrés : base, milieu, bout).
@@ -392,6 +398,37 @@ def approved() -> dict[str, str]:
                 if r["verdict"] in ("correcte", "douteuse")}
 
 
+def reference_videos(found: dict[str, list[Path]]) -> dict[str, Path]:
+    """Lettre -> sa vidéo de référence pour la galerie de l'évaluation : de face si elle
+    existe, sinon de profil."""
+    out = {}
+    for letter, paths in found.items():
+        vids = sorted((p for p in paths if p.suffix.lower() in VIDEOS), key=lambda p: -priority(p))
+        if vids:
+            out[letter] = vids[0]
+    return out
+
+
+def write_gallery(refs: dict[str, Path], videos: dict[Path, tuple], side: str | None) -> None:
+    """`galerie_lettres.json` : par lettre, la main qui signe à chaque image de sa vidéo de
+    référence (de la première à la dernière image où elle est vue, trous comblés par la
+    voisine), en unités de hauteur d'image, côté MediaPipe `cote`."""
+    letters = {}
+    for letter, path in sorted(refs.items()):
+        fps, detections = videos[path]
+        hands = []
+        for found in detections:
+            same = [pts for pts, s in found if s == side]
+            hands.append(same[0] if same else found[0][0] if len(found) == 1 else None)
+        seen = [i for i, x in enumerate(hands) if x is not None]
+        if not seen:
+            continue
+        seq = [hands[min(seen, key=lambda j: abs(j - i))] for i in range(seen[0], seen[-1] + 1)]
+        letters[letter] = {"video": path.name, "fps": round(fps, 3), "points": np.stack(seq).round(4).tolist()}
+    GALLERY.write_text(json.dumps({"cote": side, "lettres": letters}), encoding="utf-8")
+    print(f"Galerie de l'évaluation : {len(letters)} lettres d'après vos vidéos → {GALLERY.name}")
+
+
 def main() -> None:
     keep = approved()
     imposed = finger_states()
@@ -418,7 +455,8 @@ def main() -> None:
     if clip_only or kept:
         print("Sources jugées correctes gardées : " + ", ".join(
             [f"{l} (clip LSFB)" for l in sorted(clip_only)] + kept))
-    videos = {p: detect_video(p) for p in sources.values() if p.suffix.lower() in VIDEOS}
+    refs = reference_videos(found)
+    videos = {p: detect_video(p) for p in {*sources.values(), *refs.values()} if p.suffix.lower() in VIDEOS}
     side = signing_side(videos)
     det = None
     ok, failed = [], []
@@ -461,6 +499,7 @@ def main() -> None:
                   + ((" (2 mains : celle qui signe)" if path.suffix.lower() in VIDEOS else " (2 mains : la plus grande)")
                      if hand["mains_detectees"] > 1 else ""))
     print(f"Formes de main extraites : {', '.join(ok) or 'aucune'}")
+    write_gallery(refs, videos, side)
     if failed:
         print(f"⚠️  aucune main détectée : {', '.join(failed)} (photo plus nette, main entière visible)")
     print(f"Vérifier les images *_controle.png dans {ALPHABET}, puis relancer clean_signs.py.")

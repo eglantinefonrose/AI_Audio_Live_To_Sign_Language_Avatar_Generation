@@ -41,6 +41,22 @@ La galerie ne garde que la moitié « eval » des signeurs (`features.signer_hal
 moitié sert à choisir les clips du dictionnaire (`select_examples.py`). `--galerie toutes`
 reprend l'ancienne galerie (lignes de RESULTS.md antérieures au 2026-11-11 18 h).
 
+Lettres (`--lettres videos`, par défaut) : les lettres de l'avatar, isolées et dans les mots
+épelés, sont comparées aux **vidéos de lettres filmées** du projet (une par lettre,
+`dataset_generation/data/alphabet/galerie_lettres.json`, écrit par `lettres_images.py`) et
+non aux exemples LSFB, avec la main seule (orientation et doigts, `features.hand_vector` :
+les vidéos ne montrent pas le bras) ; rang parmi les 26 lettres. Les lettres LSFB sont alors
+retirées de la galerie des signes. Comme l'avatar tire ses lettres de ces mêmes vidéos, la
+mesure dit s'il les reproduit et les distingue, pas si un autre signeur les reconnaîtrait.
+`--lettres lsfb` reprend les exemples LSFB (runs antérieurs au 2026-11-15 19 h).
+
+Signes vérifiés à l'œil (`evaluation/signes_verifies.csv`) : signes jugés corrects par une
+personne alors que le reconnaisseur ne les reconnaît pas (aucun clip réel ne passe non plus).
+Ils ne figurent plus parmi les signes bloquants, et « phrases reconnues » donne un second
+chiffre qui les compte comme reconnus ; le premier chiffre reste la mesure automatique seule.
+Un verdict ne vaut que pour le clip relu (colonne `instance`) : si le clip change, le signe
+est de nouveau mesuré comme les autres.
+
 `--save` archive le run (JSON dans `evaluation/results/`, ligne dans `RESULTS.md`).
 Données dérivées de LSFB-ISOL (CC BY-NC-SA 4.0) : les caches restent dans
 `avatar_animation/data/dictionnaire/evaluation/` (ignoré par git) ; les records ne
@@ -67,13 +83,16 @@ PROJECT = BASE.parent.parent
 sys.path.insert(0, str(BASE / "avatar_animation"))
 sys.path.insert(0, str(HERE))
 from clean_signs import LSFB, clean, is_letter  # noqa: E402
-from features import Gallery, angle_error, percentile, rank_of, resample, signer_half, vector  # noqa: E402
-from pose3d import FPS, unstack  # noqa: E402
+from features import Gallery, angle_error, hand_vector, percentile, rank_of, resample, signer_half, vector  # noqa: E402
+from pose3d import FPS, to_blender, unstack  # noqa: E402
 from sequence import DICT, INDEX, load_index, load_sign, resolve  # noqa: E402
 
 CACHE = DICT / "evaluation"
+LETTER_GALLERY = BASE / "dataset_generation" / "data" / "alphabet" / "galerie_lettres.json"
 RESULTS = HERE / "results"
 TABLE = HERE / "RESULTS.md"
+VERIFIED = HERE / "signes_verifies.csv"        # signes jugés corrects à l'œil
+SELECTION = BASE / "dataset_generation" / "selection.csv"   # critère « relecture » : clip choisi à l'œil
 EXPORT = HERE / "export_avatar_blender.py"
 DEFAULT_BLENDER = "/Applications/Blender.app/Contents/MacOS/Blender"
 DEFAULT_BENCH = [PROJECT / "src" / "eval" / "dataset.jsonl", PROJECT / "src" / "eval" / "dev.jsonl"]
@@ -101,13 +120,29 @@ def load_bench(paths: list[Path]) -> tuple[list[list[str]], str]:
     return phrases, sha(raw)
 
 
-def build_gallery(index: dict, half: str | None = "eval") -> tuple[Gallery, dict]:
+def build_letter_gallery() -> Gallery:
+    """Lettres filmées du projet (`galerie_lettres.json`) : main qui signe ramenée à une main
+    droite (miroir si MediaPipe la voit gauche), repère Blender, descripteur de la main seule."""
+    if not LETTER_GALLERY.exists():
+        sys.exit(f"{LETTER_GALLERY} absent : lancer d'abord dataset_generation/lettres_images.py "
+                 "(ou --lettres lsfb)")
+    d = json.loads(LETTER_GALLERY.read_text(encoding="utf-8"))
+    flip = np.array([-1.0, 1.0, 1.0]) if d["cote"] == "Left" else np.ones(3)
+    labs, insts, seqs = [], [], []
+    for letter, v in sorted(d["lettres"].items()):
+        h = to_blender(np.array(v["points"], dtype=np.float64) * flip, 1.0)
+        labs.append(f"FS:{letter}"), insts.append(v["video"])
+        seqs.append(resample(hand_vector({f"hand.R.{k}": h[:, k] for k in range(21)})))
+    return Gallery(labs, ["vidéos du projet"] * len(labs), insts, np.stack(seqs))
+
+
+def build_gallery(index: dict, half: str | None = "eval", letters: bool = True) -> tuple[Gallery, dict]:
     """Exemples réels LSFB-ISOL des signes du dictionnaire, nettoyés comme ceux de
     l'avatar (droitier, sauts, lissage, découpe), et référence humaine du mouvement
     (seuils de vitesse / accélération = 99,5e centile des vrais signeurs) ; mis en cache.
     `half` : seulement les signeurs de cette moitié (`features.signer_half`) ; l'autre a
-    servi à choisir les clips du dictionnaire."""
-    labels = set(index["signes"])
+    servi à choisir les clips du dictionnaire. `letters` False : sans les lettres (FS:…)."""
+    labels = {l for l in index["signes"] if letters or not is_letter(l)}
     with open(LSFB / "instances.csv", newline="", encoding="utf-8") as f:
         rows = [r for r in csv.DictReader(f) if r["sign"] in labels
                 and (half is None or signer_half(r["signer"]) == half)
@@ -196,7 +231,8 @@ def evaluate(args) -> dict:
     bench_paths = [Path(p) for p in args.phrases] if args.phrases else DEFAULT_BENCH
     phrases, bench_hash = load_bench(bench_paths)
     half = None if args.galerie == "toutes" else "eval"
-    gallery, ref = build_gallery(index, half)
+    gallery, ref = build_gallery(index, half, letters=args.lettres == "lsfb")
+    letter_gallery = build_letter_gallery() if args.lettres == "videos" else None
     items, meta = export_avatar(index, phrases, args)
     t0 = time.time()
 
@@ -215,6 +251,16 @@ def evaluate(args) -> dict:
     print(f"Reconnaissance de {len(index['signes'])} signes isolés…", flush=True)
     for lab, info in sorted(index["signes"].items()):
         av = items[f"signe::{lab}"]
+        if letter_gallery is not None and is_letter(lab):      # lettre : vidéos filmées, main seule
+            rank = rank_of(letter_gallery.rank(hand_vector(av)), lab)
+            s_rank = rank_of(letter_gallery.rank(hand_vector(clean(info["instance"], True)[0])), lab)
+            fid = angle_error(av, load_sign(lab, index))
+            signs.append({"etiquette": lab, "rang_avatar": rank and rank[0], "rang_clip_source": s_rank and s_rank[0],
+                          "rang_autre_signeur": None, "centile_avatar": percentile(rank),
+                          "centile_clip_source": percentile(s_rank), "centile_autre_signeur": None,
+                          "_r": rank, "_s": s_rank, "_h": None, "exemples_galerie": 1,
+                          "ecart_bras_deg": round(fid["bras"], 1), "ecart_doigts_deg": round(fid["configuration"], 1)})
+            continue
         rank = rank_of(gallery.rank(vector(av), exclude_signer=info["signeur"]), lab)
         own = [i for i in real_by_label.get(lab, []) if gallery.instances[i] == info["instance"]]
         if own:
@@ -242,7 +288,10 @@ def evaluate(args) -> dict:
             if kind not in ("signe", "lettre"):
                 continue
             seg = {n: v[start:end] for n, v in j.items()}
-            r = rank_of(gallery.rank(vector(seg), exclude_signer=index["signes"][lab]["signeur"]), lab)
+            if kind == "lettre" and letter_gallery is not None:
+                r = rank_of(letter_gallery.rank(hand_vector(seg)), lab)
+            else:
+                r = rank_of(gallery.rank(vector(seg), exclude_signer=index["signes"][lab]["signeur"]), lab)
             if kind == "lettre":              # mesurées à part : le score reste celui des vrais signes
                 letters.append(r)
             else:
@@ -260,6 +309,10 @@ def evaluate(args) -> dict:
                            "absents": [g for g in ph["gloses"] if resolve(g, index)["type"] == "absent"],
                            "images_defaut": int(bad["vitesse"].sum() + bad["acceleration"].sum() + m["torse"].sum())})
 
+    with open(SELECTION, newline="", encoding="utf-8") as f:
+        by_eye = {r["etiquette_lsfb"] for r in csv.DictReader(f) if r["critere"] == "relecture"}
+    for s in signs:
+        s["clip_relu"] = s["etiquette"] in by_eye
     iso_av = [s.pop("_r") for s in signs]
     iso_s = [x for x in (s.pop("_s") for s in signs) if x is not None]
     iso_h = [x for x in (s.pop("_h") for s in signs) if x is not None]
@@ -294,14 +347,16 @@ def evaluate(args) -> dict:
                       "reference_humaine_main_dans_torse": ref["torse"]},
         "fidelite": {"bras_deg": float(np.median([s["ecart_bras_deg"] for s in signs])),
                      "doigts_deg": float(np.median([s["ecart_doigts_deg"] for s in signs]))},
-        "phrases": phrase_scores(per_phrase, src),
+        "phrases": phrase_scores(per_phrase, src, signs, verified_signs(index)),
     }
     print(f"(mesures en {time.time() - t0:.0f} s)")
     return {"timestamp": datetime.now().strftime("%Y-%m-%dT%H:%M:%S"), "label": args.label,
             "avatar": meta["avatar"], "dictionnaire": sha(INDEX.read_bytes()), "banc": bench_hash,
             "banc_fichiers": [str(p.relative_to(PROJECT)) for p in bench_paths], "phrases": len(phrases),
             "galerie": {"exemples": len(gallery.labels), "signes": len(set(gallery.labels)),
-                        "signeurs": len(set(gallery.signers)), "moitie": half or "toutes"},
+                        "signeurs": len(set(gallery.signers)), "moitie": half or "toutes",
+                        "lettres": args.lettres,
+                        "lettres_videos": len(letter_gallery.labels) if letter_gallery is not None else 0},
             "code": sha(*(p.read_bytes() for p in (HERE / "features.py", Path(__file__), EXPORT))),
             "git_commit": git("rev-parse", "--short", "HEAD") or None, "git_dirty": bool(git("status", "--porcelain")),
             "metrics": metrics, "signes": signs, "par_phrase": per_phrase}
@@ -310,24 +365,56 @@ def evaluate(args) -> dict:
 PHRASE_THRESHOLDS = (0.8, 0.9)            # rang centile minimal de chaque signe (top 20 % / top 10 %)
 
 
-def phrase_scores(per_phrase: list[dict], src: dict[str, float | None]) -> dict:
+def verified_signs(index: dict) -> set[str]:
+    """Signes jugés corrects à l'œil, pour le clip que l'avatar copie aujourd'hui."""
+    if not VERIFIED.exists():
+        return set()
+    with open(VERIFIED, newline="", encoding="utf-8-sig") as f:
+        return {r["etiquette_lsfb"] for r in csv.DictReader(f) if r["verdict"] == "correct"
+                and index["signes"].get(r["etiquette_lsfb"], {}).get("instance") == r["instance"]}
+
+
+def beyond_measure(signs: list[dict], th: float) -> set[str]:
+    """Signes hors de portée du reconnaisseur au seuil `th` : ni le clip humain copié ni le clip
+    d'un autre signeur ne passent, et l'avatar fait au moins aussi bien que le clip copié (à 10
+    points près). Changer de clip ou corriger l'avatar n'y peut rien : la galerie a trop peu
+    d'exemples du signe, ou des exemples signés autrement."""
+    return {s["etiquette"] for s in signs
+            if s["centile_clip_source"] is not None and s["centile_clip_source"] < th
+            and (s["centile_autre_signeur"] is None or s["centile_autre_signeur"] < th)
+            and (s["centile_avatar"] or 0) >= s["centile_clip_source"] - 0.1}
+
+
+def phrase_scores(per_phrase: list[dict], src: dict[str, float | None], signs: list[dict],
+                  verified: set[str] = frozenset()) -> dict:
     """La phrase entière est-elle bien signée ? « Jouable » : chaque glose a un vrai signe
     ou un pointage. « Reconnue au seuil s » : jouable et chaque vrai signe, en contexte,
     a un rang centile ≥ s. Référence : la même phrase où chaque signe est remplacé par son
     clip source joué par le vrai signeur. Les signes que la galerie ne classe pas
-    (centile inconnu) ne comptent ni pour l'avatar ni pour la référence."""
+    (centile inconnu) ne comptent ni pour l'avatar ni pour la référence. « Limite de la
+    mesure » : phrases jouables qui échouent seulement à cause de signes hors de portée du
+    reconnaisseur (`beyond_measure`). « Avec vérifiés » : les signes jugés corrects à l'œil
+    (`verified_signs`) comptent comme reconnus."""
     n = max(1, len(per_phrase))
     playable = [not p["absents"] for p in per_phrase]
-    out = {"n": len(per_phrase), "jouables": sum(playable) / n, "reconnues": {}, "reconnues_clips_sources": {}}
+    out = {"n": len(per_phrase), "jouables": sum(playable) / n, "reconnues": {}, "reconnues_clips_sources": {},
+           "limite_mesure": {}, "reconnues_avec_verifies": {}, "signes_bloquants": {}}
     for th in PHRASE_THRESHOLDS:
-        av = hu = 0
+        limit = beyond_measure(signs, th)
+        av = hu = lim = ver = 0
         for p, ok in zip(per_phrase, playable):
             measured = [s for s in p["signes"] if s["centile"] is not None]
-            av += ok and all(s["centile"] >= th for s in measured)
+            failing = {s["etiquette"] for s in measured if s["centile"] < th}
+            av += ok and not failing
             hu += ok and all((src.get(s["etiquette"]) or 0) >= th for s in measured)
+            lim += ok and bool(failing) and failing <= limit
+            ver += ok and failing <= verified
         out["reconnues"][f"{th:.0%}"] = av / n
         out["reconnues_clips_sources"][f"{th:.0%}"] = hu / n
-    out["signes_bloquants"] = {f"{th:.0%}": blocking_signs(per_phrase, th) for th in PHRASE_THRESHOLDS}
+        out["limite_mesure"][f"{th:.0%}"] = lim / n
+        out["reconnues_avec_verifies"][f"{th:.0%}"] = ver / n
+        out["signes_bloquants"][f"{th:.0%}"] = [b | {"limite": b["etiquette"] in limit, "verifie": b["etiquette"] in verified}
+                                                for b in blocking_signs(per_phrase, th)]
     return out
 
 
@@ -369,11 +456,20 @@ def report(rec: dict) -> None:
     print(f"  Phrases      : {pct(ph['jouables'])} jouables en entier (aucun mot sans signe) ; reconnues "
           + ", ".join(f"{pct(ph['reconnues'][s])} au seuil {s} (vrais signeurs {pct(ph['reconnues_clips_sources'][s])})"
                       for s in ph["reconnues"]) + f" — sur {ph['n']} phrases")
+    if ph.get("reconnues_avec_verifies"):
+        print(f"  Avec vérifiés: {pct(ph['reconnues_avec_verifies']['80%'])} au seuil 80 %, "
+              f"{pct(ph['reconnues_avec_verifies']['90%'])} au seuil 90 %, en comptant comme reconnus les signes "
+              f"jugés corrects à l'œil ({VERIFIED.name})")
+    if "limite_mesure" in ph:
+        print(f"  Limite       : {pct(ph['limite_mesure']['80%'])} des phrases échouent au seuil 80 % seulement à cause "
+              f"de signes hors de portée du reconnaisseur (aucun clip réel du signe ne passe non plus)")
     print(f"  Couverture   : {pct(c['signe'])} signes réels, {pct(c.get('epele'))} épelés, {pct(c['pointage'])} pointages, "
           f"{pct(c['absent'])} sans signe")
     if m.get("lettres", {}).get("n"):
         x = m["lettres"]
-        print(f"  Lettres      : centile {pct(x['centile'])} (clips sources {pct(x['centile_clips_sources'])}), "
+        ref_l = ("vos vidéos de lettres, main seule" if rec.get("galerie", {}).get("lettres") == "videos"
+                 else "exemples LSFB")
+        print(f"  Lettres      : comparées à {ref_l} ; centile {pct(x['centile'])} (clips sources {pct(x['centile_clips_sources'])}), "
               f"top-10 {pct(x['top10'])} ({x['n']} lettres épelées en phrase)")
     for name, k, what in (("Avatar isolé ", "isoles", "signes"), ("Avatar phrase", "contexte", "signes en phrase"),
                           ("Clip source  ", "clip_source", "clips réels copiés"),
@@ -393,14 +489,21 @@ def report(rec: dict) -> None:
     print("  Perdus par l'avatar (clip source mieux reconnu) : "
           + (", ".join(f"{s['etiquette']} (rang {s['rang_avatar']} contre {s['rang_clip_source']}, doigts "
                        f"{s['ecart_doigts_deg']:.0f}°)" for s in lost) or "aucun"))
-    bad_clip = sorted((s for s in ok if s["rang_clip_source"] > 50 and (s["rang_autre_signeur"] or 999) <= 10),
+    bad_clip = sorted((s for s in ok if s["rang_clip_source"] > 50 and (s["rang_autre_signeur"] or 999) <= 10
+                       and not s.get("clip_relu")),                  # clip choisi ou gardé à l'œil : on s'y tient
                       key=lambda s: -s["rang_clip_source"])[:12]
     blocking = m["phrases"].get("signes_bloquants", {}).get("80%", [])
+    fmt = lambda bs: ", ".join(f"{b['etiquette']} {b['phrases']} (dont {b['seul']} à lui seul)" for b in bs) or "aucun"
     for name, keep in (("Signes", lambda l: not is_letter(l)), ("Lettres", is_letter)):
-        worst = [b for b in blocking if keep(b["etiquette"])][:12]
-        print(f"  {name} qui font échouer des phrases jouables (seuil 80 %) : "
-              + (", ".join(f"{b['etiquette']} {b['phrases']} (dont {b['seul']} à lui seul)" for b in worst) or "aucun"))
-    print("  Clips sources à changer (un autre signeur est bien reconnu) : "
+        worst = [b for b in blocking if keep(b["etiquette"]) and not b.get("limite") and not b.get("verifie")][:12]
+        print(f"  {name} qui font échouer des phrases jouables (seuil 80 %) : {fmt(worst)}")
+    beyond = [b for b in blocking if b.get("limite") and not b.get("verifie")]
+    if beyond:
+        print(f"  Hors de portée du reconnaisseur (mesure peu fiable, à vérifier à l'œil) : {fmt(beyond)}")
+    checked = [b for b in blocking if b.get("verifie")]
+    if checked:
+        print(f"  Vérifiés à l'œil (corrects, non comptés comme bloquants) : {', '.join(b['etiquette'] for b in checked)}")
+    print("  Clips sources à changer (un autre signeur est bien reconnu ; hors clips relus à l'œil) : "
           + (", ".join(f"{s['etiquette']} (rang {s['rang_clip_source']} contre {s['rang_autre_signeur']})"
                        for s in bad_clip) or "aucun"))
 
@@ -429,7 +532,8 @@ def save(rec: dict) -> Path:
                          "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|\n", encoding="utf-8")
     d, t = rec["timestamp"].split("T")
     half = rec.get("galerie", {}).get("moitie")
-    label = (rec["label"] or "") + (" — galerie : moitié eval" if half == "eval" else "")
+    label = ((rec["label"] or "") + (" — galerie : moitié eval" if half == "eval" else "")
+             + (" ; lettres : vidéos filmées" if rec.get("galerie", {}).get("lettres") == "videos" else ""))
     row = (f"| {d} | {t} | {label} | {rec['avatar']} | {rec['dictionnaire']} | {rec['banc']} | "
            f"**{pct(m['score'])}** | {phrase_cells(m)} | {pct(m['contexte']['centile'])} | {pct(m['isoles']['centile'])} | "
            f"{pct(m['clip_source']['centile'])} | {pct(m['couverture']['signe'])} | "
@@ -450,6 +554,9 @@ def main() -> None:
     ap.add_argument("--galerie", choices=("eval", "toutes"), default="eval",
                     help="signeurs de la galerie : moitié « eval » (défaut ; l'autre moitié choisit les "
                          "clips du dictionnaire) ou tous (runs antérieurs, à ne pas comparer)")
+    ap.add_argument("--lettres", choices=("videos", "lsfb"), default="videos",
+                    help="référence des lettres : les vidéos filmées du projet (défaut, main seule) "
+                         "ou les exemples LSFB (runs antérieurs)")
     args = ap.parse_args()
     if not Path(args.blender).exists():
         sys.exit(f"Blender introuvable : {args.blender} (option --blender ou variable BLENDER)")

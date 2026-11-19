@@ -7,7 +7,7 @@ mots sans signe affichés), transférée sur l'avatar, puis rendue en
 
     /Applications/Blender.app/Contents/MacOS/Blender -b --factory-startup \\
         --python src/sign_language_3d_avatar/avatar_animation/demo_phrase_blender.py -- \\
-        --gloses "MOI MAISON AIDER-À-TOI MERCI" [--avatar avatar.vrm] [--sortie demo.mp4]
+        --gloses "MOI MAISON AIDER-À-TOI MERCI" [--avatar avatar.vrm] [--sortie demo.mp4] [--gros-plan]
 
 Le plus simple est de passer par `src/sign_language_3d_avatar/tester_phrase_lsfb.py`.
 """
@@ -54,8 +54,9 @@ def main() -> None:
     ap.add_argument("--avatar", help="fichier .vrm (VRoid Studio) ; défaut : mannequin")
     ap.add_argument("--sortie", default=str(DICT / "demo.mp4"))
     ap.add_argument("--angle", type=float, default=25.0, help="angle de vue (0 = de face)")
+    ap.add_argument("--gros-plan", action="store_true", help="caméra qui suit la main droite")
     args = ap.parse_args(argv)
-    render(args.gloses.split(), Path(args.sortie), args.avatar, args.angle)
+    render(args.gloses.split(), Path(args.sortie), args.avatar, args.angle, gros_plan=args.gros_plan)
 
 
 def render(glosses: list[str], sortie: Path, avatar: str | None = None, angle: float = 25.0,

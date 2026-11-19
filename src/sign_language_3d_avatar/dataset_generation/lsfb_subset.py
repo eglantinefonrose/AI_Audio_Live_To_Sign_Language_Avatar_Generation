@@ -35,6 +35,8 @@ MAPPING_PATH = BASE / "dataset_generation" / "lsfb_mapping.csv"
 WORDS_PATH = BASE / "dataset_generation" / "lsfb_words.txt"
 # Choix faits à la main sur la page de relecture (candidats_absents.py) : ils priment.
 DECISIONS_PATH = BASE / "dataset_generation" / "lsfb_candidats.csv"
+# Variantes choisies à la relecture des clips (revue_clips.py) : colonne « remplace ».
+CLIPS_PATH = BASE / "dataset_generation" / "choix_clips.csv"
 LICENCE = ("CC BY-NC-SA 4.0 ; Meurant, Laurence (2015), Corpus LSFB, "
            "LSFB-Lab, FRS-FNRS et Université de Namur ; https://lsfb.info.unamur.be/")
 INDEX_FILES = ("instances.csv", "instances_special.csv", "metadata/sign_occurrences.csv")
@@ -135,11 +137,22 @@ def load_decisions() -> dict[str, dict]:
         return {r["glose"]: r for r in csv.DictReader(f) if r.get("verdict")}
 
 
+def load_replacements() -> dict[str, str]:
+    """Variantes choisies sur la page de relecture des clips : ancienne étiquette -> nouvelle."""
+    if not CLIPS_PATH.exists():
+        return {}
+    with open(CLIPS_PATH, newline="", encoding="utf-8-sig") as f:
+        return {r["remplace"]: r["etiquette_lsfb"] for r in csv.DictReader(f)
+                if r.get("remplace") and r["verdict"] == "choisi"}
+
+
 class LsfbLabels:
-    def __init__(self, instances: list[dict], special: Counter, decisions: dict[str, dict] | None = None):
+    def __init__(self, instances: list[dict], special: Counter, decisions: dict[str, dict] | None = None,
+                 replacements: dict[str, str] | None = None):
         self.count = Counter(r["sign"] for r in instances)
         self.special = special
         self.decisions = decisions or {}
+        self.replacements = replacements or {}
         self.by_norm: dict[str, list[str]] = defaultdict(list)   # forme exacte
         self.by_base: dict[str, list[str]] = defaultdict(list)   # avant le « .VARIANTE »
         for label in self.count:
@@ -156,8 +169,16 @@ class LsfbLabels:
 
     def resolve(self, gloss: str) -> dict:
         """Correspondance d'une glose ; une réponse de la page de relecture prime sur la
-        proposition automatique (`decide`)."""
-        return self.decide(self.propose(gloss))
+        proposition automatique (`decide`) ; une variante choisie à la relecture des clips
+        remplace ensuite l'étiquette."""
+        row = self.decide(self.propose(gloss))
+        new = self.replacements.get(row["etiquette_lsfb"])
+        if new in self.count:
+            row = row | {"etiquette_lsfb": new, "instances": self.count[new],
+                         "statut": "validé" if row["statut"] in ("exact", "variante", "incertain", "synonyme") else row["statut"],
+                         "note": "; ".join(filter(None, [row["note"], f"variante choisie à la relecture des clips "
+                                                                   f"({CLIPS_PATH.name}) au lieu de {row['etiquette_lsfb']}"]))}
+        return row
 
     def decide(self, row: dict) -> dict:
         d = self.decisions.get(row["glose_projet"])
@@ -266,7 +287,7 @@ def write_words(rows: list[dict]) -> None:
 
 def cmd_map(args) -> None:
     instances, special = load_index(args.dest)
-    labels = LsfbLabels(instances, special, load_decisions())
+    labels = LsfbLabels(instances, special, load_decisions(), load_replacements())
     rows = [labels.resolve(g) for g in project_glosses()]
     with open(MAPPING_PATH, "w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=list(rows[0]))
@@ -370,7 +391,7 @@ def cmd_download(args) -> None:
     if not words:
         sys.exit("Aucun mot : --words A,B ou --words-file fichier.txt")
     instances, special = load_index(args.dest)
-    labels = LsfbLabels(instances, special, load_decisions())
+    labels = LsfbLabels(instances, special, load_decisions(), load_replacements())
     by_label: dict[str, list[dict]] = defaultdict(list)
     for r in instances:
         by_label[r["sign"]].append(r)

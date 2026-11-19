@@ -5,7 +5,11 @@ Pourquoi à l'œil : le choix automatique (`select_examples.py`) repose sur un r
 simple qui se laisse piéger (deux clips atypiques qui se ressemblent se classent 1ers l'un
 grâce à l'autre). Le corriger avec les scores de l'évaluation reviendrait à régler sur
 l'évaluation ; un choix humain n'utilise pas ces scores. La page n'en montre donc aucun :
-seulement les phrases que le signe fait échouer (pour savoir quoi relire) et le clip actuel.
+seulement les phrases que le signe fait échouer (pour savoir quoi relire), le rendu actuel de
+l'avatar dans ces phrases (`demo_phrase_blender.py`, `--sans-rendu` pour s'en passer) et le clip
+actuel. Les exemples des autres variantes LSFB du signe (`QUAND.1` pour `QUAND.8`…) sont montrés
+aussi : en choisir un remplace la variante pour toutes les gloses du projet qui utilisaient le
+signe (colonne `remplace` de `choix_clips.csv`, reprise par `lsfb_subset.py map`).
 
 Signes relus : ceux qui font échouer au moins une phrase jouable au seuil 80 %, dans le
 dernier record d'évaluation du dictionnaire actuel (`evaluation/results/*__mannequin.json`,
@@ -13,24 +17,34 @@ ou `--record`), les
 plus bloquants d'abord (`--max`, 20 par défaut). Les lettres de l'alphabet manuel (`FS:N`…)
 n'y figurent pas : elles servent à épeler les termes techniques et noms propres. Elles se
 relisent à part avec `--lettres` : les lettres qui font échouer des phrases (N, P, H…),
-pour choisir la forme de main la plus nette. L'export garde aussi les réponses déjà dans
+pour choisir la forme de main la plus nette. Les signes jugés corrects à l'œil
+(`evaluation/signes_verifies.csv`) n'y figurent pas non plus. L'export garde aussi les réponses déjà dans
 `choix_clips.csv` pour les signes absents de la page.
 
-Réponses (clavier) : 1-9 ou clic = ce clip, G = garder le clip actuel, V = aucun ne convient
-(autre variante LSFB à envisager, voir la note), 0 = effacer. « Exporter le CSV » produit
+Avec `--clips-a-changer` : les signes de la liste « Clips sources à changer » du rapport
+d'évaluation (clip copié mal reconnu alors qu'un clip d'un autre signeur l'est bien). Ils ne
+font pas forcément échouer de phrase : la page montre l'avatar dans les phrases du banc qui
+les utilisent, ou le signe seul. Le clip bien reconnu n'est pas signalé : le choix reste à
+l'œil, sans les scores (page `data/lsfb/revue_clips_a_changer.html`).
+
+Réponses (clavier) : 1-9 ou clic = ce clip, G = garder le clip actuel, A = le clip est bon mais
+l'avatar le joue mal (à décrire dans la note), V = aucun ne convient (autre signe à envisager,
+voir la note), 0 = effacer. « Exporter le CSV » produit
 `choix_clips.csv` (versionné, identifiants seulement), à copier dans `dataset_generation/` ;
-`select_examples.py` reprend ensuite chaque clip choisi (critère « relecture »).
+`select_examples.py` reprend ensuite chaque clip choisi (critère « relecture »), après
+`lsfb_subset.py map` si une variante a changé.
 
 Les vidéos (CC BY-NC-SA 4.0) sont téléchargées dans `data/lsfb/videos/` puis copiées en
-H.264 ; la page est `data/lsfb/revue_clips.html` (ignorée par git).
+H.264 ; la page est `data/lsfb/revue_clips.html` (ignorée par git), les rendus dans `data/lsfb/revue_clips/`.
 
 Usage :
-    uv run python src/sign_language_3d_avatar/dataset_generation/revue_clips.py [--ouvrir] [--max 20] [--record chemin.json] [--lettres]
+    uv run python src/sign_language_3d_avatar/dataset_generation/revue_clips.py [--ouvrir] [--max 20] [--record chemin.json] [--lettres] [--sans-rendu]
 """
 from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
 import json
 import subprocess
 import sys
@@ -44,15 +58,20 @@ from lsf_comparaison import DATA, GEN, SRC, to_h264  # noqa: E402
 from lsfb_subset import SOURCE, fetch  # noqa: E402
 
 sys.path.insert(0, str(GEN.parent / "evaluation"))
-from evaluate_avatar import INDEX, RESULTS, blocking_signs, sha  # noqa: E402
+from evaluate_avatar import INDEX, RESULTS, blocking_signs, sha, verified_signs  # noqa: E402
 from clean_signs import is_letter  # noqa: E402
 
 CSV_PATH = GEN / "choix_clips.csv"
 HTML_PATH = DATA / "revue_clips.html"
 HTML_LETTERS = DATA / "revue_lettres.html"
+HTML_CHANGE = DATA / "revue_clips_a_changer.html"
 SELECTION = GEN / "selection.csv"
-FIELDS = ["etiquette_lsfb", "instance", "verdict", "note", "date"]
+RENDUS = DATA / "revue_clips"
+BLENDER = "/Applications/Blender.app/Contents/MacOS/Blender"
+DEMO = GEN.parent / "avatar_animation" / "demo_phrase_blender.py"
+FIELDS = ["etiquette_lsfb", "instance", "verdict", "note", "date", "remplace"]
 MAX_CLIPS = 20
+MAX_VARIANTE = 10                  # exemples montrés par autre variante
 
 
 def latest_record() -> Path:
@@ -65,10 +84,29 @@ def latest_record() -> Path:
 
 
 def read_csv() -> dict[str, dict]:
+    """Réponses par signe relu : une variante choisie est rangée sous le signe qu'elle remplace."""
     if not CSV_PATH.exists():
         return {}
     with open(CSV_PATH, newline="", encoding="utf-8-sig") as f:
-        return {r["etiquette_lsfb"]: r for r in csv.DictReader(f)}
+        return {r.get("remplace") or r["etiquette_lsfb"]: r for r in csv.DictReader(f)}
+
+
+def render(phrases: list[str]) -> dict[str, str]:
+    """Rendu actuel de l'avatar pour chaque phrase (refait si le dictionnaire a changé) :
+    phrase -> chemin relatif à la page, horodaté pour que le navigateur ne garde pas l'ancien."""
+    RENDUS.mkdir(exist_ok=True)
+    out = {p: RENDUS / f"{hashlib.md5(p.encode()).hexdigest()[:10]}.mp4" for p in phrases}
+    todo = [p for p, f in out.items() if not f.exists() or f.stat().st_mtime < INDEX.stat().st_mtime]
+    if todo:
+        print(f"Rendu de l'avatar pour {len(todo)} phrase(s)…", flush=True)
+
+        def run(p: str) -> None:
+            subprocess.run([BLENDER, "-b", "--factory-startup", "--python", str(DEMO), "--", "--gloses", p,
+                            "--sortie", str(out[p]), "--angle", "15"], check=False,
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        with ThreadPoolExecutor(2) as ex:
+            list(ex.map(run, todo))
+    return {p: f"{f.relative_to(DATA)}?v={int(f.stat().st_mtime)}" for p, f in out.items() if f.exists()}
 
 
 def videos(ids: list[str]) -> dict[str, str]:
@@ -121,6 +159,9 @@ main { max-width:1200px; margin:0 auto; padding:16px; }
 .clip.on { outline:3px solid var(--ok); border-color:var(--ok); }
 .clip video { width:100%; aspect-ratio:4/3; object-fit:contain; border-radius:5px; background:#000; }
 .clip .cap { font-size:12px; color:var(--mute); display:flex; justify-content:space-between; }
+.group { grid-column:1/-1; font-size:13px; font-weight:600; margin-top:6px; }
+#phrases { display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:10px; list-style:none; padding:0; }
+#phrases video { display:block; width:100%; aspect-ratio:1; object-fit:contain; margin-top:4px; border-radius:6px; background:#000; }
 .clip.current .cap b { color:var(--mid); }
 .row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
 .row button.on { outline:2px solid var(--accent); }
@@ -140,24 +181,26 @@ textarea { width:100%; padding:6px; font:inherit; font-size:14px; border-radius:
 <main><section class="card">
   <div class="row" style="justify-content:space-between"><h2 id="label"></h2><span id="pos" class="meta"></span></div>
   <div class="meta" id="info"></div>
-  <div class="meta">Phrases du banc que ce signe fait échouer :</div>
+  <div class="meta">__PHRASES__</div>
   <ul id="phrases" class="meta"></ul>
   <div><b>Quel exemple montre le mieux ce signe ?</b> Le plus net, le plus typique, celui qu'un signeur
     reconnaîtrait sans contexte (pour une lettre : la forme de main la plus lisible, tenue nettement). <span id="current"></span></div>
   <div id="grid"></div>
   <div class="row">
     <button data-v="garder">Garder le clip actuel <kbd>G</kbd></button>
-    <button data-v="variante">Aucun ne convient : autre variante <kbd>V</kbd></button>
+    <button data-v="avatar">Le clip est bon, l'avatar le joue mal <kbd>A</kbd></button>
+    <button data-v="variante">Aucun ne convient : autre signe <kbd>V</kbd></button>
     <button id="prev">← Précédent</button><button id="next">Suivant →</button>
   </div>
-  <textarea id="note" rows="2" placeholder="Note (ex. : MODELE.EXEMPLE serait le bon signe) — N pour écrire, Échap pour revenir"></textarea>
-  <div class="help"><kbd>1</kbd>–<kbd>9</kbd> ou clic : ce clip · <kbd>G</kbd> garder l'actuel (cadre orange) ·
-    <kbd>V</kbd> autre variante · <kbd>0</kbd> effacer · <kbd>←</kbd> <kbd>→</kbd> naviguer · <kbd>L</kbd> ralenti.
+  <textarea id="note" rows="2" placeholder="Note (ex. : la main devrait monter plus haut ; MODELE.EXEMPLE serait le bon signe) — N pour écrire, Échap pour revenir"></textarea>
+  <div class="help"><kbd>1</kbd>–<kbd>9</kbd> ou clic : ce clip (un clip d'une autre variante remplace la variante) ·
+    <kbd>G</kbd> garder l'actuel (cadre orange) · <kbd>A</kbd> l'avatar joue mal le clip · <kbd>V</kbd> autre signe · <kbd>0</kbd> effacer · <kbd>←</kbd> <kbd>→</kbd> naviguer · <kbd>L</kbd> ralenti.
     Les réponses restent dans ce navigateur : exporte le CSV et copie-le dans <code>dataset_generation/choix_clips.csv</code>.</div>
 </section></main>
 <script>
 const SIGNS = __SIGNS__;
-const AUTRES = __AUTRES__;   // réponses du CSV pour des signes absents de cette page, recopiées à l'export
+const AUTRES = __AUTRES__;
+const DEPUIS = "__DEPUIS__";  // réponses plus anciennes que l'évaluation : déjà essayées, le signe bloque encore   // réponses du CSV pour des signes absents de cette page, recopiées à l'export
 const KEY = "lsfb-revue-clips";
 let store = { answers: {} };
 try { store = Object.assign(store, JSON.parse(localStorage.getItem(KEY) || "{}")); } catch (e) {}
@@ -171,18 +214,23 @@ const esc = t => String(t).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;",
 let idx = 0, rate = 1;
 const ans = l => store.answers[l] || {};
 function stats() {
-  const n = SIGNS.filter(s => ans(s.etiquette).verdict).length;
-  $("stats").innerHTML = `<b>${n}</b> / ${SIGNS.length} signes relus`;
+  const n = SIGNS.filter(s => ans(s.etiquette).verdict && (ans(s.etiquette).date || "") > DEPUIS).length;
+  $("stats").innerHTML = `<b>${n}</b> / ${SIGNS.length} signes relus depuis l'évaluation du ${DEPUIS.slice(0, 10)}`;
 }
 function show() {
   const s = SIGNS[idx], a = ans(s.etiquette);
   $("label").textContent = s.nom || s.etiquette;
   $("pos").textContent = `${idx + 1} / ${SIGNS.length}`;
-  $("info").innerHTML = (s.nom ? `étiquette LSFB ${esc(s.etiquette)} · ` : "") + `${s.nom ? "mots épelés avec cette lettre" : "gloses du projet"} : <b>${esc(s.gloses)}</b> · fait échouer <b>${s.phrases.length}</b> phrase(s), ` +
-    `dont ${s.seul} à lui seul · ${s.clips.length} exemple(s)` +
+  $("info").innerHTML = (s.nom ? `étiquette LSFB ${esc(s.etiquette)} · ` : "") + `${s.nom ? "mots épelés avec cette lettre" : "gloses du projet"} : <b>${esc(s.gloses)}</b> · ` +
+    (s.changer ? `${s.phrases.length} phrase(s) du banc` : `fait échouer <b>${s.phrases.length}</b> phrase(s), dont ${s.seul} à lui seul`) +
+    ` · ${s.clips.length} exemple(s)` +
+    (s.limite ? ` · <b class="v-variante">mesure peu fiable</b> : aucun clip réel de ce signe n'est reconnu non plus par l'évaluation` : "") +
     (s.variantes.length ? ` · autres variantes LSFB : ${s.variantes.map(esc).join(", ")}` : "");
-  $("phrases").innerHTML = s.phrases.map(p => `<li>${esc(p)}</li>`).join("");
-  $("grid").innerHTML = s.clips.map((c, k) => `
+  $("phrases").innerHTML = s.phrases.map(p => `<li>${esc(p.texte)}${p.video ?
+    `<video autoplay loop muted playsinline preload="auto" src="${p.video}"></video>` : ""}</li>`).join("");
+  $("grid").innerHTML = s.clips.map((c, k) => (k === 0 || c.etiquette !== s.clips[k - 1].etiquette ?
+      `<div class="group">${c.etiquette === s.etiquette ? `Exemples de ${esc(s.etiquette)} (signe actuel)`
+        : `Autre variante : ${esc(c.etiquette)}`}</div>` : "") + `
     <div class="clip${c.id === s.actuel ? " current" : ""}${a.verdict === "choisi" && a.instance === c.id ? " on" : ""}" data-k="${k}">
       <video autoplay loop muted playsinline preload="auto" src="${c.video}"></video>
       <div class="cap"><span>${k < 9 ? `<kbd>${k + 1}</kbd> ` : ""}${esc(c.signeur)}</span>${c.id === s.actuel ? "<b>actuel</b>" : ""}</div>
@@ -192,8 +240,11 @@ function show() {
     el.onclick = () => pick(s.clips[+el.dataset.k].id);
   });
   const lab = a.verdict === "choisi" ? `clip de ${esc((s.clips.find(c => c.id === a.instance) || {}).signeur || a.instance)}`
-            : a.verdict === "garder" ? "garder l'actuel" : a.verdict === "variante" ? "autre variante" : "";
-  $("current").innerHTML = a.verdict ? `— réponse : <span class="v-${a.verdict}">${lab}</span>` : "";
+              + (a.etiquette && a.etiquette !== s.etiquette ? ` (variante ${esc(a.etiquette)})` : "")
+            : a.verdict === "garder" ? "garder l'actuel" : a.verdict === "avatar" ? "l'avatar joue mal le clip"
+            : a.verdict === "variante" ? "autre signe" : "";
+  const old = a.verdict && (a.date || "") <= DEPUIS;
+  $("current").innerHTML = a.verdict ? `— ${old ? "réponse précédente (le signe bloque encore)" : "réponse"} : <span class="v-${a.verdict}">${lab}</span>` : "";
   document.querySelectorAll("[data-v]").forEach(b => b.classList.toggle("on", b.dataset.v === a.verdict));
   $("note").value = a.note || "";
   stats();
@@ -202,15 +253,21 @@ function localNow() {
   const d = new Date(), p = n => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
 }
-function answer(verdict, instance = "") {
+function answer(verdict, instance = "", etiquette = "") {
   const s = SIGNS[idx];
-  if (verdict) store.answers[s.etiquette] = { verdict, instance, note: $("note").value.trim(), date: localNow() };
+  // garder / avatar / variante : le clip actuel reste celui que l'avatar copie
+  if (verdict && !instance) instance = s.actuel || "";
+  if (verdict) store.answers[s.etiquette] = { verdict, instance, etiquette, note: $("note").value.trim(), date: localNow() };
   else delete store.answers[s.etiquette];
   save();
   if (verdict && idx < SIGNS.length - 1) idx++;
   show();
 }
-const pick = id => answer(id === SIGNS[idx].actuel ? "garder" : "choisi", id === SIGNS[idx].actuel ? "" : id);
+const pick = id => {
+  const s = SIGNS[idx], c = s.clips.find(c => c.id === id);
+  if (id === s.actuel) answer("garder");
+  else answer("choisi", id, c.etiquette === s.etiquette ? "" : c.etiquette);
+};
 const move = d => { idx = Math.max(0, Math.min(idx + d, SIGNS.length - 1)); show(); };
 document.querySelectorAll("[data-v]").forEach(b => b.onclick = () => answer(b.dataset.v));
 $("prev").onclick = () => move(-1);
@@ -221,13 +278,14 @@ $("note").addEventListener("input", () => {
   const a = store.answers[SIGNS[idx].etiquette]; if (a) { a.note = $("note").value.trim(); save(); }
 });
 $("exportBtn").onclick = () => {
-  const cols = ["etiquette_lsfb", "instance", "verdict", "note", "date"];
+  const cols = ["etiquette_lsfb", "instance", "verdict", "note", "date", "remplace"];
   const q = x => '"' + String(x ?? "").replace(/"/g, '""') + '"';
   const lines = [cols.join(",")];
-  for (const [lab, a] of Object.entries(store.answers))
-    lines.push([lab, a.instance, a.verdict, a.note, a.date].map(q).join(","));
+  for (const [lab, a] of Object.entries(store.answers))   // variante : rangée sous la nouvelle étiquette
+    lines.push((a.etiquette ? [a.etiquette, a.instance, a.verdict, a.note, a.date, lab]
+                            : [lab, a.instance, a.verdict, a.note, a.date, ""]).map(q).join(","));
   for (const r of AUTRES)
-    if (!store.answers[r.etiquette_lsfb]) lines.push(cols.map(k => q(r[k])).join(","));
+    if (!store.answers[r.remplace || r.etiquette_lsfb]) lines.push(cols.map(k => q(r[k])).join(","));
   const link = document.createElement("a");
   link.href = URL.createObjectURL(new Blob(["﻿" + lines.join("\n") + "\n"], { type: "text/csv" }));
   link.download = "choix_clips.csv"; link.click();
@@ -242,6 +300,7 @@ document.addEventListener("keydown", e => {
   if (/^[1-9]$/.test(k) && s.clips[+k - 1]) pick(s.clips[+k - 1].id);
   else if (k === "g") answer("garder");
   else if (k === "v") answer("variante");
+  else if (k === "a") answer("avatar");
   else if (k === "0") answer(null);
   else if (k === "arrowright") move(1);
   else if (k === "arrowleft") move(-1);
@@ -260,14 +319,26 @@ def main() -> None:
     ap.add_argument("--record", type=Path, help="record d'évaluation (par défaut : le plus récent du mannequin)")
     ap.add_argument("--max", type=int, default=20, help="nombre de signes à relire (les plus bloquants)")
     ap.add_argument("--ouvrir", action="store_true", help="ouvrir la page dans le navigateur")
+    ap.add_argument("--sans-rendu", action="store_true", help="ne pas rendre les phrases avec l'avatar (Blender)")
+    ap.add_argument("--clips-a-changer", action="store_true",
+                    help="relire les signes de la liste « Clips sources à changer » du rapport d'évaluation")
     ap.add_argument("--lettres", action="store_true",
                     help="relire les lettres de l'alphabet manuel qui font échouer des phrases (FS:N…)")
     args = ap.parse_args()
     record = args.record or latest_record()
     rec = json.loads(record.read_text(encoding="utf-8"))
-    blocking = blocking_signs(rec["par_phrase"], 0.8)
+    verified = verified_signs(json.loads(INDEX.read_text(encoding="utf-8")))
+    blocking = [b for b in blocking_signs(rec["par_phrase"], 0.8) if b["etiquette"] not in verified]
+    # Hors de portée du reconnaisseur (aucun clip réel ne passe non plus) : en dernier, signalés.
+    limit = {b["etiquette"] for b in rec["metrics"]["phrases"].get("signes_bloquants", {}).get("80%", []) if b.get("limite")}
+    blocking.sort(key=lambda b: b["etiquette"] in limit)
     letters = [b["etiquette"] for b in blocking if is_letter(b["etiquette"])]
     worst = [b for b in blocking if is_letter(b["etiquette"]) == args.lettres][:args.max]
+    if args.clips_a_changer:     # même critère que le rapport (evaluate_avatar.report)
+        worst = [{"etiquette": s["etiquette"], "seul": 0} for s in sorted(
+            (s for s in rec["signes"] if not is_letter(s["etiquette"]) and s["rang_clip_source"] is not None
+             and s["rang_clip_source"] > 50 and (s["rang_autre_signeur"] or 999) <= 10 and not s.get("clip_relu")),
+            key=lambda s: -s["rang_clip_source"])][:args.max]
     with open(SELECTION, newline="", encoding="utf-8") as f:
         selection = {r["etiquette_lsfb"]: r for r in csv.DictReader(f)}
     by_label: dict[str, list[dict]] = defaultdict(list)
@@ -281,28 +352,43 @@ def main() -> None:
         clips = [r for r in sorted(by_label[lab], key=lambda r: r["id"])
                  if (DATA / "poses" / "pose" / f"{r['id']}.npy").exists()][:MAX_CLIPS]
         base = lab.split(".")[0]
+        variants = [l for l, v in sorted(by_label.items()) if l != lab and l.split(".")[0] == base and len(v) >= 2]
+        for v in variants:   # poses pas forcément téléchargées : `lsfb_subset.py` les prendra si la variante est choisie
+            clips += sorted(by_label[v], key=lambda r: r["id"])[:MAX_VARIANTE]
         failing = [" ".join(p["gloses"]) + (f" — dans {', '.join(dict.fromkeys(s['glose'] for s in p['signes'] if s['etiquette'] == lab))}"
                                              if args.lettres else "")
                    for p in rec["par_phrase"] if not p["absents"]
-                   and any(s["etiquette"] == lab and s["centile"] is not None and s["centile"] < 0.8 for s in p["signes"])]
+                   and any(s["etiquette"] == lab and s["centile"] is not None
+                           and (args.clips_a_changer or s["centile"] < 0.8) for s in p["signes"])]
+        if args.clips_a_changer and not failing:      # absent du banc : le signe seul
+            failing = selection.get(lab, {}).get("gloses_projet", lab).split()[:1]
         prev = old.get(lab)
-        signs.append({"etiquette": lab, "gloses": " ".join(dict.fromkeys(selection.get(lab, {}).get("gloses_projet", "").split())),
+        signs.append({"etiquette": lab, "limite": lab in limit, "changer": args.clips_a_changer, "gloses": " ".join(dict.fromkeys(selection.get(lab, {}).get("gloses_projet", "").split())),
                       # FS:H = la lettre H de l'alphabet manuel (« FS » : fingerspelling), pas F-S-H
                       "nom": f"Lettre {lab.split(':', 1)[1]} (une seule lettre de l'alphabet manuel)" if is_letter(lab) else "",
                       "actuel": selection.get(lab, {}).get("instance", ""), "seul": w["seul"], "phrases": failing,
-                      "variantes": [f"{l} ({len(v)})" for l, v in sorted(by_label.items())
-                                    if l != lab and l.split(".")[0] == base and len(v) >= 2],
-                      "clips": [{"id": r["id"], "signeur": r["signer"]} for r in clips],
-                      "reponse": {k: prev[k] for k in ("instance", "verdict", "note", "date")} if prev else None})
+                      "variantes": [f"{v} ({len(by_label[v])})" for v in variants],
+                      "clips": [{"id": r["id"], "signeur": r["signer"], "etiquette": r["sign"]} for r in clips],
+                      "reponse": {k: prev[k] for k in ("instance", "verdict", "note", "date")}
+                      | {"etiquette": prev["etiquette_lsfb"] if prev.get("remplace") else ""} if prev else None})
+    if not signs:
+        sys.exit(f"Aucun signe à relire dans {record.name} : plus aucun ne fait échouer de phrase "
+                 f"(hors lettres et signes jugés corrects à l'œil).")
     ready = videos([c["id"] for s in signs for c in s["clips"]])
+    rendered = {} if args.sans_rendu or args.lettres else render(
+        list(dict.fromkeys(p for s in signs for p in s["phrases"])))
     for s in signs:
         s["clips"] = [c | {"video": ready[c["id"]]} for c in s["clips"] if c["id"] in ready]
+        s["phrases"] = [{"texte": p, "video": rendered.get(p, "")} for p in s["phrases"]]
     dump = json.dumps(signs, ensure_ascii=False).replace("</", "<\\/")
-    others = [r for lab, r in old.items() if lab not in {s["etiquette"] for s in signs}]
-    path = HTML_LETTERS if args.lettres else HTML_PATH
-    title = "Relecture des lettres" if args.lettres else "Relecture des clips"
+    others = [r for lab, r in old.items() if lab not in {s["etiquette"] for s in signs}]   # clés : signe relu
+    path = HTML_LETTERS if args.lettres else HTML_CHANGE if args.clips_a_changer else HTML_PATH
+    title = ("Relecture des lettres" if args.lettres else "Clips sources à revoir" if args.clips_a_changer
+             else "Relecture des clips")
+    heading = ("Phrases du banc qui utilisent ce signe (ou le signe seul), jouées par l'avatar avec le clip actuel :"
+               if args.clips_a_changer else "Phrases du banc que ce signe fait échouer, jouées par l'avatar avec le clip actuel :")
     path.write_text(PAGE.replace("__SIGNS__", dump).replace("__AUTRES__", json.dumps(others, ensure_ascii=False).replace("</", "<\\/"))
-                    .replace("__TITRE__", title), encoding="utf-8")
+                    .replace("__TITRE__", title).replace("__PHRASES__", heading).replace("__DEPUIS__", rec["timestamp"]), encoding="utf-8")
     what = "lettres" if args.lettres else "signes"
     print(f"{len(signs)} {what} à relire (record {record.name}), {sum(len(s['clips']) for s in signs)} clips"
           + (f" ; lettres épelées écartées : {', '.join(letters)}" if letters and not args.lettres else ""))

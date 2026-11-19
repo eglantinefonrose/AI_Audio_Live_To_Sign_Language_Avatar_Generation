@@ -176,7 +176,7 @@ def main() -> None:
     if MANUAL.exists():
         with open(MANUAL, newline="", encoding="utf-8-sig") as f:
             manual = {r["etiquette_lsfb"]: r["instance"] for r in csv.DictReader(f)
-                      if r["verdict"] == "choisi" and r["instance"]}
+                      if r["verdict"] in ("choisi", "garder", "avatar", "variante") and r["instance"]}   # garder… : le clip relu reste
 
     rows, missing_raw = [], 0
     for label in sorted(glosses):

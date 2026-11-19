@@ -84,6 +84,17 @@ def vector(j: dict[str, np.ndarray]) -> np.ndarray:
     return np.concatenate(out, axis=1)
 
 
+def hand_vector(j: dict[str, np.ndarray], s: str = "R") -> np.ndarray:
+    """Descripteur (T, D) d'une seule main : orientation et configuration des doigts, même
+    norme moyenne pour les deux groupes (sans bras : pour comparer à des vidéos de la main
+    seule, les lettres filmées de `dataset_generation/data/alphabet/`)."""
+    frame = hand_frame(j, s)
+    orient = np.concatenate([frame[:, 0], frame[:, 2]], 1)
+    shape = np.concatenate([np.einsum("tij,tj->ti", frame, _unit(j[f"hand.{s}.{b}"] - j[f"hand.{s}.{a}"]))
+                            for a, b in SEGMENTS], 1)
+    return np.concatenate([x / np.sqrt(x.shape[1]) for x in (orient, shape)], axis=1)
+
+
 def resample(x: np.ndarray, n: int = LENGTH) -> np.ndarray:
     t = np.linspace(0, len(x) - 1, n)
     k = np.clip(t.astype(int), 0, len(x) - 2) if len(x) > 1 else np.zeros(n, int)
