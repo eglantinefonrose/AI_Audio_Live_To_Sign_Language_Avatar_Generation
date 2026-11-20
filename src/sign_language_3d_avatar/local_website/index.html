@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Avatar LSFB</title>
+<style>
+:root { --bg:#f6f5f2; --card:#ffffff; --ink:#1d1d1f; --mute:#66666c; --line:#e2e0da; --accent:#2457c5;
+        --accent-ink:#ffffff; --ok:#1e6b3a; --warn:#8a5a00; --bad:#b3261e; --chip:#f1efe9; }
+@media (prefers-color-scheme: dark) {
+  :root { --bg:#17171a; --card:#222226; --ink:#ececf0; --mute:#a0a0a8; --line:#34343a; --accent:#8ab4ff;
+          --accent-ink:#0b1a33; --ok:#81c995; --warn:#f3c26b; --bad:#ff8a80; --chip:#2b2b30; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+main { max-width:860px; margin:0 auto; padding:24px 16px 48px; display:flex; flex-direction:column; gap:16px; }
+h1 { font-size:26px; margin:0; }
+.lead { color:var(--mute); margin:4px 0 0; }
+section { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:18px; display:flex;
+          flex-direction:column; gap:12px; }
+h2 { font-size:18px; margin:0; }
+label { font-weight:600; }
+textarea { width:100%; min-height:72px; resize:vertical; font:18px/1.4 ui-monospace, "SF Mono", Menlo, monospace;
+           text-transform:uppercase; padding:10px 12px; border-radius:10px; border:1px solid var(--line);
+           background:var(--bg); color:var(--ink); }
+textarea:focus { outline:2px solid var(--accent); outline-offset:1px; }
+.row { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+label.option { font-weight:400; display:flex; flex-wrap:wrap; gap:4px 8px; align-items:center; cursor:pointer; }
+label.option input { width:18px; height:18px; accent-color:var(--accent); margin:0; }
+button, .button { font:inherit; font-size:15px; border-radius:10px; border:1px solid var(--line); background:var(--card);
+                  color:var(--ink); padding:8px 14px; cursor:pointer; text-decoration:none; display:inline-block; }
+button.primary, .button.primary { background:var(--accent); border-color:var(--accent); color:var(--accent-ink); font-weight:600; }
+button:disabled { opacity:.45; cursor:not-allowed; }
+.small { font-size:13px; padding:4px 10px; }
+.chips { display:flex; flex-wrap:wrap; gap:8px; min-height:10px; }
+.chip { background:var(--chip); border:1px solid var(--line); border-radius:10px; padding:6px 10px; display:flex;
+        flex-direction:column; gap:2px; max-width:100%; }
+.chip b { font-family:ui-monospace, "SF Mono", Menlo, monospace; }
+.chip span { font-size:13px; color:var(--mute); }
+.chip.absent { border-color:var(--bad); }
+.chip.absent span { color:var(--bad); }
+.chip button { margin-top:4px; align-self:flex-start; }
+.legend { font-size:13px; color:var(--mute); display:flex; flex-wrap:wrap; gap:4px 14px; }
+.note { font-size:14px; padding:8px 12px; border-radius:10px; border:1px solid var(--line); }
+.note.warn { border-color:var(--warn); color:var(--warn); }
+.note.bad { border-color:var(--bad); color:var(--bad); }
+.bar { height:10px; border-radius:6px; background:var(--chip); overflow:hidden; }
+.bar div { height:100%; width:0; background:var(--accent); transition:width .3s; }
+video { width:100%; max-width:560px; aspect-ratio:1; border-radius:12px; background:#000; align-self:center; }
+details summary { cursor:pointer; font-weight:600; }
+details ul { margin:8px 0 0; padding-left:20px; }
+table { border-collapse:collapse; font-size:14px; width:100%; }
+td, th { text-align:left; padding:6px 8px; border-top:1px solid var(--line); vertical-align:top; }
+code { font-family:ui-monospace, "SF Mono", Menlo, monospace; font-size:.95em; }
+#vocab-list { max-height:220px; overflow:auto; font:13px/1.8 ui-monospace, "SF Mono", Menlo, monospace; color:var(--mute); }
+#vocab-filter { font:inherit; padding:6px 10px; border-radius:8px; border:1px solid var(--line); background:var(--bg);
+                color:var(--ink); width:100%; max-width:320px; }
+.credit { font-size:13px; color:var(--mute); }
+[hidden] { display:none !important; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Avatar LSFB</h1>
+    <p class="lead">Écrivez une phrase en gloses : l'avatar la signe en langue des signes de Belgique francophone (LSFB).
+      Tout se passe sur cet ordinateur.</p>
+  </header>
+
+  <section>
+    <label for="gloses">1. Votre phrase en gloses</label>
+    <textarea id="gloses" spellcheck="false" autocomplete="off"
+              placeholder="MATIN FRÈRE MOI VOITURE ROUGE ACHETER"></textarea>
+    <div class="row">
+      <span class="credit">Exemples :</span>
+      <button class="small" data-ex="MATIN FRÈRE MOI VOITURE ROUGE ACHETER">Ce matin, mon frère a acheté une voiture rouge.</button>
+      <button class="small" data-ex="TOI CAFÉ VOULOIR QUESTION">Tu veux un café ?</button>
+      <button class="small" data-ex="MOI PHRASE COMPRENDRE NON">Je ne comprends pas cette phrase.</button>
+    </div>
+    <details>
+      <summary>Comment écrire en gloses ?</summary>
+      <ul>
+        <li><b>Majuscules</b>, mots séparés par des espaces.</li>
+        <li><b>Pas de petits mots</b> : pas de « le », « de », « à », « est »…</li>
+        <li><b>Le moment d'abord</b>, puis le lieu, la personne, l'objet, et <b>le verbe à la fin</b>, à l'infinitif (ACHETER, pas « a acheté »).</li>
+        <li><b>Je, tu, il</b> s'écrivent <code>MOI</code>, <code>TOI</code>, <code>LUI</code> (et <code>NOUS</code>, <code>VOUS</code>, <code>EUX</code>).</li>
+        <li><b>Négation</b> : <code>NON</code> après le verbe. <b>Question</b> : le mot de question à la fin (<code>QUOI</code>, <code>OÙ</code>, <code>QUAND</code>…), ou <code>QUESTION</code> pour une question fermée.</li>
+      </ul>
+    </details>
+    <details id="vocab">
+      <summary>Voir les gloses disponibles</summary>
+      <p class="credit">Les noms propres et mots techniques absents de cette liste peuvent être épelés s'ils sont connus de l'outil.</p>
+      <input id="vocab-filter" type="search" placeholder="Chercher une glose…" autocomplete="off">
+      <div id="vocab-list"></div>
+    </details>
+  </section>
+
+  <section>
+    <h2>2. Ce que l'avatar va faire</h2>
+    <div class="legend"><span>✅ signe</span><span>👉 pointage</span><span>🔤 épelé lettre par lettre</span><span>❌ pas de signe : mot affiché</span></div>
+    <div id="chips" class="chips"><span class="credit">Tapez une phrase pour la vérifier.</span></div>
+    <div id="warn-blender" class="note bad" hidden>Blender est introuvable : la vidéo ne peut pas être créée. Installez Blender (voir la notice), puis relancez l'outil.</div>
+    <div id="warn-absent" class="note warn" hidden></div>
+  </section>
+
+  <section>
+    <h2>3. La vidéo</h2>
+    <label class="option"><input type="checkbox" id="sous-titres" checked>
+      Afficher le mot signé en haut à gauche de la vidéo
+      <span class="credit">(décoché : seuls les mots sans signe restent écrits)</span></label>
+    <div class="row">
+      <button id="generer" class="primary" disabled>Générer la vidéo</button>
+      <span id="etat" class="credit"></span>
+    </div>
+    <div id="progress" class="bar" hidden><div></div></div>
+    <div id="erreur" class="note bad" hidden></div>
+    <div id="resultat" hidden>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <video id="video" controls loop playsinline></video>
+        <div class="row" style="justify-content:center">
+          <a id="telecharger" class="button primary" href="#">Télécharger la vidéo</a>
+          <button id="lent">Ralenti</button>
+        </div>
+        <p class="credit">À indiquer si vous partagez la vidéo : « Avatar : Eglantine Fonrose (VRoid Studio) — signes : corpus LSFB
+          (Université de Namur), CC BY-NC-SA 4.0 ». Usage non commercial uniquement.</p>
+      </div>
+    </div>
+  </section>
+
+  <p class="credit">Projet expérimental : il ne remplace pas un interprète. Faites relire les vidéos importantes par une personne qui connaît la LSFB.</p>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const esc = t => String(t).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const ICON = { "signe": "✅", "composé": "✅", "épelé": "🔤", "pointage": "👉", "absent": "❌" };
+let check = { gloses: [], blender: true, max: 40 }, timer = null, polling = null;
+
+function words() { return $("gloses").value.toUpperCase().split(/\s+/).filter(Boolean); }
+
+async function verify() {
+  const text = words().join(" ");
+  if (!text) { check.gloses = []; render(); return; }
+  try {
+    const r = await fetch("/api/verifier?gloses=" + encodeURIComponent(text));
+    check = await r.json();
+  } catch { check = { gloses: [], blender: true, max: 40, horsLigne: true }; }
+  render();
+}
+
+function render() {
+  const g = check.gloses;
+  $("chips").innerHTML = check.horsLigne ? `<span class="note bad">L'outil ne répond pas : vérifiez que sa fenêtre est toujours ouverte.</span>`
+    : !g.length ? `<span class="credit">Tapez une phrase pour la vérifier.</span>`
+    : g.map((x, i) => `<div class="chip ${x.type === "absent" ? "absent" : ""}"><b>${ICON[x.type] || "?"} ${esc(x.glose)}</b>` +
+        `<span>${esc(x.detail)}</span>` +
+        (x.suggestion ? `<button class="small" data-i="${i}" data-s="${esc(x.suggestion)}">Remplacer par ${esc(x.suggestion)}</button>` : "") +
+        `</div>`).join("");
+  const absent = g.filter(x => x.type === "absent").map(x => x.glose);
+  $("warn-absent").hidden = !absent.length;
+  $("warn-absent").textContent = absent.length ? `Sans signe : ${absent.join(", ")}. Ces mots seront seulement affichés à l'écran ; essayez un autre mot si possible.` : "";
+  $("warn-blender").hidden = check.blender !== false;
+  const tooLong = g.length > check.max;
+  if (tooLong) $("etat").textContent = `Phrase trop longue : ${check.max} gloses au plus.`;
+  else if ($("etat").textContent.startsWith("Phrase trop longue")) $("etat").textContent = "";
+  $("generer").disabled = !g.length || tooLong || check.blender === false || !!polling;
+}
+
+$("gloses").addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(verify, 250); });
+document.querySelectorAll("[data-ex]").forEach(b => b.onclick = () => { $("gloses").value = b.dataset.ex; verify(); });
+$("chips").addEventListener("click", e => {
+  const b = e.target.closest("button[data-s]");
+  if (!b) return;
+  const w = words(); w[+b.dataset.i] = b.dataset.s;
+  $("gloses").value = w.join(" "); verify();
+});
+
+$("generer").onclick = async () => {
+  $("erreur").hidden = true; $("resultat").hidden = true;
+  const r = await fetch("/api/generer", { method: "POST", headers: { "Content-Type": "application/json" },
+                                          body: JSON.stringify({ gloses: words().join(" "), sous_titres: $("sous-titres").checked }) });
+  const d = await r.json();
+  if (!r.ok) { showError(d.erreur || "Erreur inconnue."); return; }
+  $("progress").hidden = false; $("progress").firstElementChild.style.width = "0";
+  $("etat").textContent = "Création de la vidéo…";
+  polling = setInterval(() => poll(d.id), 500);
+  render();
+};
+
+async function poll(id) {
+  let d;
+  try { d = await (await fetch("/api/travail/" + id)).json(); } catch { return; }
+  $("progress").firstElementChild.style.width = Math.round((d.avancement || 0) * 100) + "%";
+  if (d.etat === "en attente") $("etat").textContent = "En attente d'un autre rendu…";
+  if (d.etat === "fini" || d.etat === "erreur") {
+    clearInterval(polling); polling = null;
+    $("progress").hidden = true;
+    if (d.etat === "erreur") showError(d.erreur);
+    else {
+      $("etat").textContent = "Vidéo prête.";
+      $("video").src = "/videos/" + d.video;
+      $("video").playbackRate = 1; $("lent").textContent = "Ralenti";
+      $("telecharger").href = `/videos/${d.video}?telecharger=1&nom=${encodeURIComponent(d.nom)}`;
+      $("resultat").hidden = false;
+      $("video").play().catch(() => {});
+    }
+    render();
+  }
+}
+
+function showError(msg) {
+  $("etat").textContent = "";
+  $("erreur").textContent = "La vidéo n'a pas pu être créée. " + msg;
+  $("erreur").hidden = false;
+}
+
+$("lent").onclick = () => {
+  const v = $("video"); v.playbackRate = v.playbackRate === 1 ? 0.5 : 1;
+  $("lent").textContent = v.playbackRate === 1 ? "Ralenti" : "Vitesse normale";
+};
+
+let vocabulary = null;
+$("vocab").addEventListener("toggle", async () => {
+  if (!$("vocab").open || vocabulary) return;
+  vocabulary = await (await fetch("/api/vocabulaire")).json();
+  showVocab();
+});
+$("vocab-filter").addEventListener("input", showVocab);
+function showVocab() {
+  const f = $("vocab-filter").value.trim().toUpperCase();
+  const list = (vocabulary || []).filter(g => !f || g.includes(f));
+  $("vocab-list").textContent = `${list.length} gloses — ` + list.join(" · ");
+}
+</script>
+</body>
+</html>

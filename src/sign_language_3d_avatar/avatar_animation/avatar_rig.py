@@ -12,7 +12,9 @@ Deux avatars :
 - `load_vrm(chemin)` : modèle VRoid Studio (`.vrm`, VRM 0.x ou 1.0), importé par
   l'importeur glTF de Blender (un .vrm est un glTF). La table des os humanoïdes est lue
   dans l'extension VRM du fichier ; aucune extension Blender n'est nécessaire (les
-  matériaux MToon sont simplifiés, suffisant pour des démos).
+  matériaux MToon sont simplifiés, suffisant pour des démos). `sleeveless=True` rend le
+  haut **sans manches** (`remove_sleeves`, pour un modèle dont les manches se font traverser
+  par les bras, comme `lsfb_avatar.vrm`) ; le fichier n'est pas modifié ;
 
 Noms d'os humanoïdes = ceux de la norme VRM (`leftUpperArm`, `rightIndexProximal`…).
 Côté signeur : « L » = gauche du signeur = `left` de l'avatar.
@@ -24,6 +26,7 @@ import math
 import struct
 from pathlib import Path
 
+import bmesh
 import bpy
 import numpy as np
 from mathutils import Matrix, Vector
@@ -164,7 +167,45 @@ def vrm_humanoid(path: Path) -> tuple[dict[str, str], int]:
     raise ValueError(f"{path} : pas d'extension VRM (VRMC_vrm ou VRM)")
 
 
-def load_vrm(path: Path) -> tuple[bpy.types.Object, dict[str, str], int]:
+def remove_sleeves(arm, objects, mapping: dict[str, str]) -> int:
+    """Haut sans manches : dans les vêtements du haut (matériaux VRoid « Tops »), découpe
+    une emmanchure de débardeur et retire ce qui est au-delà : au-dessus de l'aisselle et plus
+    loin que l'articulation de l'épaule. La manche, mal attachée au bras, se faisait traverser
+    par lui ; la peau du bras est dessous. Le maillage est coupé le long des plans (bord net)
+    et le bas du haut, plus large que les épaules, est gardé. Renvoie le nombre de faces retirées."""
+    # Pose de repos (en T) : têtes des bras ; emmanchure 2 cm à l'intérieur, jusqu'à 10 cm sous elles.
+    heads = [arm.matrix_world @ arm.data.bones[mapping[h]].head_local
+             for h in ("leftUpperArm", "rightUpperArm") if h in mapping]
+    if not heads:
+        return 0
+    edge, armpit = min(abs(h.x) for h in heads) - 0.02, min(h.z for h in heads) - 0.10
+    removed = 0
+    for ob in objects:
+        if ob.type != "MESH":
+            continue
+        me = ob.data
+        tops = {i for i, m in enumerate(me.materials) if m and "Tops" in m.name}
+        if not tops:
+            continue
+        bm = bmesh.new()
+        bm.from_mesh(me)
+        bm.transform(ob.matrix_world)                     # coupes dans le repère du monde
+        cuts = [((edge, 0, 0), (1, 0, 0)), ((-edge, 0, 0), (1, 0, 0)), ((0, 0, armpit), (0, 0, 1))]
+        for co, no in cuts:
+            faces = [f for f in bm.faces if f.material_index in tops]
+            geom = faces + list({e for f in faces for e in f.edges}) + list({v for f in faces for v in f.verts})
+            bmesh.ops.bisect_plane(bm, geom=geom, plane_co=co, plane_no=no)
+        doomed = [f for f in bm.faces if f.material_index in tops
+                  and (c := f.calc_center_median()).z > armpit and abs(c.x) > edge]
+        bmesh.ops.delete(bm, geom=doomed, context="FACES")
+        bm.transform(ob.matrix_world.inverted())
+        bm.to_mesh(me)
+        bm.free()
+        removed += len(doomed)
+    return removed
+
+
+def load_vrm(path: Path, sleeveless: bool = False) -> tuple[bpy.types.Object, dict[str, str], int]:
     mapping, version = vrm_humanoid(path)
     before = set(bpy.data.objects)
     bpy.ops.import_scene.gltf(filepath=str(path))
@@ -181,6 +222,8 @@ def load_vrm(path: Path) -> tuple[bpy.types.Object, dict[str, str], int]:
             o.rotation_mode = "XYZ"
             o.rotation_euler.z += math.pi
         bpy.context.view_layer.update()
+    if sleeveless:
+        remove_sleeves(arm, new, mapping)
     return arm, mapping, version
 
 
