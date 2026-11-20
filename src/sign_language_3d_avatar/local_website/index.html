@@ -36,6 +36,11 @@ input.comment { width:100%; border-radius:8px; border:1px solid var(--line); bac
 .problemes { display:flex; flex-wrap:wrap; gap:6px 14px; font-size:14px; }
 .problemes label { font-weight:400; display:flex; gap:6px; align-items:center; cursor:pointer; }
 #avis-liste { display:flex; flex-direction:column; gap:8px; }
+#avis-etat.ok { color:var(--ok); font-weight:600; }
+#avis-etat.bad { color:var(--bad); }
+.spinner { display:inline-block; width:12px; height:12px; margin-right:6px; vertical-align:-1px; border-radius:50%;
+           border:2px solid currentColor; border-right-color:transparent; animation:tourne .8s linear infinite; }
+@keyframes tourne { to { transform:rotate(360deg); } }
 label.option { font-weight:400; display:flex; flex-wrap:wrap; gap:4px 8px; align-items:center; cursor:pointer; }
 label.option input { width:18px; height:18px; accent-color:var(--accent); margin:0; }
 button, .button { font:inherit; font-size:15px; border-radius:10px; border:1px solid var(--line); background:var(--card);
@@ -165,6 +170,7 @@ const ICON = { "signe": "✅", "composé": "✅", "épelé": "🔤", "pointage":
 let check = { gloses: [], blender: true, max: 40 }, timer = null, polling = null;
 let current = null, avis = [], segEnd = null;     // phrase de la vidéo affichée, avis sur ses signes
 let sendsToTeam = false;                          // avis envoyés au tableau de l'équipe (config.json)
+let sending = false;                              // envoi en cours : bouton bloqué
 
 function words() { return $("gloses").value.toUpperCase().split(/\s+/).filter(Boolean); }
 
@@ -263,7 +269,7 @@ const KIND = { "épelé": " (épelé)", "pointage": " (pointage)" };
 
 function showFeedback() {
   avis = current.segments.map(() => ({ verdict: null, problemes: new Set(), commentaire: "" }));
-  $("avis-commentaire").value = ""; $("avis-etat").textContent = ""; $("avis-mail").hidden = true;
+  $("avis-commentaire").value = ""; sending = false; sendState(sendLabel()); $("avis-mail").hidden = true;
   $("avis-liste").innerHTML = current.segments.length ? current.segments.map((s, i) => `<div class="avis" data-i="${i}">
       <div class="avis-tete"><button class="small" data-rejouer="${i}" title="Revoir ce signe">▶</button>
         <b>${esc(s.glose)}<span class="credit">${KIND[s.type] || ""}</span></b>
@@ -278,7 +284,13 @@ function showFeedback() {
 
 function updateSend() {
   const any = avis.some(a => a.verdict) || $("avis-commentaire").value.trim();
-  $("avis-envoyer").disabled = !any;
+  $("avis-envoyer").disabled = sending || !any;
+}
+
+function sendState(label, status = "", cls = "") {   // bouton et message à côté
+  $("avis-envoyer").innerHTML = label;
+  $("avis-etat").innerHTML = status;
+  $("avis-etat").className = "credit " + cls;
 }
 
 $("avis-liste").addEventListener("click", e => {
@@ -305,8 +317,10 @@ $("avis-liste").addEventListener("input", e => {
 });
 $("avis-commentaire").addEventListener("input", changed);
 function changed() {                               // avis modifié : à réenregistrer
-  $("avis-etat").textContent = ""; $("avis-mail").hidden = true; updateSend();
+  if (sending) return;
+  sendState(sendLabel()); $("avis-mail").hidden = true; updateSend();
 }
+const sendLabel = () => sendsToTeam ? "Enregistrer et envoyer mon avis" : "Enregistrer mon avis";
 
 function playSegment(i) {                          // revoir un seul signe, puis pause
   const s = current.segments[i], v = $("video");
@@ -323,20 +337,31 @@ $("avis-envoyer").onclick = async () => {
   const body = { gloses: current.gloses, sous_titres: current.sous_titres, commentaire: $("avis-commentaire").value,
                  avis: avis.map((a, i) => ({ i, verdict: a.verdict, problemes: [...a.problemes],
                                              commentaire: a.commentaire })).filter(a => a.verdict) };
+  // Tout de suite : bouton bloqué et « en cours » (l'envoi au tableau prend quelques secondes).
+  sending = true; $("avis-envoyer").disabled = true; $("avis-mail").hidden = true;
+  sendState(`<span class="spinner"></span>${sendsToTeam ? "Envoi en cours…" : "Enregistrement…"}`,
+            sendsToTeam ? "Envoi de votre avis à l'équipe…" : "Enregistrement de votre avis…");
+  let d;
   try {
-    const d = await (await fetch("/api/avis", { method: "POST", headers: { "Content-Type": "application/json" },
-                                                body: JSON.stringify(body) })).json();
-    $("avis-etat").textContent = d.envoye ? `Merci ! Avis envoyé à l'équipe du projet (${d.enregistres} signe(s) jugé(s)).`
-      : d.envoye === false ? `Avis enregistré sur cet ordinateur, mais l'envoi à l'équipe a échoué (pas de connexion Internet ?). ` +
-                             `Vous pouvez l'envoyer par e-mail : votre messagerie s'ouvre avec le message prêt.`
-      : `Merci ! Avis enregistré (${d.enregistres} signe(s) jugé(s)). Pour nous l'envoyer, cliquez sur ` +
-        `« Envoyer cet avis par e-mail » : votre messagerie s'ouvre avec le message prêt.`;
-    $("avis-envoyer").disabled = true;
-    const text = d.texte.length > 1800 ? d.texte.slice(0, 1800) + "\n[…] (avis tronqué : joignez le fichier CSV des avis)" : d.texte;
-    $("avis-mail").href = mailto(`Avis Avatar LSFB — ${current.gloses.slice(0, 80)}`, "Bonjour,\n\nVoici mon avis sur les signes de l'avatar :\n\n" + text + "\n");
-    $("avis-mail").hidden = !!d.envoye;
-    showTotal(d.n);
-  } catch { $("avis-etat").textContent = "L'avis n'a pas pu être enregistré : l'outil ne répond pas."; }
+    d = await (await fetch("/api/avis", { method: "POST", headers: { "Content-Type": "application/json" },
+                                          body: JSON.stringify(body) })).json();
+  } catch {                                       // rien n'a été enregistré : on peut réessayer
+    sending = false;
+    sendState(sendLabel(), "L'avis n'a pas pu être enregistré : l'outil ne répond pas (sa fenêtre est-elle ouverte ?). Réessayez.", "bad");
+    updateSend();
+    return;
+  }
+  sending = false;
+  if (d.envoye) sendState("✓ Avis envoyé", `✓ Merci ! Avis envoyé à l'équipe du projet (${d.enregistres} signe(s) jugé(s)).`, "ok");
+  else if (d.envoye === false) sendState("Avis enregistré", "Avis enregistré sur cet ordinateur, mais l'envoi à l'équipe a échoué " +
+    "(pas de connexion Internet ?). Vous pouvez l'envoyer par e-mail : votre messagerie s'ouvre avec le message prêt.", "bad");
+  else sendState("✓ Avis enregistré", `✓ Merci ! Avis enregistré (${d.enregistres} signe(s) jugé(s)). Pour nous l'envoyer, cliquez sur ` +
+    "« Envoyer cet avis par e-mail » : votre messagerie s'ouvre avec le message prêt.", "ok");
+  $("avis-envoyer").disabled = true;
+  const text = d.texte.length > 1800 ? d.texte.slice(0, 1800) + "\n[…] (avis tronqué : joignez le fichier CSV des avis)" : d.texte;
+  $("avis-mail").href = mailto(`Avis Avatar LSFB — ${current.gloses.slice(0, 80)}`, "Bonjour,\n\nVoici mon avis sur les signes de l'avatar :\n\n" + text + "\n");
+  $("avis-mail").hidden = !!d.envoye;
+  showTotal(d.n);
 };
 
 function showTotal(n) {
@@ -349,7 +374,7 @@ function showTotal(n) {
 }
 fetch("/api/avis").then(r => r.json()).then(d => {
   sendsToTeam = d.envoi;
-  if (sendsToTeam) { $("avis-envoyer").textContent = "Enregistrer et envoyer mon avis"; $("avis-note").hidden = false; }
+  if (sendsToTeam) { $("avis-envoyer").textContent = sendLabel(); $("avis-note").hidden = false; }
   showTotal(d.n);
 }).catch(() => {});
 
