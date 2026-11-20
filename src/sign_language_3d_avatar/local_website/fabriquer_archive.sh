@@ -24,7 +24,8 @@ cd "$ROOT"
 mkdir -p "$OUT/$A/local_website" "$OUT/$A/avatar_animation/data/dictionnaire" "$OUT/src/lsf_translator"
 cp "$A/local_website/serveur.py" "$A/local_website/index.html" "$A/local_website/NOTICE.md" \
    "$A/local_website/Installer.command" "$A/local_website/Installer.bat" \
-   "$A/local_website/Avatar LSFB.command" "$A/local_website/Avatar LSFB.bat" "$OUT/$A/local_website/"
+   "$A/local_website/Avatar LSFB.command" "$A/local_website/Avatar LSFB.bat" "$A/local_website/config.json" \
+   "$OUT/$A/local_website/"
 cp "$A/avatar_animation/sequence.py" "$A/avatar_animation/pose3d.py" "$A/avatar_animation/avatar_rig.py" \
    "$A/avatar_animation/demo_phrase_blender.py" "$OUT/$A/avatar_animation/"
 cp "$A/avatar_animation/data/$AVATAR" "$OUT/$A/avatar_animation/data/"
@@ -38,5 +39,7 @@ perl -0pe 's/\A<!--.*?-->\s*//s' "$A/local_website/NOTICE.md" > "$OUT/NOTICE.md"
 mkdir -p "$DIST"
 rm -f "$DIST/avatar-lsfb.zip"
 (cd "$WORK" && ditto -c -k --keepParent avatar-lsfb "$DIST/avatar-lsfb.zip")
+grep -q '"url_avis": *"http' "$A/local_website/config.json" \
+  || echo "⚠️  config.json sans url_avis : les avis ne seront pas envoyés au tableau (voir GOOGLE_SHEETS.md)."
 echo "Archive : $DIST/avatar-lsfb.zip ($(du -h "$DIST/avatar-lsfb.zip" | cut -f1)) ;" \
      "$(ls "$OUT/$A/avatar_animation/data/dictionnaire/signes" | wc -l | tr -d ' ') signes, avatar $AVATAR"

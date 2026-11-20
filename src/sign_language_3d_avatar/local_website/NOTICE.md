@@ -4,6 +4,8 @@ Outil : serveur.py (serveur local), index.html (la page), lanceurs Installer.* e
 « Avatar LSFB.* » ; ceux de racine_archive/ sont mis à la racine de l'archive et appellent
 ceux de ce dossier. Archive : bash fabriquer_archive.sh -> dist/avatar-lsfb.zip (ignoré par
 git : contient le dictionnaire dérivé de LSFB et l'avatar). Lanceurs Windows non testés.
+Avis envoyés au tableau Google Sheets de config.json (url_avis) : mise en place dans
+GOOGLE_SHEETS.md ; tant que url_avis est vide, l'étape 9 propose seulement l'e-mail.
 Avant de publier l'archive (Release GitHub), réexporter avatar_sign_4.vrm depuis VRoid Studio
 en autorisant la redistribution et l'usage par tout le monde (aujourd'hui : auteur seulement,
 redistribution interdite).
@@ -58,7 +60,8 @@ peut apparaître : faites de même.
 - Une fenêtre (Terminal sur Mac) s'ouvre : **laissez-la ouverte** tant que vous utilisez
   l'outil, c'est elle qui fait le travail.
 - Votre navigateur (Safari, Chrome, Edge…) affiche la page de l'outil. Si elle ne s'ouvre pas
-  toute seule, tapez dans la barre d'adresse : **`http://localhost:8000`**.
+  toute seule, tapez dans la barre d'adresse l'adresse affichée dans la fenêtre (en général
+  **`http://localhost:8000`**).
 
 ## 4. Écrire la phrase en gloses
 
@@ -113,7 +116,30 @@ Cliquez sur **« Télécharger »**. La vidéo (fichier **`.mp4`**) est enregist
 dossier **Téléchargements**. Vous pouvez la lire avec n'importe quel lecteur vidéo, et la
 partager dans le respect de la licence (voir plus bas).
 
-## 9. Fermer l'outil
+## 9. Donner votre avis sur les signes (facultatif, mais très utile)
+
+Sous la vidéo, la section **« 4. Votre avis sur les signes »** liste chaque signe de la phrase.
+
+1. Cliquez sur **▶** devant un signe pour le revoir seul.
+2. Dites s'il est **✅ Correct**, **⚠️ À revoir** ou **❌ Mauvais**. Cliquez à nouveau pour
+   annuler.
+3. S'il n'est pas correct, cochez ce qui ne va pas (forme de la main, emplacement,
+   mouvement, orientation de la paume, mauvais signe…) et, si possible, précisez ce qu'il
+   faudrait changer.
+4. Ajoutez si vous le voulez un commentaire sur la phrase entière, puis cliquez sur
+   **« Enregistrer et envoyer mon avis »**.
+
+Votre avis est gardé sur votre ordinateur et **envoyé à l'équipe du projet** pour l'aider à
+corriger l'avatar (connexion Internet nécessaire). Il contient la phrase, vos réponses et vos
+commentaires, mais ni votre nom ni votre adresse.
+
+Si l'envoi échoue (pas de connexion Internet, par exemple), la page vous propose
+**« ✉️ Envoyer cet avis par e-mail »** : votre messagerie s'ouvre avec un message déjà rédigé
+pour **feedback@aispeechtosignlanguage.fr**. Si aucune messagerie ne s'ouvre (webmail),
+écrivez directement à cette adresse. En bas de la page, **« Télécharger tous les avis
+(CSV) »** récupère tous vos avis dans un fichier qui s'ouvre dans un tableur.
+
+## 10. Fermer l'outil
 
 Fermez l'onglet du navigateur, puis la fenêtre ouverte à l'étape 3.
 
@@ -121,7 +147,8 @@ Fermez l'onglet du navigateur, puis la fenêtre ouverte à l'étape 3.
 
 | Problème | Que faire |
 |---|---|
-| La page ne s'ouvre pas | Vérifiez que la fenêtre de l'étape 3 est ouverte, puis tapez `http://localhost:8000` dans le navigateur |
+| La page ne s'ouvre pas | Vérifiez que la fenêtre de l'étape 3 est ouverte, puis tapez dans le navigateur l'adresse qu'elle affiche (en général `http://localhost:8000`) |
+| « Avatar LSFB est déjà ouvert » | L'outil tourne déjà dans une autre fenêtre : utilisez la page déjà ouverte, et fermez cette fenêtre-ci |
 | « Blender introuvable » | Installez Blender (étape 1). Sur Mac, il doit être dans le dossier **Applications** |
 | Un mot est marqué ❌ | Ce signe n'existe pas encore dans l'outil : reformulez avec un autre mot |
 | La vidéo ne se crée pas | Fermez la fenêtre de l'étape 3 et le navigateur, puis relancez l'outil (étape 3) |
