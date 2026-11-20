@@ -41,7 +41,7 @@ TIME_MARKERS = {"AVANT", "BIENTÔT"}
 EXPLICIT_TIME = {
     "hier": "HIER", "demain": "DEMAIN", "aujourd'hui": "AUJOURD'HUI",
     "maintenant": "MAINTENANT", "matin": "MATIN", "soir": "SOIR",
-    "week-end": "WEEK-END", "midi": "MIDI", "nuit": "NUIT",
+    "week-end": "WEEK-END", "après-midi": "APRÈS-MIDI", "midi": "MIDI", "nuit": "NUIT",
     "yesterday": "HIER", "tomorrow": "DEMAIN", "today": "AUJOURD'HUI",
 }
 CONNECTOR_END = ("pour finir", "pour conclure", "en conclusion", "pour terminer")
@@ -49,6 +49,8 @@ TECH_TERMS = {
     "dataset": "DATASET", "fine tuning": "FINE-TUNING", "fine-tuning": "FINE-TUNING",
     "random forest": "RANDOM-FOREST", "machine learning": "MACHINE-LEARNING",
     "deep learning": "DEEP-LEARNING", "camembert": "CAMEMBERT",
+    "batch size": "BATCH-SIZE", "learning rate": "LEARNING-RATE",
+    "validation loss": "VALIDATION-LOSS", "hugging face": "HUGGING-FACE",
 }
 # Possessif source -> pointage attendu après le nom.
 POSS_SRC = {"mon": "MOI", "ma": "MOI", "mes": "MOI", "ton": "TOI", "ta": "TOI",
@@ -65,6 +67,8 @@ IMPERSONAL = re.compile(
     r"est (temps|tard|tôt|\w+ de)|a plu|a neigé|a fait|va (pleuvoir|neiger|faire))\b", re.I)
 # Passé composé (avoir + participe, ou être + participe de mouvement).
 PAST_RE = re.compile(
+    r"\b(ai|as|a|avons|avez|ont)-(t-)?(je|tu|il|elle|on|nous|vous|ils|elles)\s+"
+    r"\w+(é|ée|és|ées|i|is|it|u|ue|us)\b|"
     r"\b(j'ai|ai|as|a|avons|avez|ont)\s+((pas|plus|jamais|déjà|bien|beaucoup|encore|rien|tout)\s+)?"
     r"(?!(du|un|une|des|de|le|la|les|au|aux|deux|trois|six|dix|cent|mille|"
     r"beaucoup|peu|assez|trop|faim|soif|froid|chaud|peur|besoin|envie|raison|tort)\b)\w+(é|ée|és|ées|i|is|it|u|ue|us|ert|ort|eint|ait)\b|"
@@ -77,6 +81,8 @@ FUTURE_RE = re.compile(
     r"\b\w{2,}(erai|eras|era|erons|erez|eront|irai|iras|ira|irons|irez|iront|"
     r"rrai|rras|rra|rrons|rrez|rront|drai|dras|dra|drons|drez|dront)\b|"
     r"\b(aurai|auras|aura|aurons|aurez|auront)\b|"
+    r"\b(irai|iras|ira|irons|irez|iront|ferai|feras|fera|ferons|ferez|feront|"
+    r"serai|seras|sera|serons|serez|seront)\b|"
     r"\b(vais|vas|va|allons|allez|vont)\s+((vous|te|me|le|la|les|lui|leur|nous|t'|m')\s*)?"
     r"\w+(er|ir|re|oir)\b", re.I)
 NOT_FUTURE = {"entre", "notre", "votre", "autre", "contre", "être", "lire", "écrire",
@@ -93,7 +99,7 @@ def _strip(s: str) -> str:
 # Repères de temps non glosables en un signe isolé : leur présence dispense de
 # AVANT/BIENTÔT (on ne sait pas les remplacer, mais on n'en ajoute pas).
 OTHER_TIME_RE = re.compile(r"tout à l'heure|\bdans \w+ (jours?|semaines?|mois|ans?)\b|"
-                           r"\b(semaine|année|mois) (prochaine?|dernière?)\b|"
+                           r"\b(semaine|année|mois|an|week-end) (prochaine?|derni(?:er|ère)|passée?)\b|"
                            r"\b(lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche)\b|"
                            r"\bbientôt\b|\bdéjà\b|\b\w+ heures?\b")
 NEAR_FUTURE_RE = re.compile(r"\b(vais|vas|va|allons|allez|vont)\s+((vous|te|me|le|la|les|lui|leur|nous|t'|m')\s*)?"
@@ -103,7 +109,8 @@ NEAR_FUTURE_RE = re.compile(r"\b(vais|vas|va|allons|allez|vont)\s+((vous|te|me|l
 def explicit_times(text: str) -> set[str]:
     """Gloses des temps explicites de la phrase (HIER, DEMAIN, SOIR…)."""
     low = text.lower()
-    return {gl for w, gl in EXPLICIT_TIME.items() if re.search(rf"\b{re.escape(w)}\b", low)}
+    # (?<!-) : « après-midi » n'est pas « midi »
+    return {gl for w, gl in EXPLICIT_TIME.items() if re.search(rf"(?<![\w-]){re.escape(w)}\b", low)}
 
 
 def implicit_time(text: str) -> str | None:
@@ -180,6 +187,9 @@ def check(text: str, glosses: list[str]) -> list[str]:
 
     # 7. Temps : explicite gardé, pas de AVANT/BIENTÔT en plus, temps en tête
     explicit = explicit_times(text)
+    # Vocabulaire LSFB : un temps peut se signer autrement (MAINTENANT -> AUJOURD'HUI).
+    from src.lsf_translator.lsfb import to_lsfb
+    explicit = {gl if gl in g else next((e for e in to_lsfb(gl) if e in g), gl) for gl in explicit}
     for gl in explicit:
         if gl not in g:
             errs.append(f"temps explicite non gardé ({gl})")
@@ -241,9 +251,16 @@ def check(text: str, glosses: list[str]) -> list[str]:
     src_up = {t.upper() for t in re.findall(r"[\wÀ-ÿ'\-]+", text)}
     for x in g:
         for t in src_up:
-            if x != t and _strip(x) == _strip(t):
+            if x != t and _strip(x) == _strip(t) and not _lsfb_label(x):
                 errs.append(f"accents modifiés « {x} » (source « {t} »)")
     return errs
+
+
+def _lsfb_label(x: str) -> bool:
+    """Glose écrite comme l'étiquette du vocabulaire LSFB (LEGUMES, FORET, AGE) : ses
+    accents ne sont pas une faute."""
+    from src.lsf_translator.lsfb import vocab
+    return x in vocab()
 
 
 def check_rows(rows: list[tuple[str, list[str]]]) -> list[tuple[str, list[str], list[str]]]:
@@ -258,14 +275,23 @@ def _report(name: str, rows: list[tuple[str, list[str]]]) -> int:
     return len(bad)
 
 
+def source_text(messages: list[dict]) -> str:
+    """Phrase source d'un exemple au format chat, quel que soit le format : avec ou sans
+    message système (Gemma : règles fusionnées dans le message utilisateur), avec ou
+    sans indications du vocabulaire LSFB après la phrase."""
+    user = [m for m in messages if m["role"] == "user"][-1]["content"]
+    line = next(l for l in user.splitlines() if l.startswith("Phrase à transcrire"))
+    return re.search(r'"(.*)"\s*$', line).group(1)
+
+
 def _load_jsonl(path: Path) -> list[tuple[str, list[str]]]:
     rows = []
     for line in path.read_text(encoding="utf-8").splitlines():
         if line.strip():
             r = json.loads(line)
             if "messages" in r:   # format chat (train/valid)
-                text = re.search(r'"(.*)"\s*$', r["messages"][1]["content"]).group(1)
-                rows.append((text, json.loads(r["messages"][2]["content"])["glosses"]))
+                text = source_text(r["messages"])
+                rows.append((text, json.loads(r["messages"][-1]["content"])["glosses"]))
             else:
                 rows.append((r["text"], r["glosses"]))
     return rows

@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "avatar-lsfb",
+      "runtimeExecutable": "uv",
+      "runtimeArgs": ["run", "--quiet", "--no-project", "--python", "3.12", "--with", "numpy", "python",
+                      "src/sign_language_3d_avatar/local_website/serveur.py", "--port", "8000"],
+      "port": 8000
+    }
+  ]
+}

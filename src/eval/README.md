@@ -42,6 +42,7 @@ du pipeline, pas un prompt approché.
 | **F1** | recouvrement lexical (multiset) : bon **choix** des gloses, indépendamment de l'ordre. Détecte les gloses en trop (mots-outils) ou manquantes. |
 | **ordre** | plus longue sous-séquence commune / longueur de la référence : respect de l'**ordre**. |
 | **fuites** | nb de phrases contenant une glose « mot-outil » interdite (`DE`, `DANS`, `POUR`, `LE`…), qui ne devrait jamais apparaître en LSF. |
+| **couverture LSFB** | part des gloses produites **jouables par l'avatar** (signe LSFB ou pointage, cf. CONVENTIONS.md §13) ; le reste sera épelé. Calculée pour tous les runs (colonne « Couv. LSFB » de `RESULTS.md`, recalculée depuis les sorties pour les anciens). |
 
 Une **ventilation par phénomène** (étiquettes du dataset) indique quelle classe
 de règle régresse ou progresse (ex. `negation`, `connecteur`, `lexique-direct`).
@@ -91,6 +92,17 @@ Cela produit **trois** choses :
 > `git*` (étoile) dans le tableau = le run a été lancé avec des modifications
 > non commitées. Commite le prompt **et** le record ensemble pour garder le lien
 > « cette version = ces résultats ».
+
+### Graphique des performances
+
+```bash
+uv run python -m src.eval.graphique --ouvrir                 # tous les runs
+uv run python -m src.eval.graphique --dataset a77bfbad8a13   # un seul dataset d'éval
+```
+
+Écrit `eval/graphique_resultats.html` (page autonome) : une barre par run, groupée et
+colorée par dataset d'éval, avec le modèle et la méthode en abscisse ; mesure au choix
+(exactitude, F1, ordre, couverture LSFB), infobulle au survol et tableau de détail.
 
 ### Comparer deux runs
 
@@ -151,6 +163,42 @@ Garde-fou sans LLM : `python -m lsf_translator.postprocess` applique les règles
 aux gloses de RÉFÉRENCE (train + dev) et doit n'en modifier aucune. Le lexique
 (`lsf_translator/lexicon.txt`) vient du seul split train :
 `python -m lsf_translator.lexicon finetune/data/<sha>`.
+
+### Vocabulaire LSFB
+
+Le projet signe en **LSFB** (CONVENTIONS.md §13) : une glose n'est jouable par l'avatar
+que si elle a un signe LSFB (`src/lsf_translator/lsfb.py`). Deux options :
+
+| Option | Effet | Quand |
+| --- | --- | --- |
+| `--vocab-lsfb` | les gloses produites sont ramenées au vocabulaire jouable (`PÈRE` → `PAPA`, `MAINTENANT` → `AUJOURD'HUI`…), après le post-traitement s'il est actif ; **le prompt ne change pas** | **recommandé** |
+| `--indices-lsfb` | chaque message utilisateur indique les signes LSFB disponibles pour la phrase (ordre alphabétique), les mots à garder tels quels (termes techniques, noms propres) et les mots sans signe | seulement pour un modèle **entraîné avec** ces indications |
+
+```bash
+uv run python -m src.eval.evaluate --model lsf-gemma9b:v1 --few-shot-cible --postprocess --vocab-lsfb --save --label "…"
+```
+
+Mesuré sur le gold LSFB (`a77bfbad8a13`) avec `lsf-gemma9b:v1` (prod + few-shot ciblé +
+post-traitement) : sans vocabulaire, 51 % exactes, F1 0,893, couverture 85 % ;
+`--vocab-lsfb` seul : 69 %, F1 0,952, couverture 90 % ; les premières indications
+dans le prompt faisaient chuter le modèle (49 %, il ne les avait jamais vues).
+**Post-traitement v3 + `--vocab-lsfb` : 76 % (56/74), F1 0,980, ordre 0,943** (dev :
+29 → 40/45). Règles ajoutées, réglées sur le dev : glose inventée remplacée par le mot
+de la phrase qui manque (VOITURE pour « veux »), attribut au masculin (POLLUÉ, CLAIR),
+TOI/VOUS selon la phrase, bloc de temps en tête (`ANNÉE-PROCHAINE`, `LUNDI-DERNIER`,
+`MINUTE CINQ`, jours, temps explicite oublié réinséré, `CHAQUE` retiré), nombre après le
+nom et ses adjectifs (réinséré s'il manque), lieu juste après le temps (`NICE`, `ICI`),
+directionnels de communication (`PARLER-À-TOI`, `RACONTER-À-EUX`).
+
+La colonne « Méthode » affiche `vocabulaire-lsfb (<hash>)` / `indices-lsfb (<hash>)`,
+hash du vocabulaire, des synonymes et du code. En prod : `config.py:
+OllamaConfig.vocabulaire_lsfb` (et `vocabulaire_lsfb_indices`).
+
+Le gold (`dataset.jsonl`, `dev.jsonl`) est au vocabulaire LSFB depuis le dataset éval
+`a77bfbad8a13` (16 phrases converties) : **ne compare que des runs de même « Dataset
+éval »** — un run sur `aa78d1a41ef9` (gold LSF) n'est pas comparable. Garde-fou :
+`python -m src.lsf_translator.postprocess --lsfb <fichiers>` ne doit modifier aucune
+référence.
 
 ### Few-shot dynamique
 

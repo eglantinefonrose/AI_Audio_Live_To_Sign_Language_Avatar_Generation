@@ -11,15 +11,15 @@ LSFB : CC BY-NC-SA 4.0).
 
 | Étape | Script | Ce qu'il fait |
 |---|---|---|
-| 1. Choix | `dataset_generation/select_examples.py` | parmi ~10 exemples par signe, garde le meilleur : mains détectées (poses brutes), tremblement, durée proche de la médiane → `selection.csv` |
+| 1. Choix | `dataset_generation/select_examples.py` | parmi ~20 exemples par signe, garde le mieux reconnu par les autres signeurs de la moitié « choix » (à défaut : mains détectées, tremblement, durée) → `selection.csv` |
 | 2. Nettoyage | `clean_signs.py` | droitier (clips gauchers retournés), sauts corrigés, lissage léger, immobilités du début et de la fin coupées, articulations 3D → `signes/*.npz` |
-| 3. Index | `sequence.py index` | chaque glose du projet → signe, pointage généré ou mot affiché → `index.json` |
+| 3. Index | `sequence.py index` | chaque glose du projet → signe, composé (signes à la suite), mot épelé (lettres), pointage généré ou mot affiché → `index.json` |
 | 4. Avatar | `build_dictionary_blender.py` | une action Blender par signe sur l'avatar → `dictionnaire_<avatar>.blend` et `.glb` |
-| 5. Phrase | `demo_phrase_blender.py` (via `tester_phrase_lsfb.py`) | repos, transitions de 0,24 s, signes, pointages, sous-titres → `.mp4` |
+| 5. Phrase | `demo_phrase_blender.py` (via `tester_phrase_lsfb.py`) | repos, transitions de 0,24 s (0,12 s entre deux lettres), signes, lettres, pointages, sous-titres → `.mp4` |
 
 ```bash
-# poses (nettoyées + brutes) de 10 exemples par signe (≈ 30 Mo)
-uv run python src/sign_language_3d_avatar/dataset_generation/lsfb_subset.py download --words-file src/sign_language_3d_avatar/dataset_generation/lsfb_words.txt --max-par-glose 10 --landmarks pose,left_hand,right_hand --raw
+# poses (nettoyées + brutes) de 20 exemples par signe (≈ 60 Mo)
+uv run python src/sign_language_3d_avatar/dataset_generation/lsfb_subset.py download --words-file src/sign_language_3d_avatar/dataset_generation/lsfb_words.txt --max-par-glose 20 --landmarks pose,left_hand,right_hand --raw
 uv run python src/sign_language_3d_avatar/dataset_generation/select_examples.py
 uv run python src/sign_language_3d_avatar/avatar_animation/clean_signs.py
 uv run python src/sign_language_3d_avatar/avatar_animation/sequence.py index
@@ -41,9 +41,11 @@ matériaux MToon sont simplifiés (rendu Workbench), suffisant pour des démos.
 - pointages `MOI`, `TOI`, `LUI` (fixes) et `NOUS`, `VOUS`, `EUX` (balayage) : générés, main
   droite index tendu (LSFB-ISOL ne fournit pas de clip de pointage) ;
 - verbes directionnels (`AIDER-À-TOI`) : forme de base du verbe, sans orientation ;
-- 173 gloses sans signe (termes techniques, noms propres, synonymes non retenus) : mot
-  affiché en sous-titre, mains au repos. LSFB-ISOL n'a pas d'alphabet manuel complet,
-  donc pas d'épellation ;
+- mots épelés (42 noms propres et termes techniques, choisis à la relecture) : lettres de
+  l'alphabet manuel LSFB (`FS:A`…`FS:Z`), dont on garde la partie centrale (0,4 s au plus).
+  Les lettres sont tirées de conversations, et `K` et `Q` n'ont qu'un seul clip : à vérifier ;
+- 91 gloses sans signe (aucun signe LSFB convenable à la relecture) : mot affiché en
+  sous-titre, mains au repos ;
 - pas de visage dans cette version.
 
 **Limites** : clips tirés de conversations spontanées (gestes parfois bas ou réduits),
