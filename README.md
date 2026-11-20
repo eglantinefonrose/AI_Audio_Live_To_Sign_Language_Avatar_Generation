@@ -64,8 +64,9 @@ la vidéo.
 [NOTICE.md](src/sign_language_3d_avatar/local_website/NOTICE.md)**
 
 > L'archive à télécharger (`avatar-lsfb.zip`) décrite dans la notice n'est pas encore
-> disponible : pour l'instant, l'outil se lance depuis le dossier du projet
-> (`src/sign_language_3d_avatar/local_website/`).
+> publiée. En attendant, l'outil se lance depuis le dossier du projet
+> (`src/sign_language_3d_avatar/local_website/`), et l'archive se fabrique avec
+> `bash src/sign_language_3d_avatar/local_website/fabriquer_archive.sh`.
 
 ## Où en est le projet ?
 

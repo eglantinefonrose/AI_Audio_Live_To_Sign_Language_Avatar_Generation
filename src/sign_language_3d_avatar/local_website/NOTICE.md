@@ -1,12 +1,12 @@
 <!--
-Construit dans ce dossier : serveur.py (serveur local), index.html (la page), Installer.command /
-Installer.bat et « Avatar LSFB.command » / « Avatar LSFB.bat » (lanceurs, à double-cliquer),
-http://localhost:8000.
-Reste à faire : l'archive avatar-lsfb.zip de l'étape 2. Le dictionnaire des signes
-(avatar_animation/data/dictionnaire/, dérivé de LSFB, CC BY-NC-SA 4.0) est exclu de git :
-un téléchargement du dépôt ne suffit pas, l'archive doit l'inclure avec l'avatar. Avant de la
-distribuer, réexporter avatar_sign_4.vrm depuis VRoid Studio en autorisant la redistribution
-et l'usage par tout le monde (aujourd'hui : auteur seulement, redistribution interdite).
+Pour les développeurs (ce commentaire est retiré de la notice copiée dans l'archive).
+Outil : serveur.py (serveur local), index.html (la page), lanceurs Installer.* et
+« Avatar LSFB.* » ; ceux de racine_archive/ sont mis à la racine de l'archive et appellent
+ceux de ce dossier. Archive : bash fabriquer_archive.sh -> dist/avatar-lsfb.zip (ignoré par
+git : contient le dictionnaire dérivé de LSFB et l'avatar). Lanceurs Windows non testés.
+Avant de publier l'archive (Release GitHub), réexporter avatar_sign_4.vrm depuis VRoid Studio
+en autorisant la redistribution et l'usage par tout le monde (aujourd'hui : auteur seulement,
+redistribution interdite).
 -->
 
 # Avatar LSFB : faire signer une phrase par l'avatar
@@ -19,7 +19,8 @@ Tout se passe **sur votre ordinateur** : rien n'est envoyé sur Internet.
 
 ## Ce qu'il vous faut
 
-- Un ordinateur **Mac** (macOS 12 ou plus récent) ou **Windows** (10 ou 11).
+- Un ordinateur **Mac** (macOS 12 ou plus récent) ou **Windows** (10 ou 11 ; version Windows
+  pas encore testée).
 - Environ **3 Go d'espace libre**.
 - Une connexion Internet, **seulement pendant l'installation**.
 
@@ -36,22 +37,26 @@ n'aurez jamais à l'ouvrir vous-même.
 
 ## 2. Installer l'outil (une seule fois)
 
-1. Téléchargez le fichier **`avatar-lsfb.zip`** depuis la page du projet.
+1. Téléchargez le fichier **`avatar-lsfb.zip`** depuis la page des versions du projet :
+   **github.com/eglantinefonrose/AI_Audio_Live_To_Sign_Language_Avatar_Generation/releases**.
 2. Double-cliquez dessus pour le décompresser. Un dossier **`avatar-lsfb`** apparaît.
-3. Dans ce dossier, double-cliquez sur :
+3. Dans ce dossier (il contient aussi cette notice), double-cliquez sur :
    - **Mac** : `Installer.command`. Si un message dit que le fichier vient d'Internet,
      faites un clic droit sur le fichier → **Ouvrir** → **Ouvrir** ;
    - **Windows** : `Installer.bat`. Si Windows affiche « Windows a protégé votre
      ordinateur », cliquez sur **Informations complémentaires** → **Exécuter quand même**.
-4. Une fenêtre s'ouvre et installe ce qui manque. Attendez le message **« Installation
-   terminée »**, ce qui peut prendre quelques minutes, puis fermez la fenêtre.
+4. Une fenêtre (Terminal sur Mac) s'ouvre et installe ce qui manque. Attendez le message
+   **« Installation terminée »**, ce qui peut prendre quelques minutes, puis appuyez sur
+   **Entrée** (Mac) ou sur une touche (Windows) : la fenêtre se ferme ou peut être fermée.
 
 ## 3. Lancer l'outil
 
-Dans le dossier `avatar-lsfb`, double-cliquez sur **`Avatar LSFB`**.
+Dans le dossier `avatar-lsfb`, double-cliquez sur **`Avatar LSFB.command`** (Mac) ou
+**`Avatar LSFB.bat`** (Windows). La première fois, le même message de sécurité qu'à l'étape 2
+peut apparaître : faites de même.
 
-- Une fenêtre noire s'ouvre : **laissez-la ouverte** tant que vous utilisez l'outil, c'est
-  elle qui fait le travail.
+- Une fenêtre (Terminal sur Mac) s'ouvre : **laissez-la ouverte** tant que vous utilisez
+  l'outil, c'est elle qui fait le travail.
 - Votre navigateur (Safari, Chrome, Edge…) affiche la page de l'outil. Si elle ne s'ouvre pas
   toute seule, tapez dans la barre d'adresse : **`http://localhost:8000`**.
 
@@ -110,16 +115,16 @@ partager dans le respect de la licence (voir plus bas).
 
 ## 9. Fermer l'outil
 
-Fermez l'onglet du navigateur, puis la fenêtre noire.
+Fermez l'onglet du navigateur, puis la fenêtre ouverte à l'étape 3.
 
 ## En cas de problème
 
 | Problème | Que faire |
 |---|---|
-| La page ne s'ouvre pas | Vérifiez que la fenêtre noire est ouverte, puis tapez `http://localhost:8000` dans le navigateur |
+| La page ne s'ouvre pas | Vérifiez que la fenêtre de l'étape 3 est ouverte, puis tapez `http://localhost:8000` dans le navigateur |
 | « Blender introuvable » | Installez Blender (étape 1). Sur Mac, il doit être dans le dossier **Applications** |
 | Un mot est marqué ❌ | Ce signe n'existe pas encore dans l'outil : reformulez avec un autre mot |
-| La vidéo ne se crée pas | Fermez la fenêtre noire et le navigateur, puis relancez l'outil (étape 3) |
+| La vidéo ne se crée pas | Fermez la fenêtre de l'étape 3 et le navigateur, puis relancez l'outil (étape 3) |
 
 ## Licence et crédits
 
