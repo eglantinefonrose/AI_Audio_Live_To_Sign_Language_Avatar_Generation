@@ -262,8 +262,9 @@ def project_glosses() -> list[str]:
     for line in (ROOT / "lsf_translator" / "lexicon.txt").read_text(encoding="utf-8").splitlines():
         if line.strip() and not line.startswith("#"):
             glosses.add(line.strip())
-    for name in ("dataset.jsonl", "dev.jsonl"):     # éval + dev = banc de l'évaluation de l'avatar
-        with open(ROOT / "eval" / name, encoding="utf-8") as f:
+    for path in (ROOT / "eval" / "dataset.jsonl", ROOT / "eval" / "dev.jsonl",     # éval + dev du traducteur
+                 ROOT / "sign_language_3d_avatar" / "evaluation" / "banc_avatar.jsonl"):  # banc de l'avatar
+        with open(path, encoding="utf-8") as f:
             for line in f:
                 if line.strip():
                     glosses.update(json.loads(line)["glosses"])

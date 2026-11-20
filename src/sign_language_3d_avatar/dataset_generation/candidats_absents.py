@@ -21,7 +21,8 @@ sait si le signe a le bon sens. `lsfb_subset.py map` reporte ensuite les répons
 `lsfb_mapping.csv` (statut « validé » ou « épeler »).
 
 Sur la page, une carte par glose (les plus fréquentes d'abord) : la glose, une phrase
-du projet où elle apparaît, et un clip de chaque candidat (« autre signeur » pour en voir
+du projet où elle apparaît, avec sa traduction en gloses (la glose relue surlignée), et
+un clip de chaque candidat (« autre signeur » pour en voir
 un second). Réponses au clavier : 1-4 = ce candidat, A = aucun ne convient, E = à épeler
 (nom propre, terme technique), I = incertain, ou une autre étiquette LSFB tapée à la main.
 
@@ -37,7 +38,7 @@ Les vidéos des candidats (2 signeurs par étiquette) sont téléchargées depui
 (CC BY-NC-SA 4.0) dans `data/lsfb/videos/`, puis copiées en H.264 pour le navigateur.
 
 Relecture ciblée (`--bloquantes`) : seulement les gloses encore sans signe qui empêchent
-de jouer une phrase du banc d'essai (`src/eval/dataset.jsonl` et `dev.jsonl`), même déjà
+de jouer une phrase du banc d'essai de l'avatar (`evaluation/banc_avatar.jsonl`), même déjà
 relues. Les candidats sont de nouvelles pistes (`PISTES` ci-dessous : synonymes, signes
 composés A+B joués à la suite), puis toutes les variantes LSFB du mot, puis les candidats
 déjà refusés. La page (`data/lsfb/candidats_bloquants.html`) rappelle la réponse précédente ;
@@ -45,13 +46,19 @@ son export contient tout `lsfb_candidats.csv` (les gloses non relues ici gardent
 réponse) et le remplace comme d'habitude. Une suite « A+B », choisie ou tapée, devient
 le statut « décomposé » dans `lsfb_mapping.csv`.
 
+Toutes les gloses sans signe (`--absentes`) : même relecture ciblée, pour les gloses du
+projet encore absentes du dictionnaire, banc ou non (celles qui bloquent le banc d'abord).
+S'y ajoutent les signes LSFB de la même famille (PLUIE pour PLEUVOIR, FATIGUER pour
+FATIGUÉ…) : en langue des signes, nom, verbe et adjectif sont souvent un seul signe.
+Page `data/lsfb/candidats_absentes.html`, même export.
+
 Changement de variante (`--variantes`) : les signes pour lesquels aucun clip ne convenait
 (verdict « autre variante » dans `choix_clips.csv`, page `revue_clips.py`). Une carte par
 glose du projet jouée par ce signe, avec les pistes, toutes les variantes LSFB du mot, et
 le signe actuel en dernier. Page `data/lsfb/candidats_variantes.html`, même export.
 
 Usage :
-    uv run python src/sign_language_3d_avatar/dataset_generation/candidats_absents.py [--ouvrir] [--sans-video] [--bloquantes | --variantes]
+    uv run python src/sign_language_3d_avatar/dataset_generation/candidats_absents.py [--ouvrir] [--sans-video] [--bloquantes | --absentes | --variantes]
 """
 from __future__ import annotations
 
@@ -79,9 +86,10 @@ CSV_PATH = GEN / "lsfb_candidats.csv"
 HTML_PATH = DATA / "candidats.html"
 HTML_BLOCKING = DATA / "candidats_bloquants.html"
 HTML_VARIANTS = DATA / "candidats_variantes.html"
+HTML_ABSENT = DATA / "candidats_absentes.html"
 CLIP_CHOICES = GEN / "choix_clips.csv"
 SELECTION = GEN / "selection.csv"
-BENCH = [SRC / "eval" / "dataset.jsonl", SRC / "eval" / "dev.jsonl"]
+BENCH = [GEN.parent / "evaluation" / "banc_avatar.jsonl"]     # banc de l'évaluation de l'avatar
 MAX_BLOCKING = 8
 FIELDS = ["glose", "frequence", "candidats", "choix", "verdict", "note", "date"]
 MAX_CANDIDATES = 4
@@ -157,6 +165,25 @@ PISTES = {
     "DURER": ["LONGTEMPS.DUREE", "LONGTEMPS", "TEMPS"],
     "INDUSTRIE": ["ENTREPRISE", "FABRIQUER", "TRAVAIL+FABRIQUER"],
     "GENS": ["PERSONNE.HUMAIN", "HUMAIN", "PUBLIC", "PERSONNE"],
+    # Même famille (nom / verbe / adjectif), souvent un seul signe en langue des signes.
+    "FATIGUÉ": ["FATIGUER"],
+    "PLEUVOIR": ["PLUIE"],
+    "NEIGER": ["NEIGE"],
+    "AIDE": ["AIDER"],
+    "CUISINER": ["CUISINE"],
+    "PAROLE": ["PARLER", "MOT"],
+    "CHANGEMENT": ["CHANGER", "CHANGER.DEVENIR"],
+    "MÉDECINE": ["MEDECIN"],
+    "SIGNER": ["SIGNE"],
+    "FÊTER": ["FETE", "FETE.PARTY"],
+    "OUVERT": ["OUVRIR"],
+    "MATHS": ["MATHEMATIQUE", "CALCULER"],
+    "INFORMATIQUE": ["ORDINATEUR"],
+    "COÛTER": ["PRIX"],
+    "CHEZ-MOI": ["MAISON"],
+    "TOUT-LE-MONDE": ["TOUT+PERSONNE", "TOUT"],
+    "ANNÉE-DERNIÈRE": ["ANNEE-1", "ANNEE+DERNIER"],
+    "SEMAINE-DERNIÈRE": ["SEMAINE-1", "SEMAINE+DERNIER"],
 }
 
 
@@ -234,6 +261,9 @@ def blocking_candidates(gloss: str, bases: dict[str, list[str]], by_label: dict[
         add(label, "proposée à la relecture")
     for label in PISTES.get(gloss, []):
         add(label, "signes joués à la suite" if "+" in label else "nouvelle piste")
+    for c in candidates(gloss, bases, []):                # lemme, racine commune…
+        if not c["raison"].startswith("orthographe"):
+            add(c["etiquette"], "même famille" if c["raison"] in ("lemme", "racine commune") else c["raison"])
     for p in [p for p in gloss.split("-") if p]:
         for label in bases.get(norm(p), []):
             if label != current:
@@ -262,18 +292,21 @@ def blocking_glosses(only: set[str] | None = None) -> dict[str, list[str]]:
     return out
 
 
-def example_sentences() -> dict[str, list[str]]:
-    """Phrases françaises du projet où chaque glose apparaît (éval, dev, dataset d'entraînement)."""
-    paths = [SRC / "eval" / "dataset.jsonl", SRC / "eval" / "dev.jsonl",
+def project_pairs() -> list[dict]:
+    """Phrases françaises du projet et leur traduction en gloses (éval, dev, dataset d'entraînement)."""
+    paths = [*BENCH, SRC / "eval" / "dataset.jsonl", SRC / "eval" / "dev.jsonl",
              *sorted((SRC / "finetune" / "data").glob("*/pairs.jsonl"))]
+    return [json.loads(line) for path in paths
+            for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+
+
+def example_sentences() -> dict[str, list[str]]:
+    """Phrases françaises du projet où chaque glose apparaît."""
     out: dict[str, list[str]] = defaultdict(list)
-    for path in paths:
-        for line in path.read_text(encoding="utf-8").splitlines():
-            if line.strip():
-                r = json.loads(line)
-                for g in set(r["glosses"]):
-                    if len(out[g]) < 3 and r["text"] not in out[g]:
-                        out[g].append(r["text"])
+    for r in project_pairs():
+        for g in set(r["glosses"]):
+            if len(out[g]) < 3 and r["text"] not in out[g]:
+                out[g].append(r["text"])
     return out
 
 
@@ -364,6 +397,8 @@ main { max-width:1000px; margin:0 auto; padding:16px; }
 .meta { font-size:13px; color:var(--mute); }
 #sentences { margin:0; padding-left:18px; }
 #sentences li { margin:2px 0; }
+#sentences .gl { font-family:ui-monospace,monospace; font-size:.9em; opacity:.8; }
+#sentences .gl b { background:#ffe58a; color:#000; padding:0 3px; border-radius:3px; }
 .question { font-size:16px; font-weight:600; }
 .ctx { font-size:14px; color:var(--mid); }
 #cands { display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:10px; }
@@ -436,6 +471,7 @@ textarea { width:100%; padding:6px; background:var(--bg); resize:vertical; }
 <script>
 const CARDS = __CARDS__;
 const LABELS = __LABELS__;
+const GLOSES = __GLOSES__;     // phrase -> sa traduction en gloses
 const KEY = __KEY__;
 const AUTRES = __AUTRES__;   // lignes du CSV absentes de cette page, recopiées à l'export
 const EXPORT_EVERY = 20;
@@ -490,7 +526,8 @@ function show() {
   $("ancien").innerHTML = old.verdict ? `Relecture précédente : <b class="v-${esc(old.verdict)}">${esc(old.choix || old.verdict)}</b>` +
     (old.candidats ? ` parmi ${esc(old.candidats)}` : "") + (old.note ? ` — « ${esc(old.note)} »` : "") : "";
   $("ctx").textContent = c.contexte;
-  $("sentences").innerHTML = c.phrases.map(p => `<li>« ${esc(p)} »</li>`).join("");
+  $("sentences").innerHTML = c.phrases.map(p => `<li>« ${esc(p)} »` + (GLOSES[p] ? `<div class="gl">→ ` +
+    GLOSES[p].map(g => g === c.glose ? `<b>${esc(g)}</b>` : esc(g)).join(" ") + `</div>` : "") + `</li>`).join("");
   $("cands").innerHTML = c.candidats.length ? c.candidats.map((x, k) => `
     <div class="cand${cur.choix === x.etiquette ? " on" : ""}" data-k="${k}">
       <div class="label">${k + 1}. ${esc(x.etiquette)}</div>
@@ -601,13 +638,17 @@ MODES = {   # mode -> (titre, page, clé du navigateur)
     "relecture": ("Gloses à relire (LSFB)", HTML_PATH, "lsfb-candidats-absents"),
     "bloquantes": ("Gloses qui bloquent le banc (LSFB)", HTML_BLOCKING, "lsfb-candidats-bloquants"),
     "variantes": ("Variantes à changer (LSFB)", HTML_VARIANTS, "lsfb-candidats-variantes"),
+    "absentes": ("Gloses sans signe (LSFB)", HTML_ABSENT, "lsfb-candidats-absentes"),
 }
 
 
 def write_html(cards: list[dict], labels: list[str], mode: str = "relecture", others: list[dict] = ()) -> Path:
     dump = lambda x: json.dumps(x, ensure_ascii=False).replace("</", "<\\/")
     title, path, key = MODES[mode]
+    shown = {t for c in cards for t in c["phrases"]}
+    glosses = {r["text"]: r["glosses"] for r in project_pairs() if r["text"] in shown}   # phrase -> gloses
     page = (PAGE.replace("__CARDS__", dump(cards)).replace("__LABELS__", dump(labels))
+            .replace("__GLOSES__", dump(glosses))
             .replace("__AUTRES__", dump(list(others))).replace("__TITRE__", title)
             .replace("__KEY__", dump(key))
             .replace("__MAXK__", str(MAX_CANDIDATES if mode == "relecture" else MAX_BLOCKING)))
@@ -623,6 +664,8 @@ def main() -> None:
                     help="changer de variante LSFB pour les signes « autre variante » de choix_clips.csv")
     ap.add_argument("--bloquantes", action="store_true",
                     help="relecture ciblée : gloses sans signe qui bloquent une phrase du banc, avec de nouvelles pistes")
+    ap.add_argument("--absentes", action="store_true",
+                    help="toutes les gloses sans signe, avec les signes LSFB de la même famille (PLUIE pour PLEUVOIR…)")
     args = ap.parse_args()
     if not (DATA / "instances.csv").exists():
         sys.exit("Index LSFB absent : lance d'abord lsfb_subset.py map (voir l'aide).")
@@ -630,8 +673,8 @@ def main() -> None:
     labels = LsfbLabels(*load_index(DATA))       # proposition automatique, sans les réponses
     old = read_csv()
     freq, sentences = gloss_frequencies(), example_sentences()
-    if args.bloquantes or args.variantes:
-        return main_blocking(args, by_label, bases, labels, old, freq)
+    if args.bloquantes or args.variantes or args.absentes:
+        return main_blocking(args, by_label, bases, labels, old, freq, sentences)
     cards = []
     for gloss in project_glosses():
         row = labels.propose(gloss)
@@ -672,9 +715,9 @@ def variants_to_change() -> dict[str, str]:
                 for g in r["gloses_projet"].split()}
 
 
-def main_blocking(args, by_label, bases, labels, old, freq) -> None:
-    """Relecture ciblée (gloses bloquantes ou variantes à changer) : le CSV n'est pas
-    réécrit, l'export de la page le remplace."""
+def main_blocking(args, by_label, bases, labels, old, freq, sentences) -> None:
+    """Relecture ciblée (gloses bloquantes, toutes les gloses sans signe, ou variantes à
+    changer) : le CSV n'est pas réécrit, l'export de la page le remplace."""
     current = variants_to_change() if args.variantes else {}
     if args.variantes and not current:
         sys.exit(f"Aucun signe « autre variante » dans {CLIP_CHOICES.name} (page revue_clips.py).")
@@ -682,12 +725,23 @@ def main_blocking(args, by_label, bases, labels, old, freq) -> None:
                 "LSFB peut jouer cette glose ?") if args.variantes else
                ("Déjà relue sans signe retenu : voici d'autres pistes (synonymes, signes joués à la "
                 "suite). « À épeler » reste possible pour un nom propre."))
+    if args.absentes:
+        context = ("Relue sans signe retenu. En langue des signes, le nom, le verbe et l'adjectif d'une "
+                   "même famille (PLUIE / PLEUVOIR, FATIGUER / FATIGUÉ) sont souvent un seul signe : "
+                   "juge le geste et le sens, pas la forme du mot. « À épeler » reste possible.")
+        index = load_dictionary()
+        absent = {g for g, p in index["gloses"].items() if p["type"] == "absent"}
+        bench = blocking_glosses(absent)
+        glosses = {g: bench.get(g, []) for g in sorted(absent)}
+    else:
+        glosses = blocking_glosses(set(current) if args.variantes else None)
     cards = []
-    for gloss, texts in blocking_glosses(set(current) if args.variantes else None).items():
+    for gloss, texts in glosses.items():
         prev = old.get(gloss, {})
         extra = [prev["choix"]] if prev.get("verdict") == "autre" and prev.get("choix") else []
         refused = prev.get("candidats", "").split()
-        cards.append({"glose": gloss, "frequence": freq.get(gloss, 0), "phrases": texts, "bloque": len(texts),
+        cards.append({"glose": gloss, "frequence": freq.get(gloss, 0), "phrases": texts or sentences.get(gloss, []),
+                      "bloque": len(texts),
                       "statut": labels.propose(gloss)["statut"], "contexte": context,
                       "candidats": blocking_candidates(gloss, bases, by_label, refused, extra, current.get(gloss, "")),
                       "ancien": {k: prev.get(k, "") for k in ("candidats", "choix", "verdict", "note", "date")}
@@ -696,9 +750,11 @@ def main_blocking(args, by_label, bases, labels, old, freq) -> None:
     cards.sort(key=lambda c: (-c["bloque"], -c["frequence"], c["glose"]))
     missing = attach_videos(cards, by_label, download=not args.sans_video)
     others = [r for g, r in old.items() if g not in {c["glose"] for c in cards}]
-    path = write_html(cards, sorted(by_label), "variantes" if args.variantes else "bloquantes", others)
+    mode = "variantes" if args.variantes else "absentes" if args.absentes else "bloquantes"
+    path = write_html(cards, sorted(by_label), mode, others)
     verb = "apparaissent dans" if args.variantes else "bloquent"
-    print(f"{len(cards)} gloses {verb} {len({t for c in cards for t in c["phrases"]})} phrase(s) du banc ; "
+    print(f"{len(cards)} gloses, dont {sum(bool(c['bloque']) for c in cards)} {verb} "
+          f"{sum(c['bloque'] for c in cards)} phrase(s) du banc ; "
           f"{sum(len(c['candidats']) for c in cards)} candidats ({sum(not c['candidats'] for c in cards)} gloses sans candidat)")
     if missing:
         print(f"⚠️  {missing} candidat(s) sans vidéo lisible.")

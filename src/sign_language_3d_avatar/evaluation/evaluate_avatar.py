@@ -1,7 +1,10 @@
 """Évaluation de l'avatar seul : signe-t-il bien des phrases déjà en gloses LSFB ?
 
 La traduction n'intervient pas : les phrases du banc d'essai sont des gloses de
-référence (par défaut celles de `src/eval/dataset.jsonl` et `src/eval/dev.jsonl`).
+référence. Par défaut, `banc_avatar.jsonl` : les 119 phrases de `src/eval/dataset.jsonl`
+et `src/eval/dev.jsonl`, traduites en gloses LSFB par Claude avec les seuls signes du
+dictionnaire (8 phrases reformulées quand un mot n'a aucun signe : `texte_original`,
+`note`). Les fichiers de `src/eval/` restent la référence du traducteur.
 L'avatar (mannequin ou VRoid) joue chaque signe du dictionnaire et chaque phrase dans
 Blender ; on relève ses articulations (`export_avatar_blender.py`) et on mesure :
 
@@ -95,7 +98,7 @@ VERIFIED = HERE / "signes_verifies.csv"        # signes jugés corrects à l'œi
 SELECTION = BASE / "dataset_generation" / "selection.csv"   # critère « relecture » : clip choisi à l'œil
 EXPORT = HERE / "export_avatar_blender.py"
 DEFAULT_BLENDER = "/Applications/Blender.app/Contents/MacOS/Blender"
-DEFAULT_BENCH = [PROJECT / "src" / "eval" / "dataset.jsonl", PROJECT / "src" / "eval" / "dev.jsonl"]
+DEFAULT_BENCH = [HERE / "banc_avatar.jsonl"]
 HAND_POINTS = (0, 4, 8, 12, 16, 20)      # poignet et bouts des doigts
 
 
@@ -181,7 +184,9 @@ def export_avatar(index: dict, phrases: list[list[str]], args) -> tuple[dict, di
     key = sha(json.dumps(job, ensure_ascii=False).encode(), INDEX.read_bytes(),
               (avatar.read_bytes() if avatar else b"mannequin"), EXPORT.read_bytes(),
               (BASE / "avatar_animation" / "avatar_rig.py").read_bytes(),
-              (BASE / "avatar_animation" / "sequence.py").read_bytes())
+              (BASE / "avatar_animation" / "sequence.py").read_bytes(),
+              # Les signes nettoyés eux-mêmes : un nouveau nettoyage garde souvent le même index.
+              *((DICT / index["signes"][s]["fichier"]).read_bytes() for s in job["signes"]))
     out = CACHE / f"avatar_{key}.npz"
     if not out.exists():
         CACHE.mkdir(parents=True, exist_ok=True)

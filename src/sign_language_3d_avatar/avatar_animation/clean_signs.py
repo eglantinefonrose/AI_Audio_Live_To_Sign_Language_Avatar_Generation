@@ -13,7 +13,12 @@ lissées par LSFB). Pour chaque signe, sans intervention humaine :
 3. **lissage léger** : Savitzky-Golay (fenêtre 5, ordre 2) ;
 4. **découpe** : les images immobiles au début et à la fin (vitesse des mains < 15 %
    du maximum) sont retirées, avec 2 images de marge ;
-5. **3D** : articulations en mètres dans le repère commun (`pose3d.joints`).
+5. **3D** : articulations en mètres dans le repère commun (`pose3d.joints`) ;
+6. **poitrine** : la profondeur reconstruite place parfois la main dans le plan des
+   épaules, donc dans le corps. Une main devant le torse est avancée en bloc, poignet
+   compris, jusqu'à la surface de la poitrine : une demi-ellipse sous les épaules,
+   0,25 largeur d'épaules devant elles au milieu, 0,45 de demi-largeur, arrondie vers
+   les clavicules (aucune correction au-dessus des épaules).
 
 Lettre avec une image de référence (`dataset_generation/data/alphabet/<LETTRE>.json`,
 extrait par `dataset_generation/lettres_images.py`) : la main droite du clip est remplacée,
@@ -59,6 +64,7 @@ POSE_PAIRS = [(1, 4), (2, 5), (3, 6), (7, 8), (9, 10), (11, 12), (13, 14), (15, 
 FACING = {"bas": (0, 1, 0), "haut": (0, -1, 0), "avant": (0, 0, -1), "soi": (0, 0, 1)}
 SG5 = np.array([-3, 12, 17, 12, -3]) / 35          # Savitzky-Golay fenêtre 5, ordre 2
 MIN_FRAMES = 8
+CHEST_FRONT, CHEST_HALF_WIDTH = 0.25, 0.45         # ÷ largeur d'épaules (≈ 9,5 et 17 cm)
 
 
 def safe_name(label: str) -> str:
@@ -228,6 +234,34 @@ def fit_hand(clip: np.ndarray, shape: np.ndarray, motion: np.ndarray | None = No
     return out / scale_xz
 
 
+def out_of_chest(j: dict[str, np.ndarray]) -> int:
+    """Avance chaque main enfoncée dans le torse jusqu'à la surface de la poitrine (en
+    place) ; renvoie le nombre d'images corrigées. Seules comptent les mains entre le bassin
+    et les épaules, à moins de 0,25 largeur d'épaules derrière elles : une main dans le dos
+    vient d'une autre erreur, on ne la ramène pas à travers le corps."""
+    sw = float(np.median(np.linalg.norm(j["shoulder.L"] - j["shoulder.R"], axis=1)))
+    chest = (j["shoulder.L"] + j["shoulder.R"]) / 2
+    moved = np.zeros(len(chest), dtype=bool)
+    for s in "LR":
+        names = [f"hand.{s}.{k}" for k in range(21)]
+        rel = (np.stack([j[n] for n in names], axis=1) - chest[:, None]) / sw     # (T, 21, 3)
+        across = np.clip(1 - (rel[..., 0] / CHEST_HALF_WIDTH) ** 2, 0, None)
+        top = np.clip(-rel[..., 2] / 0.15, 0, 1)            # poitrine arrondie vers les clavicules
+        surface = -CHEST_FRONT * np.sqrt(across) * top                           # −Y = devant
+        inside = ((across > 0) & (top > 0) & (rel[..., 2] * sw + chest[:, None, 2] > j["hip"][:, None, 2])
+                  & (rel[..., 1] < CHEST_FRONT))
+        push = np.where(inside, np.clip(rel[..., 1] - surface, 0, None), 0).max(axis=1) * sw
+        # Lissée dans le temps sans repasser sous la surface : maximum sur ±2 images puis
+        # moyenne sur 5 (chaque image reste au moins autant avancée qu'il le faut).
+        padded = np.pad(push, 2, mode="edge")
+        push = np.max([padded[k:k + len(push)] for k in range(5)], axis=0)
+        push = np.convolve(np.pad(push, 2, mode="edge"), np.ones(5) / 5, mode="valid")
+        for n in names + [f"wrist.{s}"]:
+            j[n][:, 1] -= push
+        moved |= push > 0
+    return int(moved.sum())
+
+
 def clean(instance: str, letter: bool = False, hand_shape: np.ndarray | None = None,
           motion: dict | None = None, palm: str | None = None,
           absolute: bool = False) -> tuple[dict[str, np.ndarray], dict]:
@@ -266,7 +300,9 @@ def clean(instance: str, letter: bool = False, hand_shape: np.ndarray | None = N
 
     # 5. Articulations 3D.
     j = joints(pose, hands, ASPECT)
-    meta = {"instance": instance, "retourne": bool(mirrored), "sauts_corriges": spikes,
+    # 6. Mains hors de la poitrine.
+    chest = out_of_chest(j)
+    meta = {"instance": instance, "retourne": bool(mirrored), "sauts_corriges": spikes, "mains_avancees": chest,
             "images_source": int(len(load("pose"))), "debut": int(start), "fin": int(end),
             "images": int(end - start), "fps": FPS, "mouvement": motion is not None,
             "orientation_video": absolute}

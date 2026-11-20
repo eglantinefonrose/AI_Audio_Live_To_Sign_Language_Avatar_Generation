@@ -1,0 +1,119 @@
+{"text": "Le directeur a parlé de ses projets.", "glosses": ["AVANT", "DIRECTEUR", "PROJET", "LUI", "PARLER"], "language": "fr", "source": "dataset:0"}
+{"text": "Nous regardons le match en direct.", "glosses": ["NOUS", "MATCH", "REGARDER", "DIRECT"], "language": "fr", "source": "dataset:1"}
+{"text": "Le concert est diffusé en live.", "glosses": ["MUSIQUE", "DIFFUSER", "DIRECT"], "language": "fr", "source": "dataset:2"}
+{"text": "En conclusion, je vous remercie.", "glosses": ["ENFIN", "MOI", "MERCI-À-VOUS"], "language": "fr", "source": "dataset:3"}
+{"text": "Elle n'aime pas du tout le café.", "glosses": ["LUI", "CAFÉ", "AIMER", "NON"], "language": "fr", "source": "dataset:4"}
+{"text": "Pourquoi tu ne viens pas demain ?", "glosses": ["DEMAIN", "TOI", "VENIR", "NON", "POURQUOI"], "language": "fr", "source": "dataset:5"}
+{"text": "Ce matin, mon frère a acheté une voiture rouge.", "glosses": ["MATIN", "FRÈRE", "MOI", "VOITURE", "ROUGE", "ACHETER"], "language": "fr", "source": "dataset:6"}
+{"text": "Les étudiants étrangers adorent Paris.", "glosses": ["ÉTUDIANT", "ÉTRANGER", "PARIS", "AIMER", "BEAUCOUP"], "language": "fr", "source": "dataset:7"}
+{"text": "Je ne comprends pas cette phrase.", "glosses": ["MOI", "PHRASE", "COMPRENDRE", "NON"], "language": "fr", "source": "dataset:8"}
+{"text": "Hier, j'ai mangé une pomme.", "glosses": ["HIER", "MOI", "POMME", "MANGER"], "language": "fr", "source": "dataset:9"}
+{"text": "Quand est-ce que tu pars en vacances ?", "glosses": ["TOI", "VACANCES", "PARTIR", "QUAND"], "language": "fr", "source": "dataset:10"}
+{"text": "Tu veux un café ?", "glosses": ["TOI", "CAFÉ", "VOULOIR", "QUESTION"], "language": "fr", "source": "dataset:11"}
+{"text": "Le fine tuning utilise des modèles pré-entraînés.", "glosses": ["FINE-TUNING", "MODÈLE", "ENTRAÎNER", "DÉJÀ", "UTILISER"], "language": "fr", "note": "« pré-entraînés » : signes ENTRAÎNER + DÉJÀ plutôt que 12 lettres épelées", "source": "dataset:12"}
+{"text": "Camembert est un modèle français.", "glosses": ["CAMEMBERT", "MODÈLE", "FRANÇAIS"], "language": "fr", "source": "dataset:13"}
+{"text": "Pour conclure, je montre les résultats.", "glosses": ["ENFIN", "MOI", "RÉSULTAT", "MONTRER"], "language": "fr", "source": "dataset:14"}
+{"text": "Demain matin, les élèves visiteront le musée.", "glosses": ["DEMAIN", "MATIN", "ÉLÈVE", "MUSÉE", "VISITER"], "language": "fr", "source": "dataset:15"}
+{"text": "Je t'explique la méthode.", "glosses": ["MOI", "MÉTHODE", "EXPLIQUER-À-TOI"], "language": "fr", "source": "dataset:16"}
+{"text": "Elle me prête son vélo.", "glosses": ["LUI", "VÉLO", "LUI", "PRÊTER-À-MOI"], "language": "fr", "source": "dataset:17"}
+{"text": "Nous vous envoyons le rapport demain.", "glosses": ["DEMAIN", "NOUS", "RAPPORT", "ENVOYER-À-VOUS"], "language": "fr", "source": "dataset:18"}
+{"text": "Tu lui as dit la vérité ?", "glosses": ["AVANT", "TOI", "VRAI", "DIRE-À-LUI", "QUESTION"], "language": "fr", "source": "dataset:19"}
+{"text": "Je vais vous présenter mon projet.", "glosses": ["BIENTÔT", "MOI", "PROJET", "MOI", "PRÉSENTER-À-VOUS"], "language": "fr", "source": "dataset:20"}
+{"text": "Ils nous demandent de l'aide.", "glosses": ["EUX", "AIDE", "DEMANDER-À-NOUS"], "language": "fr", "source": "dataset:21"}
+{"text": "Qui a gagné le match ?", "glosses": ["AVANT", "MATCH", "GAGNER", "QUI"], "language": "fr", "source": "dataset:22"}
+{"text": "Comment fonctionne ce modèle ?", "glosses": ["MODÈLE", "MARCHER", "COMMENT"], "language": "fr", "source": "dataset:23"}
+{"text": "Combien d'invités viennent ce soir ?", "glosses": ["SOIR", "INVITÉ", "VENIR", "COMBIEN"], "language": "fr", "source": "dataset:24"}
+{"text": "Que mangez-vous à midi ?", "glosses": ["MIDI", "VOUS", "MANGER", "QUOI"], "language": "fr", "source": "dataset:25"}
+{"text": "Où as-tu garé la voiture ?", "glosses": ["AVANT", "TOI", "VOITURE", "GARER", "OÙ"], "language": "fr", "source": "dataset:26"}
+{"text": "Pourquoi ce dataset est trop petit ?", "glosses": ["DATASET", "PETIT", "EXAGÉRER", "POURQUOI"], "language": "fr", "source": "dataset:27"}
+{"text": "Vous avez déjà essayé le random forest ?", "glosses": ["VOUS", "RANDOM-FOREST", "ESSAYER", "DÉJÀ", "QUESTION"], "language": "fr", "source": "dataset:28"}
+{"text": "Il pleut encore ?", "glosses": ["PLUIE", "ENCORE", "QUESTION"], "language": "fr", "source": "dataset:29"}
+{"text": "Ta sœur peut venir samedi ?", "glosses": ["SAMEDI", "SŒUR", "TOI", "VENIR", "POUVOIR", "QUESTION"], "language": "fr", "source": "dataset:30"}
+{"text": "Je ne mange jamais de viande le soir.", "glosses": ["SOIR", "MOI", "VIANDE", "MANGER", "JAMAIS"], "language": "fr", "source": "dataset:31"}
+{"text": "Il ne dit rien.", "glosses": ["LUI", "DIRE", "RIEN"], "language": "fr", "source": "dataset:32"}
+{"text": "Nous ne voyons personne.", "glosses": ["NOUS", "VOIR", "PERSONNE"], "language": "fr", "source": "dataset:33"}
+{"text": "Mes parents ne peuvent pas venir.", "glosses": ["PARENTS", "MOI", "VENIR", "POUVOIR", "NON"], "language": "fr", "source": "dataset:34"}
+{"text": "J'ai perdu mon téléphone.", "glosses": ["AVANT", "MOI", "TÉLÉPHONE", "MOI", "PERDRE"], "language": "fr", "source": "dataset:35"}
+{"text": "Nous avons entraîné le modèle sur un GPU.", "glosses": ["AVANT", "NOUS", "MODÈLE", "GPU", "ENTRAÎNER"], "language": "fr", "source": "dataset:36"}
+{"text": "Ils sont arrivés en retard.", "glosses": ["AVANT", "EUX", "ARRIVER", "RETARD"], "language": "fr", "source": "dataset:37"}
+{"text": "Lundi dernier, j'ai rencontré ton professeur.", "glosses": ["LUNDI-DERNIER", "MOI", "PROFESSEUR", "TOI", "RENCONTRER"], "language": "fr", "source": "dataset:38"}
+{"text": "Aujourd'hui, nous testons la nouvelle version.", "glosses": ["AUJOURD'HUI", "NOUS", "VERSION", "NOUVEAU", "TESTER"], "language": "fr", "source": "dataset:39"}
+{"text": "Dans trois semaines, nous partons en Italie.", "glosses": ["SEMAINE", "TROIS", "ITALIE", "NOUS", "PARTIR"], "language": "fr", "texte_original": "Dans trois semaines, nous partons au Japon.", "note": "JAPON sans signe (NS:JAPON refusé) : Italie", "source": "dataset:40"}
+{"text": "Maintenant, le système marche en direct.", "glosses": ["MAINTENANT", "SYSTÈME", "MARCHER", "DIRECT"], "language": "fr", "texte_original": "Maintenant, le système tourne en direct.", "note": "TOURNER sans signe : « marche »", "source": "dataset:41"}
+{"text": "Nous allons publier le dataset.", "glosses": ["BIENTÔT", "NOUS", "DATASET", "PUBLIER"], "language": "fr", "source": "dataset:42"}
+{"text": "Tu finiras ce travail.", "glosses": ["BIENTÔT", "TOI", "TRAVAIL", "FINIR"], "language": "fr", "source": "dataset:43"}
+{"text": "Le train partira en retard.", "glosses": ["BIENTÔT", "TRAIN", "PARTIR", "RETARD"], "language": "fr", "source": "dataset:44"}
+{"text": "À la bibliothèque, je lis des romans.", "glosses": ["BIBLIOTHÈQUE", "MOI", "ROMAN", "LIRE"], "language": "fr", "source": "dataset:45"}
+{"text": "Dans la salle, les étudiants attendent le professeur.", "glosses": ["SALLE", "ÉTUDIANT", "PROFESSEUR", "ATTENDRE"], "language": "fr", "source": "dataset:46"}
+{"text": "Mon oncle habite à Marseille.", "glosses": ["MARSEILLE", "ONCLE", "MOI", "HABITER"], "language": "fr", "source": "dataset:47"}
+{"text": "Nous allons au cinéma ce soir.", "glosses": ["SOIR", "CINÉMA", "NOUS", "ALLER"], "language": "fr", "source": "dataset:48"}
+{"text": "Vous présentez très clairement.", "glosses": ["VOUS", "PRÉSENTER", "CLAIR", "TRÈS"], "language": "fr", "texte_original": "Votre présentation est très claire.", "note": "PRÉSENTATION sans signe : verbe PRÉSENTER", "source": "dataset:49"}
+{"text": "Leurs enfants jouent au jardin.", "glosses": ["JARDIN", "ENFANT", "EUX", "JOUER"], "language": "fr", "source": "dataset:50"}
+{"text": "Notre modèle dépasse le baseline.", "glosses": ["MODÈLE", "NOUS", "BASELINE", "DÉPASSER"], "language": "fr", "source": "dataset:51"}
+{"text": "J'ai acheté trois livres anciens.", "glosses": ["AVANT", "MOI", "LIVRE", "ANCIEN", "TROIS", "ACHETER"], "language": "fr", "source": "dataset:52"}
+{"text": "Les grandes villes sont polluées.", "glosses": ["VILLE", "GRAND", "POLLUÉ"], "language": "fr", "source": "dataset:53"}
+{"text": "Cinq ingénieurs travaillent sur le projet.", "glosses": ["INGÉNIEUR", "CINQ", "PROJET", "TRAVAILLER"], "language": "fr", "source": "dataset:54"}
+{"text": "Elle a deux chiens noirs.", "glosses": ["LUI", "CHIEN", "NOIR", "DEUX"], "language": "fr", "source": "dataset:55"}
+{"text": "Vous devez écrire votre adresse.", "glosses": ["VOUS", "ADRESSE", "VOUS", "ÉCRIRE", "DEVOIR"], "language": "fr", "texte_original": "Vous devez remplir ce formulaire.", "note": "FORMULAIRE sans signe : phrase reformulée", "source": "dataset:56"}
+{"text": "Je peux t'aider ?", "glosses": ["MOI", "AIDER-À-TOI", "POUVOIR", "QUESTION"], "language": "fr", "source": "dataset:57"}
+{"text": "Ils veulent apprendre la LSF.", "glosses": ["EUX", "LSF", "APPRENDRE", "VOULOIR"], "language": "fr", "source": "dataset:58"}
+{"text": "Pour terminer, nous comparons les deux modèles.", "glosses": ["ENFIN", "NOUS", "MODÈLE", "DEUX", "COMPARER"], "language": "fr", "source": "dataset:59"}
+{"text": "Donc, le modèle fonctionne bien.", "glosses": ["MODÈLE", "MARCHER", "BIEN"], "language": "fr", "source": "dataset:60"}
+{"text": "Du coup, nous changeons de méthode.", "glosses": ["NOUS", "MÉTHODE", "CHANGER"], "language": "fr", "source": "dataset:61"}
+{"text": "Le match est retransmis en direct ce soir.", "glosses": ["SOIR", "MATCH", "RETRANSMETTRE", "DIRECT"], "language": "fr", "source": "dataset:62"}
+{"text": "Je commente la course en live.", "glosses": ["MOI", "COURSE", "COMMENTER", "DIRECT"], "language": "fr", "source": "dataset:63"}
+{"text": "Tu regardes le live ?", "glosses": ["TOI", "DIRECT", "REGARDER", "QUESTION"], "language": "fr", "source": "dataset:64"}
+{"text": "Le deep learning demande beaucoup d'exemples.", "glosses": ["DEEP-LEARNING", "EXEMPLE", "BEAUCOUP", "DEMANDER"], "language": "fr", "texte_original": "Le deep learning demande beaucoup de données.", "note": "DONNÉE sans signe (INFORMER n'avait pas ce sens) : « exemples »", "source": "dataset:65"}
+{"text": "Nous comparons Camembert et Flaubert.", "glosses": ["NOUS", "CAMEMBERT", "FLAUBERT", "COMPARER"], "language": "fr", "source": "dataset:66"}
+{"text": "Le machine learning détecte les fraudes.", "glosses": ["MACHINE-LEARNING", "FRAUDE", "TROUVER"], "language": "fr", "source": "dataset:67"}
+{"text": "Ce film, je l'ai déjà vu.", "glosses": ["FILM", "MOI", "VOIR", "DÉJÀ"], "language": "fr", "source": "dataset:68"}
+{"text": "Le chocolat, elle déteste ça.", "glosses": ["CHOCOLAT", "LUI", "AIMER", "NON"], "language": "fr", "source": "dataset:69"}
+{"text": "Tu parles français ?", "glosses": ["TOI", "FRANÇAIS", "PARLER", "QUESTION"], "language": "fr", "source": "dataset:70"}
+{"text": "Elle ne boit pas de thé.", "glosses": ["LUI", "THÉ", "BOIRE", "NON"], "language": "fr", "source": "dataset:71"}
+{"text": "Demain, nous entraînerons un nouveau modèle.", "glosses": ["DEMAIN", "NOUS", "MODÈLE", "NOUVEAU", "ENTRAÎNER"], "language": "fr", "source": "dataset:72"}
+{"text": "Qui est ton professeur ?", "glosses": ["PROFESSEUR", "TOI", "QUI"], "language": "fr", "source": "dataset:73"}
+{"text": "Je vous conseille ce livre.", "glosses": ["MOI", "LIVRE", "CONSEILLER-À-VOUS"], "language": "fr", "source": "dev:0"}
+{"text": "Nous vous expliquerons la suite.", "glosses": ["BIENTÔT", "NOUS", "SUITE", "EXPLIQUER-À-VOUS"], "language": "fr", "source": "dev:1"}
+{"text": "Le live commence dans cinq minutes.", "glosses": ["MINUTE", "CINQ", "DIRECT", "COMMENCER"], "language": "fr", "source": "dev:2"}
+{"text": "Tu dois partir ?", "glosses": ["TOI", "PARTIR", "DEVOIR", "QUESTION"], "language": "fr", "source": "dev:3"}
+{"text": "Nous dînons à huit heures.", "glosses": ["HEURE", "HUIT", "NOUS", "DÎNER"], "language": "fr", "source": "dev:4"}
+{"text": "Je ne connais pas cet homme.", "glosses": ["MOI", "HOMME", "CONNAÎTRE", "NON"], "language": "fr", "source": "dev:5"}
+{"text": "Du coup, on reste ici ce soir.", "glosses": ["SOIR", "ICI", "NOUS", "RESTER"], "language": "fr", "source": "dev:6"}
+{"text": "Je bois un café chaque matin.", "glosses": ["MATIN", "MOI", "CAFÉ", "BOIRE"], "language": "fr", "source": "dev:7"}
+{"text": "À l'hôpital, les médecins travaillent beaucoup.", "glosses": ["HÔPITAL", "MÉDECIN", "TRAVAILLER", "BEAUCOUP"], "language": "fr", "texte_original": "À l'hôpital, les médecins sont très occupés.", "note": "OCCUPÉ sans signe : « travaillent beaucoup »", "source": "dev:8"}
+{"text": "Ce matin, nous avons lancé l'entraînement.", "glosses": ["MATIN", "NOUS", "ENTRAÎNEMENT", "COMMENCER"], "language": "fr", "source": "dev:9"}
+{"text": "Elle range ses livres.", "glosses": ["LUI", "LIVRE", "LUI", "RANGER"], "language": "fr", "source": "dev:10"}
+{"text": "Elle leur raconte une histoire.", "glosses": ["LUI", "HISTOIRE", "RACONTER-À-EUX"], "language": "fr", "source": "dev:11"}
+{"text": "Le batch size est petit.", "glosses": ["BATCH-SIZE", "PETIT"], "language": "fr", "source": "dev:12"}
+{"text": "Je ne sais pas.", "glosses": ["MOI", "SAVOIR", "NON"], "language": "fr", "source": "dev:13"}
+{"text": "Nous allons voter.", "glosses": ["BIENTÔT", "NOUS", "VOTER"], "language": "fr", "source": "dev:14"}
+{"text": "Je te montre mon nouveau téléphone.", "glosses": ["MOI", "TÉLÉPHONE", "MOI", "NOUVEAU", "MONTRER-À-TOI"], "language": "fr", "source": "dev:15"}
+{"text": "Vous aimez votre travail ?", "glosses": ["VOUS", "TRAVAIL", "VOUS", "AIMER", "QUESTION"], "language": "fr", "source": "dev:16"}
+{"text": "Que regardes-tu à la télévision ?", "glosses": ["TÉLÉVISION", "TOI", "REGARDER", "QUOI"], "language": "fr", "source": "dev:17"}
+{"text": "L'année prochaine, nous déménageons à Nantes.", "glosses": ["ANNÉE-PROCHAINE", "NANTES", "NOUS", "DÉMÉNAGER"], "language": "fr", "source": "dev:18"}
+{"text": "La semaine prochaine, elle part en Italie.", "glosses": ["SEMAINE-PROCHAINE", "ITALIE", "LUI", "PARTIR"], "language": "fr", "source": "dev:19"}
+{"text": "Notre réseau apprend vite.", "glosses": ["RÉSEAU", "NOUS", "APPRENDRE", "VITE"], "language": "fr", "source": "dev:20"}
+{"text": "Le fine tuning améliore les résultats.", "glosses": ["FINE-TUNING", "RÉSULTAT", "AMÉLIORER"], "language": "fr", "source": "dev:21"}
+{"text": "Pourquoi tu es en retard ?", "glosses": ["TOI", "RETARD", "POURQUOI"], "language": "fr", "source": "dev:22"}
+{"text": "Alors, tu as trouvé une idée ?", "glosses": ["AVANT", "TOI", "IDÉE", "TROUVER", "QUESTION"], "language": "fr", "texte_original": "Alors, tu as pris ta décision ?", "note": "DÉCISION sans signe (DECIDER refusé) : phrase reformulée", "source": "dev:23"}
+{"text": "Quand est-ce que vous arrivez ?", "glosses": ["VOUS", "ARRIVER", "QUAND"], "language": "fr", "source": "dev:24"}
+{"text": "Nous suivons l'élection en live.", "glosses": ["NOUS", "ÉLECTION", "SUIVRE", "DIRECT"], "language": "fr", "source": "dev:25"}
+{"text": "Paul et Julie habitent à Nice.", "glosses": ["NICE", "PAUL", "JULIE", "HABITER"], "language": "fr", "source": "dev:26"}
+{"text": "Combien d'heures pour l'entraînement ?", "glosses": ["ENTRAÎNEMENT", "HEURE", "COMBIEN"], "language": "fr", "texte_original": "Combien d'heures dure l'entraînement ?", "note": "DURER sans signe : phrase sans verbe", "source": "dev:27"}
+{"text": "Tu lui réponds quand ?", "glosses": ["TOI", "RÉPONDRE-À-LUI", "QUAND"], "language": "fr", "source": "dev:28"}
+{"text": "Ils n'ont rien compris.", "glosses": ["AVANT", "EUX", "COMPRENDRE", "RIEN"], "language": "fr", "source": "dev:29"}
+{"text": "Il m'a dit son secret.", "glosses": ["AVANT", "LUI", "SECRET", "LUI", "DIRE-À-MOI"], "language": "fr", "source": "dev:30"}
+{"text": "Le machine learning transforme l'industrie.", "glosses": ["MACHINE-LEARNING", "INDUSTRIE", "TRANSFORMER"], "language": "fr", "source": "dev:31"}
+{"text": "Je veux te parler.", "glosses": ["MOI", "PARLER-À-TOI", "VOULOIR"], "language": "fr", "source": "dev:32"}
+{"text": "Le système détecte les signes en live.", "glosses": ["SYSTÈME", "SIGNE", "TROUVER", "DIRECT"], "language": "fr", "source": "dev:33"}
+{"text": "Le magasin n'est pas ouvert.", "glosses": ["MAGASIN", "OUVRIR", "NON"], "language": "fr", "source": "dev:34"}
+{"text": "Comment tu t'appelles ?", "glosses": ["TOI", "APPELER", "COMMENT"], "language": "fr", "source": "dev:35"}
+{"text": "Vous utilisez le GPU ?", "glosses": ["VOUS", "GPU", "UTILISER", "QUESTION"], "language": "fr", "source": "dev:36"}
+{"text": "Dans le bus, les gens dorment.", "glosses": ["BUS", "GENS", "DORMIR"], "language": "fr", "source": "dev:37"}
+{"text": "Que veut dire ce mot ?", "glosses": ["MOT", "VOULOIR-DIRE", "QUOI"], "language": "fr", "source": "dev:38"}
+{"text": "Nous allons améliorer le modèle.", "glosses": ["BIENTÔT", "NOUS", "MODÈLE", "AMÉLIORER"], "language": "fr", "source": "dev:39"}
+{"text": "À la plage, les enfants jouent dans le sable.", "glosses": ["PLAGE", "ENFANT", "SABLE", "JOUER"], "language": "fr", "source": "dev:40"}
+{"text": "Le bus ne passe plus ici.", "glosses": ["ICI", "BUS", "PASSER", "NON"], "language": "fr", "source": "dev:41"}
+{"text": "Demain, elle t'appelle.", "glosses": ["DEMAIN", "LUI", "APPELER-À-TOI"], "language": "fr", "source": "dev:42"}
+{"text": "Le magasin ferme tard ?", "glosses": ["MAGASIN", "FERMER", "TARD", "QUESTION"], "language": "fr", "source": "dev:43"}
+{"text": "Je regarde Arte le soir.", "glosses": ["SOIR", "MOI", "ARTE", "REGARDER"], "language": "fr", "source": "dev:44"}

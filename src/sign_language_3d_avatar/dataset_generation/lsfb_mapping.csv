@@ -7,7 +7,7 @@ ADORABLE,MIGNON,validé,21,,choisi à la relecture (lsfb_candidats.csv)
 ADRESSE,ADRESSE,exact,1,,
 AFFAIRE,AFFAIRE,exact,6,,
 AGIR,FAIRE,validé,142,,choisi à la relecture (lsfb_candidats.csv)
-AIDE,,absent,0,,"aucun signe ne convient, d'après la relecture (lsfb_candidats.csv)"
+AIDE,AIDER,validé,170,,choisi à la relecture (lsfb_candidats.csv)
 AIDER,AIDER,exact,170,,
 AIDER-À-MOI,AIDER,directionnel,170,,forme de citation ; orientation vers MOI à produire par l'avatar
 AIDER-À-TOI,AIDER,directionnel,170,,forme de citation ; orientation vers TOI à produire par l'avatar
@@ -21,11 +21,11 @@ AMÉLIORER,AMELIORER,exact,6,,
 ANCIEN,ANCIEN,exact,19,ANCIEN.AVANT,
 ANGLAIS,ANGLAIS,exact,17,,
 ANIMER,,absent,0,,"aucun signe ne convient, d'après la relecture (lsfb_candidats.csv)"
-ANNIVERSAIRE,,absent,0,,
+ANNIVERSAIRE,,absent,0,,"aucun signe ne convient, d'après la relecture (lsfb_candidats.csv)"
 ANNOTER,,absent,0,,"aucun signe ne convient, d'après la relecture (lsfb_candidats.csv)"
 ANNOTÉ,,absent,0,,"aucun signe ne convient, d'après la relecture (lsfb_candidats.csv)"
 ANNULER,ANNULER,exact,10,ANNULER.BRUN,
-ANNÉE-DERNIÈRE,,absent,0,,
+ANNÉE-DERNIÈRE,,absent,0,,"aucun signe ne convient, d'après la relecture (lsfb_candidats.csv)"
 ANNÉE-PROCHAINE,ANNEE+PROCHAINE,décomposé,15,,"composé absent : signes séparés, joués à la suite"
 APPARAÎTRE,APPARAITRE,exact,234,,
 APPARTEMENT,APPARTEMENT,exact,13,,
@@ -61,7 +61,7 @@ BLEU,BLEU,exact,38,,
 BOIRE,BOIRE,exact,73,,
 BON,BON,exact,98,BON.MENTON,
 BORDEAUX,FS:B+FS:O+FS:R+FS:D+FS:E+FS:A+FS:U+FS:X,épeler,2,,"épelé (alphabet manuel FS:A–Z), d'après la relecture (lsfb_candidats.csv)"
-BOULANGERIE,,absent,0,,"aucun signe ne convient, d'après la relecture (lsfb_candidats.csv)"
+BOULANGERIE,BOULANGER,validé,17,,choisi à la relecture (lsfb_candidats.csv)
 BRETAGNE,FS:B+FS:R+FS:E+FS:T+FS:A+FS:G+FS:N+FS:E,épeler,4,,"épelé (alphabet manuel FS:A–Z), d'après la relecture (lsfb_candidats.csv)"
 BRUIT,BRUIT,exact,15,BRUIT.SON BRUIT.SON.SON,
 BRUITÉ,,absent,0,,"aucun signe ne convient, d'après la relecture (lsfb_candidats.csv)"
@@ -77,7 +77,7 @@ CHANGEMENT,,absent,0,,"aucun signe ne convient, d'après la relecture (lsfb_cand
 CHANGER,CHANGER,exact,36,CHANGER.DEVENIR CHANGER.DEVENIRT CHANGER.MOT CHANGER.ROUE,
 CHANTER,CHANTER,exact,1,,
 CHAPITRE,PARTIE,validé,38,,choisi à la relecture (lsfb_candidats.csv)
-CHAT,,absent,0,CHAT.10,"aucun signe ne convient, d'après la relecture (lsfb_candidats.csv)"
+CHAT,CHAT.10,validé,3,CHAT.10,choisi à la relecture (lsfb_candidats.csv)
 CHAUD,CHAUD,exact,78,,
 CHEMIN,CHEMIN,exact,31,,
 CHER,CHER,exact,43,CHER.5 CHER.ARGENT,
@@ -107,9 +107,9 @@ CONCOURS,CONCOURS,exact,13,,
 CONDUIRE,CONDUIRE,exact,28,,
 CONFÉRENCE,CONFERENCE,exact,8,CONFERENCE.LS,
 CONNAÎTRE,CONNAITRE,exact,253,,
-CONSEILLER-À-VOUS,,absent,0,,"aucun signe ne convient, d'après la relecture (lsfb_candidats.csv)"
+CONSEILLER-À-VOUS,CONSEIL,validé,5,,forme de citation ; orientation vers VOUS à produire par l'avatar ; choisi à la relecture (lsfb_candidats.csv)
 CONSTRUIRE,CONSTRUIRE,exact,27,CONSTRUIRE.LASAGNE,
-CONTENIR,,absent,0,,"aucun signe ne convient, d'après la relecture (lsfb_candidats.csv)"
+CONTENIR,INTERIEUR,validé,2,,choisi à la relecture (lsfb_candidats.csv)
 CONTENT,CONTENT,exact,95,CONTENT.PLAISIR,
 CONVERGER,,absent,0,,"aucun signe ne convient, d'après la relecture (lsfb_candidats.csv)"
 COUCHE,ETAGE,validé,20,,choisi à la relecture (lsfb_candidats.csv)
@@ -117,11 +117,11 @@ COUPER,COUPER,exact,81,COUPER.ABATTRE COUPER.MOITIE COUPER.ABBATRE COUPER.MAIN C
 COUR,,absent,0,,"aucun signe ne convient, d'après la relecture (lsfb_candidats.csv)"
 COURIR,COURIR,exact,30,COURIR.1 COURIR.5,
 COURS,COURS,exact,56,,
-COURSE,,absent,0,,"aucun signe ne convient, d'après la relecture (lsfb_candidats.csv)"
+COURSE,COURIR,validé,30,,choisi à la relecture (lsfb_candidats.csv)
 COUSIN,COUSIN,exact,15,,
 COÛTER,,absent,0,,"aucun signe ne convient, d'après la relecture (lsfb_candidats.csv)"
 CUISINE,CUISINE,exact,55,CUISINE.MENAGE,
-CUISINER,,absent,0,,"aucun signe ne convient, d'après la relecture (lsfb_candidats.csv)"
+CUISINER,CUISINE,validé,55,,choisi à la relecture (lsfb_candidats.csv)
 D'ACCORD,,absent,0,,"aucun signe ne convient, d'après la relecture (lsfb_candidats.csv)"
 DATASET,FS:D+FS:A+FS:T+FS:A+FS:S+FS:E+FS:T,épeler,6,,"épelé (alphabet manuel FS:A–Z), d'après la relecture (lsfb_candidats.csv)"
 DEEP-LEARNING,FS:D+FS:E+FS:E+FS:P+FS:L+FS:E+FS:A+FS:R+FS:N+FS:I+FS:N+FS:G,épeler,4,,"épelé (alphabet manuel FS:A–Z), d'après la relecture (lsfb_candidats.csv)"
@@ -155,7 +155,7 @@ DONNÉE,,absent,0,,"aucun signe ne convient, d'après la relecture (lsfb_candida
 DORMIR,DORMIR,exact,90,DORMIR.MAINS,
 DRÔLE,COMIQUE,validé,67,,choisi à la relecture (lsfb_candidats.csv)
 DURER,,absent,0,,"aucun signe ne convient, d'après la relecture (lsfb_candidats.csv)"
-DÉBAT,,absent,0,,"aucun signe ne convient, d'après la relecture (lsfb_candidats.csv)"
+DÉBAT,DISCUTER,validé,86,,choisi à la relecture (lsfb_candidats.csv)
 DÉCISION,,absent,0,,"aucun signe ne convient, d'après la relecture (lsfb_candidats.csv)"
 DÉCOUPER,COUPER,validé,81,,choisi à la relecture (lsfb_candidats.csv)
 DÉFILÉ,,absent,0,,"aucun signe ne convient, d'après la relecture (lsfb_candidats.csv)"
@@ -176,7 +176,7 @@ ENFIN,ENFIN.DEPASSER,validé,1,ENFIN.TRANQUILLE ENFIN.DEPASSER,choisi à la rele
 ENNUYEUX,,absent,0,,"aucun signe ne convient, d'après la relecture (lsfb_candidats.csv)"
 ENSEMBLE,ENSEMBLE,exact,67,,
 ENTRAÎNEMENT,ENTRAINEMENT,exact,43,,
-ENTRAÎNER,,absent,0,,"aucun signe ne convient, d'après la relecture (lsfb_candidats.csv)"
+ENTRAÎNER,ENTRAINEMENT,validé,43,,choisi à la relecture (lsfb_candidats.csv)
 ENTRETIEN,INTERVIEW,validé,22,,choisi à la relecture (lsfb_candidats.csv)
 ENTRÉE,,absent,0,,"aucun signe ne convient, d'après la relecture (lsfb_candidats.csv)"
 ENVOYER-À-NOUS,ENVOYER,directionnel,41,ENVOYER.SMS ENVOYER.MESSAGE ENVOYER.COPIE,forme de citation ; orientation vers NOUS à produire par l'avatar
@@ -248,8 +248,8 @@ ICI,ICI,exact,80,,
 IDÉE,IDEE,exact,67,IDEE.50,
 IMAGE,IMAGE,exact,122,,
 IMPORTANT,IMPORTANT,exact,192,,
-INDUSTRIE,,absent,0,,"aucun signe ne convient, d'après la relecture (lsfb_candidats.csv)"
-INFORMATIQUE,,absent,0,,"aucun signe ne convient, d'après la relecture (lsfb_candidats.csv)"
+INDUSTRIE,ENTREPRISE,validé,31,,choisi à la relecture (lsfb_candidats.csv)
+INFORMATIQUE,ORDINATEUR,validé,49,,choisi à la relecture (lsfb_candidats.csv)
 INFORMER,INFORMER,exact,130,,
 INFORMER-À-NOUS,INFORMER,directionnel,130,,forme de citation ; orientation vers NOUS à produire par l'avatar
 INGÉNIEUR,INGENIEUR,exact,1,,
@@ -290,7 +290,7 @@ LÉGUME,LEGUMES,validé,16,,choisi à la relecture (lsfb_candidats.csv)
 MACHINE-LEARNING,FS:M+FS:A+FS:C+FS:H+FS:I+FS:N+FS:E+FS:L+FS:E+FS:A+FS:R+FS:N+FS:I+FS:N+FS:G,épeler,4,,"épelé (alphabet manuel FS:A–Z), d'après la relecture (lsfb_candidats.csv)"
 MAGASIN,MAGASIN,exact,45,MAGASIN.VENDRE MAGASIN.55 MAGASIN.VENDRET,
 MAI,MAI,exact,1,,
-MAINTENANT,,absent,0,,"aucun signe ne convient, d'après la relecture (lsfb_candidats.csv)"
+MAINTENANT,MAINTENANY,validé,1,,choisi à la relecture (lsfb_candidats.csv)
 MAISON,MAISON,exact,225,,
 MAL,MAL,exact,22,MAL.PATIENCE MAL.GORGE,
 MALADE,MALADE,exact,26,MALADE.VENTRE,
@@ -303,7 +303,7 @@ MARDI-PROCHAIN,,absent,0,,"aucun signe ne convient, d'après la relecture (lsfb_
 MARIE,FS:M+FS:A+FS:R+FS:I+FS:E,épeler,6,,"épelé (alphabet manuel FS:A–Z), d'après la relecture (lsfb_candidats.csv)"
 MARSEILLE,FS:M+FS:A+FS:R+FS:S+FS:E+FS:I+FS:L+FS:L+FS:E,épeler,6,,"épelé (alphabet manuel FS:A–Z), d'après la relecture (lsfb_candidats.csv)"
 MATCH,MATCH,exact,3,,
-MATHS,,absent,0,,"aucun signe ne convient, d'après la relecture (lsfb_candidats.csv)"
+MATHS,MATHEMATIQUE,validé,7,,choisi à la relecture (lsfb_candidats.csv)
 MATIN,MATIN,exact,58,,
 MEILLEUR,MEILLEUR,exact,42,,
 MENU,MENU,exact,4,,
@@ -345,7 +345,7 @@ NON,NON,exact,1184,NON.N NON.STOP,
 NOUS,PT:PRO4,pointage,0,,"384 occurrences annotées dans le corpus, mais pas de clip servi dans ISOL : à générer (pointage)"
 NOUVEAU,NOUVEAU,exact,2,NOUVEAU.FLASH NOUVEAU.REPETER,
 NUIT,NUIT,exact,9,,
-NÉCESSAIRE,,absent,0,,"aucun signe ne convient, d'après la relecture (lsfb_candidats.csv)"
+NÉCESSAIRE,BESOIN,validé,121,,choisi à la relecture (lsfb_candidats.csv)
 OCCUPÉ,,absent,0,,"aucun signe ne convient, d'après la relecture (lsfb_candidats.csv)"
 OLLAMA,FS:O+FS:L+FS:L+FS:A+FS:M+FS:A,épeler,9,,"épelé (alphabet manuel FS:A–Z), d'après la relecture (lsfb_candidats.csv)"
 ONCLE,ONCLE,exact,10,,
@@ -360,13 +360,13 @@ PANTALON,PANTALON,exact,8,,
 PAPA,PAPA,exact,315,PAPA.8 PAPA.COQ,
 PARALLÈLE,PARALLELE,exact,2,,
 PARC,PARC,exact,2,,
-PARDON,,absent,0,,"aucun signe ne convient, d'après la relecture (lsfb_candidats.csv)"
+PARDON,DESOLE,validé,65,,choisi à la relecture (lsfb_candidats.csv)
 PARENT,PARENTS,validé,291,,choisi à la relecture (lsfb_candidats.csv)
 PARENTS,PARENTS,exact,291,PARENTS.8 PARENTS.INVERSE,
 PARIS,FS:P+FS:A+FS:R+FS:I+FS:S,épeler,10,,"épelé (alphabet manuel FS:A–Z), d'après la relecture (lsfb_candidats.csv)"
 PARLER,PARLER,exact,391,PARLER.LOGOPEDIE PARLER.F,
 PARLER-À-TOI,PARLER,directionnel,391,PARLER.LOGOPEDIE PARLER.F,forme de citation ; orientation vers TOI à produire par l'avatar
-PAROLE,,absent,0,,"aucun signe ne convient, d'après la relecture (lsfb_candidats.csv)"
+PAROLE,PARLER,validé,391,,choisi à la relecture (lsfb_candidats.csv)
 PARTIR,PARTIR,exact,172,PARTIR.B PARTIR.GRANDIR PARTIR.ASSEZ PARTIR.ELIMINER,
 PASSER,PASSER.TRAVERSER,validé,43,PASSER.TRAVERSER,choisi à la relecture (lsfb_candidats.csv)
 PATRON,CHEF,validé,71,,choisi à la relecture (lsfb_candidats.csv)
@@ -383,7 +383,7 @@ PISCINE,PISCINE,exact,12,PISCINE.RECTANGLE,
 PLAGE,PLAGE,exact,5,,
 PLANTER,PLANTER,exact,2,,
 PLEURER,PLEURER,exact,51,PLEURER.OEIL PLEURER.BEAUCOUP,
-PLEUVOIR,,absent,0,,"aucun signe ne convient, d'après la relecture (lsfb_candidats.csv)"
+PLEUVOIR,PLUIE,validé,24,,choisi à la relecture (lsfb_candidats.csv)
 PLUIE,PLUIE,exact,24,,
 PLUS,PLUS,exact,370,PLUS.P PLUS.PUBLIC PLUS.S,
 PLUSIEURS,PLUSIEURS,exact,84,PLUSIEURS.LISTE,
@@ -446,7 +446,7 @@ RESTER,RESTER,exact,128,RESTER.DURER,
 RETARD,RETARD,exact,50,,
 RETRANSMETTRE,DIFFUSER,validé,104,,choisi à la relecture (lsfb_candidats.csv)
 RETROUVER,RENCONTRER,validé,296,,choisi à la relecture (lsfb_candidats.csv)
-REVENIR,,absent,0,,"aucun signe ne convient, d'après la relecture (lsfb_candidats.csv)"
+REVENIR,FS:R+FS:E+FS:V+FS:E+FS:N+FS:I+FS:R,épeler,4,,"épelé (alphabet manuel FS:A–Z), d'après la relecture (lsfb_candidats.csv)"
 RIEN,RIEN,exact,969,RIEN.MAGIE,
 ROBE,ROBE,exact,2,,
 ROMAN,LIVRE,validé,95,,choisi à la relecture (lsfb_candidats.csv)
@@ -473,7 +473,7 @@ SAVOIR,SAVOIR,exact,388,SAVOIR.AUTRE,
 SECRET,SECRET,exact,7,,
 SEIZE,16,exact,9,16.2,
 SEMAINE,SEMAINE,exact,13,SEMAINE.JOURNAL,
-SEMAINE-DERNIÈRE,,absent,0,,
+SEMAINE-DERNIÈRE,,absent,0,,"aucun signe ne convient, d'après la relecture (lsfb_candidats.csv)"
 SEMAINE-PROCHAINE,SEMAINE+PROCHAINE,décomposé,13,,"composé absent : signes séparés, joués à la suite"
 SERVEUR,SERVEUR,exact,1,,
 SERVIR,SERVIR,exact,2,,
@@ -488,11 +488,11 @@ SOUVENT,SOUVENT,exact,47,SOUVENT.MARSEILLE SOUVENT.MARSELLE,
 SPORT,SPORT,exact,42,SPORT.EXAGERER,
 STYLO,CRAYON,validé,4,,choisi à la relecture (lsfb_candidats.csv)
 SUCCÈS,,absent,0,,"aucun signe ne convient, d'après la relecture (lsfb_candidats.csv)"
-SUITE,,absent,0,,"aucun signe ne convient, d'après la relecture (lsfb_candidats.csv)"
+SUITE,SUIVANT,validé,47,,choisi à la relecture (lsfb_candidats.csv)
 SUIVRE,SUIVRE,exact,166,,
 SYMPA,SYMPATHIQUE,validé,2,,choisi à la relecture (lsfb_candidats.csv)
 SYSTÈME,SYSTEME,exact,11,,
-SÉPARÉ,,absent,0,,"aucun signe ne convient, d'après la relecture (lsfb_candidats.csv)"
+SÉPARÉ,SEPARER,validé,83,,choisi à la relecture (lsfb_candidats.csv)
 SŒUR,SOEUR,exact,78,SOEUR.NONNE,
 TARD,TARD,exact,22,TARD.PROCHAINE,
 TERMINÉ,FINI,validé,1,,choisi à la relecture (lsfb_candidats.csv)
@@ -537,7 +537,7 @@ VERSION,VERSION,exact,1,,
 VERT,VERT,exact,87,,
 VIANDE,VIANDE,exact,37,,
 VIDÉO,VIDEO,exact,26,,
-VIEUX,,absent,0,,"aucun signe ne convient, d'après la relecture (lsfb_candidats.csv)"
+VIEUX,AGE,validé,436,,choisi à la relecture (lsfb_candidats.csv)
 VILLE,VILLE,exact,32,,
 VINGT,20,exact,60,20.000,
 VISITER,VISITER,exact,18,VISITER.RENCONTRER,
@@ -553,7 +553,7 @@ VOUS,PT:PRO5,pointage,0,,"110 occurrences annotées dans le corpus, mais pas de 
 VOYAGE,VOYAGE,exact,9,VOYAGE.SAUTER VOYAGE.X VOYAGE.BOUCLE VOYAGE.PLEURER,
 VRAI,VRAI,exact,553,,
 VÉLO,VELO,exact,35,VELO.JUILLET,
-VÉRITÉ,,absent,0,,"aucun signe ne convient, d'après la relecture (lsfb_candidats.csv)"
+VÉRITÉ,VRAI,validé,553,,choisi à la relecture (lsfb_candidats.csv)
 WEEK-END,WEEK-END,exact,15,,
 YEUX,YEUX,exact,42,YEUX.X YEUX.TOURNER YEUX.C YEUX.FERMES YEUX.ORAL,
 YOUTUBE,YOUTUBE,exact,1,,

@@ -21,6 +21,9 @@ pour choisir la forme de main la plus nette. Les signes jugés corrects à l'œi
 (`evaluation/signes_verifies.csv`) n'y figurent pas non plus. L'export garde aussi les réponses déjà dans
 `choix_clips.csv` pour les signes absents de la page.
 
+Avec `--signes CONSEIL,SUIVANT,COMMENT` : ces signes-là sur une seule page, bloquants ou
+non (pour un signe non bloquant, toutes les phrases du banc qui l'utilisent).
+
 Avec `--clips-a-changer` : les signes de la liste « Clips sources à changer » du rapport
 d'évaluation (clip copié mal reconnu alors qu'un clip d'un autre signeur l'est bien). Ils ne
 font pas forcément échouer de phrase : la page montre l'avatar dans les phrases du banc qui
@@ -322,6 +325,8 @@ def main() -> None:
     ap.add_argument("--sans-rendu", action="store_true", help="ne pas rendre les phrases avec l'avatar (Blender)")
     ap.add_argument("--clips-a-changer", action="store_true",
                     help="relire les signes de la liste « Clips sources à changer » du rapport d'évaluation")
+    ap.add_argument("--signes", help="signes à relire, séparés par des virgules (CONSEIL,COMMENT) : "
+                    "bloquants ou non, sur une seule page")
     ap.add_argument("--lettres", action="store_true",
                     help="relire les lettres de l'alphabet manuel qui font échouer des phrases (FS:N…)")
     args = ap.parse_args()
@@ -339,6 +344,10 @@ def main() -> None:
             (s for s in rec["signes"] if not is_letter(s["etiquette"]) and s["rang_clip_source"] is not None
              and s["rang_clip_source"] > 50 and (s["rang_autre_signeur"] or 999) <= 10 and not s.get("clip_relu")),
             key=lambda s: -s["rang_clip_source"])][:args.max]
+    if args.signes:
+        alone = {b["etiquette"]: b["seul"] for b in blocking}
+        worst = [{"etiquette": l.strip(), "seul": alone.get(l.strip(), 0)} for l in args.signes.split(",") if l.strip()]
+    blocked = {b["etiquette"] for b in blocking}
     with open(SELECTION, newline="", encoding="utf-8") as f:
         selection = {r["etiquette_lsfb"]: r for r in csv.DictReader(f)}
     by_label: dict[str, list[dict]] = defaultdict(list)
@@ -349,6 +358,7 @@ def main() -> None:
     signs = []
     for w in worst:
         lab = w["etiquette"]
+        change = args.clips_a_changer or lab not in blocked      # pas bloquant : toutes ses phrases
         clips = [r for r in sorted(by_label[lab], key=lambda r: r["id"])
                  if (DATA / "poses" / "pose" / f"{r['id']}.npy").exists()][:MAX_CLIPS]
         base = lab.split(".")[0]
@@ -359,11 +369,11 @@ def main() -> None:
                                              if args.lettres else "")
                    for p in rec["par_phrase"] if not p["absents"]
                    and any(s["etiquette"] == lab and s["centile"] is not None
-                           and (args.clips_a_changer or s["centile"] < 0.8) for s in p["signes"])]
-        if args.clips_a_changer and not failing:      # absent du banc : le signe seul
+                           and (change or s["centile"] < 0.8) for s in p["signes"])]
+        if change and not failing:      # absent du banc : le signe seul
             failing = selection.get(lab, {}).get("gloses_projet", lab).split()[:1]
         prev = old.get(lab)
-        signs.append({"etiquette": lab, "limite": lab in limit, "changer": args.clips_a_changer, "gloses": " ".join(dict.fromkeys(selection.get(lab, {}).get("gloses_projet", "").split())),
+        signs.append({"etiquette": lab, "limite": lab in limit, "changer": change, "gloses": " ".join(dict.fromkeys(selection.get(lab, {}).get("gloses_projet", "").split())),
                       # FS:H = la lettre H de l'alphabet manuel (« FS » : fingerspelling), pas F-S-H
                       "nom": f"Lettre {lab.split(':', 1)[1]} (une seule lettre de l'alphabet manuel)" if is_letter(lab) else "",
                       "actuel": selection.get(lab, {}).get("instance", ""), "seul": w["seul"], "phrases": failing,
@@ -385,7 +395,9 @@ def main() -> None:
     path = HTML_LETTERS if args.lettres else HTML_CHANGE if args.clips_a_changer else HTML_PATH
     title = ("Relecture des lettres" if args.lettres else "Clips sources à revoir" if args.clips_a_changer
              else "Relecture des clips")
-    heading = ("Phrases du banc qui utilisent ce signe (ou le signe seul), jouées par l'avatar avec le clip actuel :"
+    heading = ("Phrases du banc qui utilisent ce signe (ou que ce signe fait échouer), jouées par l'avatar avec le clip actuel :"
+               if args.signes else
+               "Phrases du banc qui utilisent ce signe (ou le signe seul), jouées par l'avatar avec le clip actuel :"
                if args.clips_a_changer else "Phrases du banc que ce signe fait échouer, jouées par l'avatar avec le clip actuel :")
     path.write_text(PAGE.replace("__SIGNS__", dump).replace("__AUTRES__", json.dumps(others, ensure_ascii=False).replace("</", "<\\/"))
                     .replace("__TITRE__", title).replace("__PHRASES__", heading).replace("__DEPUIS__", rec["timestamp"]), encoding="utf-8")

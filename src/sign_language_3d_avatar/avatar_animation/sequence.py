@@ -171,11 +171,13 @@ def pointing(target: str, torso: dict[str, np.ndarray], rest: dict[str, np.ndarr
     """Pointage de la main droite vers MOI/TOI/LUI (fixe) ou NOUS/VOUS/EUX (balayage)."""
     sh, chest = torso["shoulder.R"], torso["chest"]
     # (position du poignet au début, à la fin), (direction de l'index au début, à la fin)
+    # MOI et NOUS : le bout de l'index s'arrête sur la poitrine (≈ 10 cm devant les
+    # épaules), il ne la traverse pas.
     plans = {
-        "MOI": ((chest + [-0.02, -0.22, -0.06],) * 2, ([0.05, 1.0, -0.15],) * 2),
+        "MOI": ((chest + [-0.02, -0.29, -0.06],) * 2, ([0.05, 1.0, -0.15],) * 2),
         "TOI": ((sh + [0.10, -0.32, -0.10],) * 2, ([0.05, -1.0, 0.05],) * 2),
         "LUI": ((sh + [-0.05, -0.30, -0.10],) * 2, ([-0.75, -0.65, 0.0],) * 2),
-        "NOUS": ((chest + [0.10, -0.20, -0.06], chest + [-0.12, -0.20, -0.06]), ([0.35, 1.0, -0.1], [-0.35, 1.0, -0.1])),
+        "NOUS": ((chest + [0.10, -0.28, -0.06], chest + [-0.12, -0.28, -0.06]), ([0.35, 1.0, -0.1], [-0.35, 1.0, -0.1])),
         "VOUS": ((sh + [0.15, -0.32, -0.10], sh + [-0.08, -0.32, -0.10]), ([0.5, -1.0, 0.0], [-0.5, -1.0, 0.0])),
         "EUX": ((sh + [0.0, -0.32, -0.10], sh + [-0.15, -0.26, -0.10]), ([-0.3, -1.0, 0.0], [-1.0, -0.5, 0.0])),
     }
