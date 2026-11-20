@@ -11,11 +11,15 @@ Sur une seule page :
    mannequin), avec le rang de la lettre dans chaque mot ; pour celles où elle est seule en
    cause, l'avatar épelle le mot en gros plan (rendu Blender, `demo_phrase_blender.py`).
 
+4. avec `--voisines L,D,H` : les lettres que l'évaluation classe devant celle-ci, l'avatar
+   et votre vidéo pour chacune, pour juger si elles se distinguent à l'œil.
+`--seuil 0.9` : phrases qui échouent au seuil de 90 % (80 % par défaut).
+
 Rien à exporter : la page sert à regarder. La page et les vidéos sont dans `data/lsfb/`
 (ignoré par git : clips CC BY-NC-SA 4.0).
 
 Usage :
-    uv run python src/sign_language_3d_avatar/dataset_generation/regard_lettre.py [E] [--sans-rendu] [--ouvrir]
+    uv run python src/sign_language_3d_avatar/dataset_generation/regard_lettre.py [E] [--voisines L,D,H] [--seuil 0.9] [--sans-rendu] [--ouvrir]
 """
 from __future__ import annotations
 
@@ -91,20 +95,26 @@ let html = `<section><h2>1. L'avatar et votre vidéo</h2>
   ${D.source_src ? fig(D.source_src, `<b>Votre vidéo</b> (${esc(D.source)})`) : ""}
   ${D.copie_src ? fig(D.copie_src, `<b>Clip LSFB copié</b> (signeur ${esc(D.copie_signeur)}) : bras et position`) : ""}</div></section>`;
 html += `<section><h2>2. Les ${L} du dataset LSFB (${D.clips.length} exemples en tout)</h2>
-  <p class="lead">L'évaluation reconnaît la lettre de l'avatar en la comparant aux exemples des signeurs
-  <span class="tag eval">évaluation</span> : si votre ${L} est juste mais diffère de ces exemples-là, il sera mal reconnu.
-  Les autres <span class="tag">choix</span> servent à choisir le clip copié.</p>
+  <p class="lead">Ils servent à choisir le clip copié (bras, position${D.orientation ? "" : ", orientation de la main"}).
+  L'évaluation, elle, compare la main de l'avatar à <b>vos vidéos</b> des 26 lettres, pas à ces exemples.</p>
   <div class="grid">${D.clips.map(c => fig(c.video,
     `<span class="tag ${c.moitie === "eval" ? "eval" : ""}">${c.moitie === "eval" ? "évaluation" : "choix"}</span>` +
     (c.copie ? `<span class="tag copie">copié par l'avatar</span>` : "") + ` signeur ${esc(c.signeur)}`)).join("")}</div></section>`;
 html += `<section><h2>3. Phrases où ${L} fait échouer la phrase (${D.phrases.length})</h2>
   <p class="lead">Rang de la lettre parmi les ${D.galerie} signes de la galerie (1 = reconnue du premier coup) ;
-  une phrase échoue quand un signe est hors des 20 % les mieux classés.
+  une phrase échoue quand un signe est hors des ${Math.round(100 - D.seuil * 100)} % les mieux classés.
   <span class="seul">En rouge</span> : ${L} est le seul signe qui fait échouer la phrase.</p>
   ${D.mots.length ? `<div class="grid">${D.mots.map(m => fig(m.video, `<b>${esc(m.mot)}</b> épelé par l'avatar (gros plan)`)).join("")}</div>` : ""}
   <table><tr><th>Phrase</th><th>Mot épelé</th><th>Rang de ${L}</th></tr>
   ${D.phrases.map(p => `<tr><td class="${p.seul ? "seul" : ""}">${esc(p.phrase)}</td><td>${esc(p.mots.join(", "))}</td>` +
     `<td>${esc(p.rangs.join(", "))}</td></tr>`).join("")}</table></section>`;
+if (D.voisines.length) html += `<section><h2>4. Lettres classées devant ${L} par l'évaluation</h2>
+  <p class="lead">Distance de la main de l'avatar (dans un mot épelé) à votre vidéo de chaque lettre : plus elle est
+  petite, plus l'évaluation les juge proches. ${L} doit se distinguer de ces lettres à l'œil.</p>
+  <table><tr><th>Lettre</th><th>Distance</th></tr>${D.distances.map(d =>
+    `<tr><td>${d.lettre === L ? `<b>${esc(d.lettre)}</b>` : esc(d.lettre)}</td><td>${d.distance.toFixed(3)}</td></tr>`).join("")}</table>
+  ${D.voisines.map(v => `<h2>${esc(v.lettre)}</h2><div class="grid">${fig(v.avatar_main, `<b>Avatar</b> — ${esc(v.lettre)} en gros plan`)}` +
+    (v.source_src ? fig(v.source_src, `<b>Votre vidéo</b> — ${esc(v.lettre)}`) : "") + `</div>`).join("")}</section>`;
 document.getElementById("main").innerHTML = html;
 let rate = 1;
 const slow = () => { rate = rate === 1 ? 0.25 : 1; document.querySelectorAll("video").forEach(v => v.playbackRate = rate);
@@ -120,11 +130,38 @@ def stamp(path: Path) -> str:
     return f"{path.relative_to(DATA)}?v={int(path.stat().st_mtime)}"
 
 
+def neighbour(letter: str) -> dict:
+    """Avatar et vidéo de référence d'une autre lettre."""
+    ref = ALPHABET / f"{letter}.json"
+    source = json.loads(ref.read_text(encoding="utf-8")).get("image", "") if ref.exists() else ""
+    return {"lettre": letter, "avatar_main": stamp(RENDUS / f"{letter}_main.mp4"),
+            "source_src": f"../alphabet/{source}?v={int((ALPHABET / source).stat().st_mtime)}" if source else ""}
+
+
+def letter_distances(label: str, n: int = 6) -> list[dict]:
+    """Les `n` lettres les plus proches de la lettre jouée par l'avatar dans le premier mot
+    épelé du banc (galerie des lettres de l'évaluation : vos vidéos, main seule)."""
+    import numpy as np
+    import evaluate_avatar as ev                      # evaluation/ est dans le chemin (revue_clips)
+    cache = max((ev.CACHE).glob("avatar_*.npz"), key=lambda p: p.stat().st_mtime)
+    d = np.load(cache)
+    names, meta = list(d["noms"]), json.loads(str(d["meta"]))
+    for k, ph in enumerate(meta["phrases"]):
+        for start, end, _, kind, _, lab in ph["chronologie"]:
+            if kind == "lettre" and lab == label:
+                j = ev.unstack(names, d[f"phrase::{k}"].astype(np.float64))
+                ranking = ev.build_letter_gallery().rank(ev.hand_vector({n_: v[start:end] for n_, v in j.items()}))
+                return [{"lettre": l.split(":", 1)[1], "distance": dist} for l, dist in ranking[:n]]
+    return []
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("lettre", nargs="?", default="E")
     ap.add_argument("--sans-rendu", action="store_true", help="ne pas refaire les mots épelés (Blender)")
     ap.add_argument("--ouvrir", action="store_true", help="ouvrir la page dans le navigateur")
+    ap.add_argument("--voisines", default="", help="lettres à comparer (L,D,H : classées devant par l'évaluation)")
+    ap.add_argument("--seuil", type=float, default=0.8, help="centile sous lequel une phrase échoue (0.8 ou 0.9)")
     args = ap.parse_args()
     letter = args.lettre.upper()
     label = f"FS:{letter}"
@@ -149,10 +186,10 @@ def main() -> None:
         if p["absents"]:
             continue
         mine = [s for s in p["signes"] if s["etiquette"] == label and s["centile"] is not None]
-        if not any(s["centile"] < 0.8 for s in mine):
+        if not any(s["centile"] < args.seuil for s in mine):
             continue
         others = [s for s in p["signes"] if s["etiquette"] != label and s["centile"] is not None]
-        phrases.append({"phrase": " ".join(p["gloses"]), "seul": all(s["centile"] >= 0.8 for s in others),
+        phrases.append({"phrase": " ".join(p["gloses"]), "seul": all(s["centile"] >= args.seuil for s in others),
                         "mots": list(dict.fromkeys(s["glose"] for s in mine)),
                         "rangs": [str(s["rang"]) for s in mine]})
     phrases.sort(key=lambda p: not p["seul"])
@@ -172,7 +209,9 @@ def main() -> None:
             "copie_src": ready.get(copied.get("instance", ""), ""), "copie_signeur": copied.get("signeur", ""),
             "clips": [{"video": ready[r["id"]], "signeur": r["signer"], "moitie": signer_half(r["signer"]),
                        "copie": r["id"] == copied.get("instance")} for r in clips if r["id"] in ready],
-            "galerie": galerie, "phrases": phrases, "mots": mots}
+            "galerie": galerie, "phrases": phrases, "mots": mots, "seuil": args.seuil,
+            "voisines": [neighbour(v.strip().upper()) for v in args.voisines.split(",") if v.strip()],
+            "distances": letter_distances(label) if args.voisines else []}
     page = DATA / f"lettre_{letter}.html"
     page.write_text(PAGE.replace("__TITRE__", f"Lettre {letter} de près")
                     .replace("__DONNEES__", json.dumps(data, ensure_ascii=False).replace("</", "<\\/")), encoding="utf-8")
