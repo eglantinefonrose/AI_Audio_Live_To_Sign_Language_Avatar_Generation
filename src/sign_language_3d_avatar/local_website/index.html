@@ -24,6 +24,23 @@ textarea { width:100%; min-height:72px; resize:vertical; font:18px/1.4 ui-monosp
            background:var(--bg); color:var(--ink); }
 textarea:focus { outline:2px solid var(--accent); outline-offset:1px; }
 .row { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+textarea.comment, input.comment { font:15px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; text-transform:none;
+                                   min-height:0; padding:8px 10px; }
+textarea.comment { min-height:64px; }
+input.comment { width:100%; border-radius:8px; border:1px solid var(--line); background:var(--bg); color:var(--ink); }
+.avis { border:1px solid var(--line); border-radius:10px; padding:10px 12px; display:flex; flex-direction:column; gap:8px; }
+.avis-tete { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+.avis-tete b { font-family:ui-monospace, "SF Mono", Menlo, monospace; margin-right:auto; }
+.choix { display:flex; flex-wrap:wrap; gap:6px; }
+.choix button.sel { border-color:var(--accent); outline:2px solid var(--accent); font-weight:600; }
+.problemes { display:flex; flex-wrap:wrap; gap:6px 14px; font-size:14px; }
+.problemes label { font-weight:400; display:flex; gap:6px; align-items:center; cursor:pointer; }
+#avis-liste { display:flex; flex-direction:column; gap:8px; }
+#avis-etat.ok { color:var(--ok); font-weight:600; }
+#avis-etat.bad { color:var(--bad); }
+.spinner { display:inline-block; width:12px; height:12px; margin-right:6px; vertical-align:-1px; border-radius:50%;
+           border:2px solid currentColor; border-right-color:transparent; animation:tourne .8s linear infinite; }
+@keyframes tourne { to { transform:rotate(360deg); } }
 label.option { font-weight:400; display:flex; flex-wrap:wrap; gap:4px 8px; align-items:center; cursor:pointer; }
 label.option input { width:18px; height:18px; accent-color:var(--accent); margin:0; }
 button, .button { font:inherit; font-size:15px; border-radius:10px; border:1px solid var(--line); background:var(--card);
@@ -126,6 +143,23 @@ code { font-family:ui-monospace, "SF Mono", Menlo, monospace; font-size:.95em; }
     </div>
   </section>
 
+  <section id="avis-section" hidden>
+    <h2>4. Votre avis sur les signes</h2>
+    <p class="lead">Pour chaque signe, dites s'il est correct ; s'il ne l'est pas, cochez ce qui ne va pas.
+      Cliquez sur ▶ pour revoir ce signe seul. Les avis restent sur cet ordinateur.</p>
+    <div id="avis-liste"></div>
+    <label for="avis-commentaire">Commentaire sur la phrase entière (facultatif)</label>
+    <textarea id="avis-commentaire" class="comment" placeholder="Par exemple : l'ordre des signes, le rythme, ce qui manque…"></textarea>
+    <div class="row">
+      <button id="avis-envoyer" class="primary" disabled>Enregistrer mon avis</button>
+      <a id="avis-mail" class="button" href="#" hidden>✉️ Envoyer cet avis par e-mail</a>
+      <span id="avis-etat" class="credit"></span>
+    </div>
+    <p id="avis-note" class="credit" hidden>Votre avis est enregistré sur cet ordinateur et envoyé à l'équipe du projet
+      (connexion Internet nécessaire). Il contient la phrase, vos réponses et vos commentaires, mais ni votre nom ni votre adresse.</p>
+  </section>
+  <p id="avis-total" class="credit" hidden></p>
+
   <p class="credit">Projet expérimental : il ne remplace pas un interprète. Faites relire les vidéos importantes par une personne qui connaît la LSFB.</p>
 </main>
 
@@ -134,6 +168,9 @@ const $ = id => document.getElementById(id);
 const esc = t => String(t).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const ICON = { "signe": "✅", "composé": "✅", "épelé": "🔤", "pointage": "👉", "absent": "❌" };
 let check = { gloses: [], blender: true, max: 40 }, timer = null, polling = null;
+let current = null, avis = [], segEnd = null;     // phrase de la vidéo affichée, avis sur ses signes
+let sendsToTeam = false;                          // avis envoyés au tableau de l'équipe (config.json)
+let sending = false;                              // envoi en cours : bouton bloqué
 
 function words() { return $("gloses").value.toUpperCase().split(/\s+/).filter(Boolean); }
 
@@ -175,9 +212,10 @@ $("chips").addEventListener("click", e => {
 });
 
 $("generer").onclick = async () => {
-  $("erreur").hidden = true; $("resultat").hidden = true;
+  $("erreur").hidden = true; $("resultat").hidden = true; $("avis-section").hidden = true;
+  current = { gloses: words().join(" "), sous_titres: $("sous-titres").checked, segments: [] };
   const r = await fetch("/api/generer", { method: "POST", headers: { "Content-Type": "application/json" },
-                                          body: JSON.stringify({ gloses: words().join(" "), sous_titres: $("sous-titres").checked }) });
+                                          body: JSON.stringify({ gloses: current.gloses, sous_titres: current.sous_titres }) });
   const d = await r.json();
   if (!r.ok) { showError(d.erreur || "Erreur inconnue."); return; }
   $("progress").hidden = false; $("progress").firstElementChild.style.width = "0";
@@ -202,6 +240,8 @@ async function poll(id) {
       $("telecharger").href = `/videos/${d.video}?telecharger=1&nom=${encodeURIComponent(d.nom)}`;
       $("resultat").hidden = false;
       $("video").play().catch(() => {});
+      current.segments = d.segments || [];
+      showFeedback();
     }
     render();
   }
@@ -217,6 +257,126 @@ $("lent").onclick = () => {
   const v = $("video"); v.playbackRate = v.playbackRate === 1 ? 0.5 : 1;
   $("lent").textContent = v.playbackRate === 1 ? "Ralenti" : "Vitesse normale";
 };
+
+// ------------------------------------------------------------------ avis
+const FEEDBACK_EMAIL = "feedback@aispeechtosignlanguage.fr";      // adresse des retours
+const mailto = (subject, body) => `mailto:${FEEDBACK_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+const VERDICTS = [["correct", "✅ Correct"], ["à revoir", "⚠️ À revoir"], ["mauvais", "❌ Mauvais"]];
+const PROBLEMES = ["La forme de la main", "L'emplacement (où le signe est fait)", "Le mouvement",
+  "L'orientation de la paume", "Ce n'est pas le bon signe (autre sens)", "Trop rapide ou trop lent",
+  "La transition avec le signe voisin", "La main ou le bras traverse le corps", "L'expression du visage", "Autre"];
+const KIND = { "épelé": " (épelé)", "pointage": " (pointage)" };
+
+function showFeedback() {
+  avis = current.segments.map(() => ({ verdict: null, problemes: new Set(), commentaire: "" }));
+  $("avis-commentaire").value = ""; sending = false; sendState(sendLabel()); $("avis-mail").hidden = true;
+  $("avis-liste").innerHTML = current.segments.length ? current.segments.map((s, i) => `<div class="avis" data-i="${i}">
+      <div class="avis-tete"><button class="small" data-rejouer="${i}" title="Revoir ce signe">▶</button>
+        <b>${esc(s.glose)}<span class="credit">${KIND[s.type] || ""}</span></b>
+        <div class="choix">${VERDICTS.map(([v, l]) => `<button class="small" data-v="${esc(v)}">${l}</button>`).join("")}</div></div>
+      <div class="details" hidden><span class="credit">Qu'est-ce qui ne va pas ? (plusieurs choix possibles)</span>
+        <div class="problemes">${PROBLEMES.map(p => `<label><input type="checkbox" value="${esc(p)}">${esc(p)}</label>`).join("")}</div>
+        <input class="comment" type="text" maxlength="500" placeholder="Précisez si possible : ce qu'il faudrait changer…"></div></div>`).join("")
+    : `<p class="credit">Aucun signe joué dans cette phrase (seulement des mots sans signe).</p>`;
+  $("avis-section").hidden = false;
+  updateSend();
+}
+
+function updateSend() {
+  const any = avis.some(a => a.verdict) || $("avis-commentaire").value.trim();
+  $("avis-envoyer").disabled = sending || !any;
+}
+
+function sendState(label, status = "", cls = "") {   // bouton et message à côté
+  $("avis-envoyer").innerHTML = label;
+  $("avis-etat").innerHTML = status;
+  $("avis-etat").className = "credit " + cls;
+}
+
+$("avis-liste").addEventListener("click", e => {
+  const replay = e.target.closest("button[data-rejouer]");
+  if (replay) return playSegment(+replay.dataset.rejouer);
+  const b = e.target.closest("button[data-v]");
+  if (!b) return;
+  const row = b.closest(".avis"), a = avis[+row.dataset.i];
+  a.verdict = a.verdict === b.dataset.v ? null : b.dataset.v;          // re-cliquer : annuler
+  row.querySelectorAll("button[data-v]").forEach(x => x.classList.toggle("sel", x.dataset.v === a.verdict));
+  row.querySelector(".details").hidden = !a.verdict || a.verdict === "correct";
+  changed();
+});
+$("avis-liste").addEventListener("change", e => {
+  if (e.target.type !== "checkbox") return;
+  const a = avis[+e.target.closest(".avis").dataset.i];
+  e.target.checked ? a.problemes.add(e.target.value) : a.problemes.delete(e.target.value);
+  changed();
+});
+$("avis-liste").addEventListener("input", e => {
+  if (e.target.type !== "text") return;
+  avis[+e.target.closest(".avis").dataset.i].commentaire = e.target.value;
+  changed();
+});
+$("avis-commentaire").addEventListener("input", changed);
+function changed() {                               // avis modifié : à réenregistrer
+  if (sending) return;
+  sendState(sendLabel()); $("avis-mail").hidden = true; updateSend();
+}
+const sendLabel = () => sendsToTeam ? "Enregistrer et envoyer mon avis" : "Enregistrer mon avis";
+
+function playSegment(i) {                          // revoir un seul signe, puis pause
+  const s = current.segments[i], v = $("video");
+  v.loop = false; segEnd = s.fin + 0.15;
+  v.currentTime = Math.max(0, s.debut - 0.1);
+  v.play().catch(() => {});
+  v.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+$("video").addEventListener("timeupdate", () => {
+  if (segEnd !== null && $("video").currentTime >= segEnd) { $("video").pause(); segEnd = null; $("video").loop = true; }
+});
+
+$("avis-envoyer").onclick = async () => {
+  const body = { gloses: current.gloses, sous_titres: current.sous_titres, commentaire: $("avis-commentaire").value,
+                 avis: avis.map((a, i) => ({ i, verdict: a.verdict, problemes: [...a.problemes],
+                                             commentaire: a.commentaire })).filter(a => a.verdict) };
+  // Tout de suite : bouton bloqué et « en cours » (l'envoi au tableau prend quelques secondes).
+  sending = true; $("avis-envoyer").disabled = true; $("avis-mail").hidden = true;
+  sendState(`<span class="spinner"></span>${sendsToTeam ? "Envoi en cours…" : "Enregistrement…"}`,
+            sendsToTeam ? "Envoi de votre avis à l'équipe…" : "Enregistrement de votre avis…");
+  let d;
+  try {
+    d = await (await fetch("/api/avis", { method: "POST", headers: { "Content-Type": "application/json" },
+                                          body: JSON.stringify(body) })).json();
+  } catch {                                       // rien n'a été enregistré : on peut réessayer
+    sending = false;
+    sendState(sendLabel(), "L'avis n'a pas pu être enregistré : l'outil ne répond pas (sa fenêtre est-elle ouverte ?). Réessayez.", "bad");
+    updateSend();
+    return;
+  }
+  sending = false;
+  if (d.envoye) sendState("✓ Avis envoyé", `✓ Merci ! Avis envoyé à l'équipe du projet (${d.enregistres} signe(s) jugé(s)).`, "ok");
+  else if (d.envoye === false) sendState("Avis enregistré", "Avis enregistré sur cet ordinateur, mais l'envoi à l'équipe a échoué " +
+    "(pas de connexion Internet ?). Vous pouvez l'envoyer par e-mail : votre messagerie s'ouvre avec le message prêt.", "bad");
+  else sendState("✓ Avis enregistré", `✓ Merci ! Avis enregistré (${d.enregistres} signe(s) jugé(s)). Pour nous l'envoyer, cliquez sur ` +
+    "« Envoyer cet avis par e-mail » : votre messagerie s'ouvre avec le message prêt.", "ok");
+  $("avis-envoyer").disabled = true;
+  const text = d.texte.length > 1800 ? d.texte.slice(0, 1800) + "\n[…] (avis tronqué : joignez le fichier CSV des avis)" : d.texte;
+  $("avis-mail").href = mailto(`Avis Avatar LSFB — ${current.gloses.slice(0, 80)}`, "Bonjour,\n\nVoici mon avis sur les signes de l'avatar :\n\n" + text + "\n");
+  $("avis-mail").hidden = !!d.envoye;
+  showTotal(d.n);
+};
+
+function showTotal(n) {
+  $("avis-total").hidden = !n;
+  $("avis-total").innerHTML = !n ? "" : sendsToTeam ? `${n} avis enregistré(s) sur cet ordinateur · ` +
+    `<a href="/api/avis.csv">Télécharger tous les avis (CSV)</a>` : `${n} avis enregistré(s) sur cet ordinateur · ` +
+    `<a href="/api/avis.csv">Télécharger tous les avis (CSV)</a>, puis ` +
+    `<a href="${esc(mailto("Avis Avatar LSFB (fichier CSV)", "Bonjour,\n\nVoici mes avis sur les signes de l'avatar : le fichier avis-avatar-lsfb.csv est joint.\n"))}">` +
+    `l'envoyer à ${FEEDBACK_EMAIL}</a> en pièce jointe, pour aider à corriger les signes.`;
+}
+fetch("/api/avis").then(r => r.json()).then(d => {
+  sendsToTeam = d.envoi;
+  if (sendsToTeam) { $("avis-envoyer").textContent = sendLabel(); $("avis-note").hidden = false; }
+  showTotal(d.n);
+}).catch(() => {});
 
 let vocabulary = null;
 $("vocab").addEventListener("toggle", async () => {

@@ -54,7 +54,10 @@ sans rien connaître à la programmation :
    🔤 épelé, ❌ pas de signe) et propose parfois un autre mot ;
 3. on clique sur « Générer la vidéo » : quelques secondes plus tard, la vidéo de l'avatar
    apparaît, avec ou sans le mot signé écrit dans un coin ;
-4. on la regarde, puis on la télécharge sur son ordinateur.
+4. on la regarde, puis on la télécharge sur son ordinateur ;
+5. on peut donner son avis sur chaque signe (correct, à revoir, mauvais, et ce qui ne va
+   pas) et nous l'envoyer par e-mail à **feedback@aispeechtosignlanguage.fr** : ces retours
+   aident à corriger l'avatar.
 
 Tout se passe sur votre ordinateur, rien n'est envoyé sur Internet. L'outil fonctionne sur Mac
 (Windows : en cours de test) et demande d'installer le logiciel gratuit Blender, qui fabrique
